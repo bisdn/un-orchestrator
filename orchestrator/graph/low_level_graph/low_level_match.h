@@ -1,0 +1,57 @@
+#ifndef LOW_LEVEL_MATCH_H_
+#define LOW_LEVEL_MATCH_H_ 1
+
+#pragma once
+
+#include <inttypes.h>
+#include <ostream>
+
+#include <rofl/platform/unix/cunixenv.h>
+#include <rofl/platform/unix/cdaemon.h>
+#include <rofl/common/cparams.h>
+
+#include <rofl/common/ciosrv.h>
+#include <rofl/common/logging.h>
+
+#include "../../utils/logger.h"
+#include "../match.h"
+
+using namespace rofl;
+using namespace std;
+
+namespace lowlevel
+{
+
+class Match : public graph::Match
+{
+private:
+
+	bool isInput_port;
+	unsigned int input_port;
+	
+public:
+	Match();
+	
+	bool operator==(const Match &other) const;
+
+	/**
+	*	@brief: insert the match into a flowmod message
+	*
+	*	@param: message		flowmod message
+	*/
+	void fillFlowmodMessage(rofl::openflow::cofflowmod &message);
+	
+	/**
+	*	@brief: it is a sort of copy constructor. In fact, starting
+	*		from a generic Match, it creates a lowlevel match with the
+	*		same "common" parameters
+	*/
+	void setAllCommonFields(graph::Match match);
+	
+	void setInputPort(unsigned int input_port);
+	
+	void print();
+};
+
+}
+#endif //LOW_LEVEL_MATCH_H_

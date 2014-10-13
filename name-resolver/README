@@ -1,0 +1,88 @@
+The name-resolver is a module that, given the name of a network function, provides
+information for all the possible implementations of that netowrk function. 
+
+It listens for HTTP requests on the TCP port 2828 and, if the required network function
+exists, provides the information in a JSON format. The following example requires
+the information for the network function "example":
+
+GET /nfs/example HTTP/1.1
+
+A possible answer sent by the name-resolver is the following
+
+{
+    "implementations" : [
+        {
+            "type" : "docker",
+            "uri" : "localhost:5000/example"
+        },
+        {
+            "cores" : "1",
+            "location" : "remote",
+            "type" : "dpdk",
+            "uri" : "https://nf_repository.con/example"
+        },
+        {
+            "cores" : "1",
+            "location" : "local",
+            "type" : "dpdk",
+            "uri" : "/home/nf_repository/dpdk/example"
+        },
+        {
+            "type" : "kvm",
+            "uri" : "/home/nf_repository/kvm/example.qcow2"
+        }
+    ],
+    "name" : "example"
+}
+
+At the startup, the name-resolver requires an xml file describing the possible
+implementations for the network functions (see and example in config/example.xml)
+
+###############################################################################
+
+Required libraries:
+
+* Git
+      apt-get install git
+
+* Boost
+      apt-get install libboost-all-dev 
+
+* JSON spirit
+      git clone https://github.com/sirikata/json-spirit
+
+* Libmicrohttpd
+      apt-get install libmicrohttpd-dev
+
+* libxml2
+     apt-get install libxml2-dev
+
+###############################################################################
+
+Compilation steps:
+
+  cd name-resolver
+  cmake .
+  make
+  
+  Alternatively to "cmake .", you can use "ccmake .", in order to configure some
+  compilation parameters. For instance, you can change the logging level of the
+  node-orchestrator.     
+     
+###############################################################################
+
+Usage:                                                                                   
+  sudo ./name-resolver --f file_name                                                     
+                                                                                         
+Parameters:                                                                              
+  --f file_name                                                                          
+        Name of the xml file describing the possible implementations for the
+        network functions.                               
+                                                                                         
+Options:                                                                                 
+  --h                                                                                    
+        Print this help.                                                                 
+                                                                                         
+Example:                                                                                 
+  sudo ./name-resolver ./config/example.xml
+  

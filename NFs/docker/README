@@ -1,0 +1,28 @@
+This folder contains NFs implemented in Docker containers.
+
+###############################################################################
+
+Reqiured libraries:
+
+* Docker and LXC
+     http://docs.docker.com/installation/
+     apt-get install lxc -y
+     echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker.io
+     service docker restart
+     
+* Ubuntu docker image
+	docker pull ubuntu:latest
+	
+* Docker registry
+    
+    To deploy and run a registry on localhost:5000, apply the following commands:
+        - docker pull samalba/docker-registry
+        - docker run -d -p 5000:5000 samalba/docker-registry
+        
+###############################################################################
+
+The script "build.sh" creates the images for all the docker NFs that are in this
+folder, and pushes them in the registry running at  localhost:5000
+
+Before running this script, make sure that the NFs are properly configured, as 
+described in the README files specific for each NF.

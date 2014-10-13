@@ -1,0 +1,7 @@
+This xDPd plugin receives commands from the node-orchestrator, through a TCP connection.
+Commands require the creation of a new LSI with a number of physical ports, network
+function ports, and virtual link to connect the LSI with another LSI alredy created.
+Similarly, a command could require to destroy an LSI, to create/destroy a network 
+function port and/or a virtual link.
+
+The xDPd branch "config_plugin_nf_support" already includes this plugin.

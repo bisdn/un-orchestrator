@@ -1,0 +1,29 @@
+{  
+   "flow-graph":{  
+      "VNFs":[  
+         {  
+            "id":"example"
+         }
+      ],
+      "flow-rules":[  
+         {  
+            "id":"00000001",
+            "match":{  
+              "port":"ge0"
+            },
+            "action":{  
+               "VNF_id":"example:1"
+            }
+         },
+         {  
+            "id":"00000002",
+            "match":{  
+               "VNF_id":"example:2"
+            },
+            "action":{  
+              "port":"ge1"
+            }
+         }
+      ]
+   }
+}

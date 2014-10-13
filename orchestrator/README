@@ -1,0 +1,152 @@
+The node-orchestrator is the module that controls the entire node. It receives
+commands through a REST API, and takes care of implementing these commands.
+
+More in detail, when it receives a command to deploy a new NF-FG, it does all
+the operations required to actually implement this graph: retrive the network
+function images, configure xDPd to create a new LSI and the ports required to
+connect it to the network functions to be deployed, deploy and starts the 
+network functions, and translated the rules to steer the traffic in openflow
+flowmod messages to be sent to xDPd (some flowmod are sent to the new LSI,
+others to the LSI-0, i.e. an LSI which steer the traffic into the proper graph.
+
+Similarly, the node-orchestrator takes care of updating or destroying a graph,
+when the proper messages are received.
+
+###############################################################################
+
+Libraries required to compile:
+
+* Build essential
+     apt-get install build-essential
+
+* cmake
+     apt-get install cmake
+
+* ccmake [optional]
+     sudo apt-get install cmake-curses-gui
+
+* Boost
+      apt-get install libboost-all-dev 
+
+* Git
+      apt-get install git
+
+* JSON spirit
+      git clone https://github.com/sirikata/json-spirit
+      Install it according to the description provided in the downloaded folder
+
+* Libmicrohttpd
+      apt-get install libmicrohttpd-dev
+
+* ROFL
+     git clone https://github.com/bisdn/rofl-core
+     cd rofl-core/
+     git checkout -b devel0.6/nf_refactor origin/devel0.6/nf_refactor
+     Install it according to the description provided in the downloaded folderS
+
+###############################################################################
+
+Software required at runtime
+
+* name-resolver
+     ../name-resolver
+     Compile it according to the description provided with the module
+
+* DPDK
+     http://dpdk.org/browse/dpdk/snapshot/dpdk-1.6.0r2.tar.gz
+     (Versions newer than 1.6.0 are not supported)
+     Install it according to the description provided in the downloaded archive
+
+* xDPd
+     git clone https://github.com/bisdn/xdpd
+     cd xdpd/
+     git checkout -b devel0.6/config_plugin_nf_support origin/devel0.6/config_plugin_nf_support
+     Install it according to the description provided in the downloaded folder.
+     Note that you must use the the "gnu_linux_dpdk" driver, hence you have to
+     add the text "--with-hw-support=gnu-linux-dpdk" when you run the "configure"
+     command. You have also to add "--with-plugins="node_orchestrator", in order
+     to run the plugin that interact with the node-orchestrator.
+     
+* Docker and LXC [optional]
+
+     On Ubuntu: 
+          follow the instruction provided here:
+               http://docs.docker.com/installation/
+          apt-get install lxc -y
+          echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker.io
+          service docker.io restart
+
+     On Debian:
+          follow the instruction provided here:
+              https://scottlinux.com/2014/05/04/how-to-install-and-run-docker-on-debian-wheezy/
+              apt-get install docker -y
+              echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
+              service docker.io restart
+
+* Private Docker registry [optional]
+    
+    To deploy and run a registry on localhost:5000, apply the following commands:
+        - docker pull samalba/docker-registry
+        - docker run -d -p 5000:5000 samalba/docker-registry
+        
+###############################################################################
+
+Compilation steps:
+
+  cd orchestrator
+  cmake .
+  make
+  
+  Alternatively to "cmake .", you can use "ccmake .", in order to configure some
+  compilation parameters. For instance, you can change the logging level and 
+  enable the node-orchestrator to read the graph description from a file.
+     
+###############################################################################
+
+Usage:                                                                                   
+  sudo ./name-orchestrator                                                 
+                                                                                         
+Parameters:                                                                              
+                                                                                         
+Options:                                                                                 
+  --p tcp_port                                                                           
+        TCP port used by the REST server to receive commands (default is 8080)           
+  --c core_mask                                                                          
+        Mask that specifies which cores must be used for DPDK network functions. These   
+        cores will be allocated to the DPDK network functions in a round robin fashion   
+        (default is 0x2)                                                                 
+  --w                                                                                    
+        name of a wireless interface (existing on the node) to be attached to the system 
+  --h                                                                                    
+        Print this help.                                                                 
+                                                                                         
+Example:                                                                                 
+  sudo ./node-orchestrator --w wlan0 
+
+* If you compile the node-orchestrator with the flag READ_JSON_FROM_FILE enabled:
+
+Usage:                                                                                   
+  sudo ./name-orchestrator --f file_name                                 
+                                                                                         
+Parameters:                                                                              
+  --f file_name                                                                          
+        Name of the file describing the NF-FG to be deployed on the node.                
+                                                              
+Options:                                                                                 
+  --c core_mask                                                                          
+        Mask that specifies which cores must be used for DPDK network functions. These   
+        cores will be allocated to the DPDK network functions in a round robin fashion   
+        (default is 0x2)                                                                 
+  --w                                                                                    
+        name of a wireless interface (existing on the node) to be attached to the system 
+  --h                                                                                    
+        Print this help.                                                                 
+                                                                                         
+Example:                                                                                 
+  sudo ./node-orchestrator --f example.json --w wlan0   
+  
+###############################################################################
+
+To read about the commands to be sent to the orchestrator, see the file
+"commands.txt"
+
