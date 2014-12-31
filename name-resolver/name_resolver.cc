@@ -65,7 +65,7 @@ bool parse_command_line(int argc, char *argv[], char **file_name)
 	file_name[0] = '\0';
 
 	while ((opt = getopt_long(argc, argvopt, "", lgopts, &option_index)) != EOF)
-    {
+	{
 		switch (opt)
 		{
 			/* long options */

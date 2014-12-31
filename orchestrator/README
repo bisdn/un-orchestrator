@@ -1,7 +1,7 @@
 The node-orchestrator is the module that controls the entire node. It receives
 commands through a REST API, and takes care of implementing these commands.
 
-More in detail, when it receives a command to deploy a new NF-FG, it does all
+In more detail, when it receives a command to deploy a new NF-FG, it does all
 the operations required to actually implement this graph: retrive the network
 function images, configure xDPd to create a new LSI and the ports required to
 connect it to the network functions to be deployed, deploy and starts the 

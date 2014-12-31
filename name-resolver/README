@@ -35,8 +35,8 @@ A possible answer sent by the name-resolver is the following
     "name" : "example"
 }
 
-At the startup, the name-resolver requires an xml file describing the possible
-implementations for the network functions (see and example in config/example.xml)
+At startup, the name-resolver requires an xml file describing the possible
+implementations for the network functions (see an example in config/example.xml)
 
 ###############################################################################
 
