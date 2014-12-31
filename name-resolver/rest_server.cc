@@ -13,7 +13,7 @@ bool RestServer::init(string fileName)
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Reading configuration file: %s",fileName.c_str());
 
-	// Validate the configuration file with the schema
+	//Validate the configuration file with the schema
 	schema_doc = xmlReadFile(NETWORK_FUNCTIONS_XSD, NULL, XML_PARSE_NONET);
 	if (schema_doc == NULL) 
 	{
@@ -67,10 +67,10 @@ bool RestServer::init(string fileName)
 		return false;
 	}
 	
-	// Retrieve the names of the NFs
+	///Retrieve the names of the NFs
 	xmlNodePtr root = xmlDocGetRootElement(doc);
 
-	// Load the file describing NFs
+	//Load the file describing NFs
 	for(xmlNodePtr cur_root_child=root->xmlChildrenNode; cur_root_child!=NULL; cur_root_child=cur_root_child->next) 
 	{
 		if ((cur_root_child->type == XML_ELEMENT_NODE)&&(!xmlStrcmp(cur_root_child->name, (const xmlChar*)NETWORK_FUNCTION_ELEMENT)))
@@ -97,7 +97,7 @@ bool RestServer::init(string fileName)
 					assert(attr_type != NULL);
 					assert(attr_uri != NULL);
 					
-					// TODO: understand if this check can be implemented in the schema
+					//TODO: understand if this check can be implemented in the schema
 					if(strcmp((const char*)attr_type,"dpdk")==0)
 					{
 						//the attributes "cores" and "location" must be present
