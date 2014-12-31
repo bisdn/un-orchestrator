@@ -5,7 +5,7 @@
 #
 # Brief: this script configures the DPDK on the machine. In other words, it loads
 #    the proper kernel modules, associates some interfaces to the DPDK, and finally
-#    creates a number of huge pages. The inetrafeces to be assocaited with the DPDP,
+#    creates a number of huge pages. The interfaces to be associated with the DPDK,
 #    as well as the number of huge pages to be created can be easily changed by
 #    modifying this script.
 #    Note that the script requires that DPDK have been properly compiled.
