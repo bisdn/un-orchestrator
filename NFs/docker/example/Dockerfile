@@ -1,5 +1,5 @@
 FROM      ubuntu
-MAINTAINER Ivano Cerrato <ivano.cerrato@polito.it>
+MAINTAINER Politecnico di Torino
 
 RUN apt-get update
 RUN apt-get install -y libpcap-dev
