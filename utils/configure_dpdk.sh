@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Author: Ivano Cerrato
-# Date: 08/05/2015
+# Date: 08/04/2015
 #
 # Brief: this script configures the DPDK on the machine. In other words, it loads
 #    the proper kernel modules, associates some interfaces to the DPDK, and finally
