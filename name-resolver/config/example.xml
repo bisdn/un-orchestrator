@@ -38,7 +38,7 @@
 	
 	<network-function name="firewall">
 		<!-- Only a docker implementation is available for this network function -->
-		<implementation type="docker" uri="localhost:5000/firewall"/>
+		<implementation type="docker" uri="localhost:5000/iptables"/>
 	</network-function>
    
 	<network-function name="dpi">

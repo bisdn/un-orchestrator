@@ -13,7 +13,7 @@ done
 
 cat tmp | while read c
 do 
-	sudo docker rm $c
+	sudo docker rm -f $c
 done
 
 rm tmp

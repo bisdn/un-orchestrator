@@ -9,7 +9,7 @@ Reqiured libraries:
 * Docker and LXC
      http://docs.docker.com/installation/
      apt-get install lxc -y
-     echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker.io
+     echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
      service docker restart
      
 * Ubuntu docker image
@@ -34,7 +34,7 @@ Run the container:
 	docker run -i -t --lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth0" \
 		--lxc-conf="lxc.network.name=eth0" --lxc-conf="lxc.network.flags=up" \
 		--lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth1" \
-		--lxc-conf="lxc.network.name=eth1" --lxc-conf="lxc.network.flags=up" --networking="false" \  
+		--lxc-conf="lxc.network.name=eth1" --lxc-conf="lxc.network.flags=up" --net="none" \
 		--privileged="true" localhost:5000/iptables /bin/bash
 
 	./start.sh
@@ -44,7 +44,7 @@ Run the container:
 	docker run -d --lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth0" \
 		--lxc-conf="lxc.network.name=eth0" --lxc-conf="lxc.network.flags=up" \
 		--lxc-conf="lxc.network.type=phys" --lxc-conf="lxc.network.link=vEth1" \
-		--lxc-conf="lxc.network.name=eth1" --lxc-conf="lxc.network.flags=up" --networking="false" \  
+		--lxc-conf="lxc.network.name=eth1" --lxc-conf="lxc.network.flags=up" --net="none" \  
 		--privileged="true" localhost:5000/iptables
 		
 In both the cases, vEth0 and vEth1 are vEth interfaces available in the host.

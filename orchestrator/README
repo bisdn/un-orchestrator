@@ -53,14 +53,16 @@ Software required at runtime
      Compile it according to the description provided with the module
 
 * DPDK
-     http://dpdk.org/browse/dpdk/snapshot/dpdk-1.6.0r2.tar.gz
-     (Versions newer than 1.6.0 are not supported)
+     git clone https://github.com/bisdn/dpdk-dev
      Install it according to the description provided in the downloaded archive
+     
+     This is not the official version of DPDK, but a patched version that provides
+     better performance.
 
 * xDPd
      git clone https://github.com/bisdn/xdpd
      cd xdpd/
-     git checkout -b devel-0.7 origin/devel-0.7/config_plugin_nf_support
+     git checkout -b devel-0.7 origin/devel-0.7
      Install it according to the description provided in the downloaded folder.
      Note that you must use the the "gnu_linux_dpdk" driver, hence you have to
      add the text "--with-hw-support=gnu-linux-dpdk" when you run the "configure"
@@ -73,8 +75,8 @@ Software required at runtime
           follow the instruction provided here:
                http://docs.docker.com/installation/
           apt-get install lxc -y
-          echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker.io
-          service docker.io restart
+          echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
+          service docker restart
 
      On Debian:
           follow the instruction provided here:

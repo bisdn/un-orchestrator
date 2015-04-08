@@ -90,8 +90,6 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	lowlevel::Graph graph;
 
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	
-	
 	switch(OFP_VERSION)
 	{
 		case OFP_10:
@@ -585,7 +583,6 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	strControllerPort << controllerPort;
 
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-
 	switch(OFP_VERSION)
 	{
 		case OFP_10:

@@ -30,19 +30,22 @@ find=`cat downloaded | grep $3 | wc -l`
 
 if [ $find -eq 0 ]
 then 
-	#The image must be downloaded from the ropository
+#	IVANO: uncomment the following rows in case you want that the images are downloaded from a repositotory.
+#		Otherwise, the code supposes that the VNFs images are available locally.
 
-	sudo docker pull $3
-	#docker pull returns 0 in case of success
-	ret=`echo $?`
-
-	if [ $ret -eq 0 ]
-	then
-		echo "[pullAndRunNF] Image '"$3"' retrieved"
-	else
-		echo "[pullAndRunNF] Impossible to retrieve image '"$3"'"
-		exit 0
-	fi
+#	#The image must be downloaded from the ropository
+#
+#	sudo docker pull $3
+#	#docker pull returns 0 in case of success
+#	ret=`echo $?`
+#
+#	if [ $ret -eq 0 ]
+#	then
+#		echo "[pullAndRunNF] Image '"$3"' retrieved"
+#	else
+#		echo "[pullAndRunNF] Impossible to retrieve image '"$3"'"
+#		exit 0
+#	fi
 	
 	echo $3 >> downloaded
 fi
@@ -80,9 +83,10 @@ do
 	currentEthernet=`expr $currentEthernet + 1`
 done 
  
-echo --networking=\"false\"  --privileged=true  $3 >> $tmp_file
+#echo --networking=\"false\"  --privileged=true  $3 >> $tmp_file
+echo --net=\"none\"  --privileged=true  $3 >> $tmp_file
 
-echo "[pullAndRunNF] Executing command: '"`cat $tmp_file`"'"
+echo [`date`]"[pullAndRunNF] Executing command: '"`cat $tmp_file`"'"
 
 ID=`bash $tmp_file`
 
@@ -91,7 +95,7 @@ ret=`echo $?`
 
 if [ $ret -eq 0 ]
 then
-	echo "[pullAndRunNF] Container started with ID: '"$ID"'"
+	echo [`date`]"[pullAndRunNF] Container $2 started with ID: '"$ID"'"
 else
 	echo "[pullAndRunNF] An error occurred while starting the container"
 	rm $tmp_file

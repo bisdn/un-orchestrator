@@ -8,13 +8,13 @@ modified and the packet is sent back on the interface 'i+1'.
 Reqiured libraries:
 
 * DPDK
-     http://dpdk.org/browse/dpdk/snapshot/dpdk-1.6.0r2.tar.gz
+     git clone https://github.com/bisdn/dpdk-dev
 
 ###############################################################################
 
 Compile it as follows:
 * export RTE_SDK=absolute_path_dpdk
-  (e.g., export RTE_SDK=~/Desktop/dpdk-1.6.0r2/)
+  (e.g., export RTE_SDK=~/Desktop/dpdk-dev)
 * make
 
 ###############################################################################

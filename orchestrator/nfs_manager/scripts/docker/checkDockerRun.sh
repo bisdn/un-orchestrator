@@ -13,12 +13,14 @@ then
     exit 0
 fi
 
-version=`cat /etc/*-release | grep "ID=ubuntu" | wc -l`
+#IVANO: probably the check on the version can be removed. To me it seems that both Ubuntu and
+#Debian use the same syntax.
 
+version=`cat /etc/*-release | grep "ID=ubuntu" | wc -l`
 if [ $version -ge 1 ]
 then
 	#The distribution is Ubuntu
-	num=`ps aux | grep "docker.io -d" | grep "lxc" | grep -v "grep" | wc -l`
+	num=`ps aux | grep "docker -d" | grep "lxc" | grep -v "grep" | wc -l`
 else
 	#I'm assuming that the distribution is Debian
 	num=`ps aux | grep "/usr/bin/docker -d" | grep "lxc" | grep -v "grep" | wc -l`
