@@ -40,6 +40,11 @@ void Controller::handle_dpt_close(crofdpt& dpt)
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed");
 }
 
+/*void Controller::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid,rofl::openflow::cofmsg_packet_in& msg)
+{
+	dpt.send_packet_out_message(auxid, msg.get_buffer_id(), in_port, actions);
+}*/
+
 
 bool Controller::installNewRule(Rule rule)
 {
@@ -124,10 +129,11 @@ bool Controller::installNewRulesIntoLSI(list<Rule> rules)
 		for(; rule != rules.end(); rule++)
 		{
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Installing rule %s",rule->getID().c_str());
-			rofl::openflow::cofflowmod fe(dpt->get_version());
-			rule->fillFlowmodMessage(fe,dpt->get_version(),ADD_RULE);
-			if(LOGGING_LEVEL <= ORCH_DEBUG)
-				std::cout << "installing new Flow-Mod entry:" << std::endl << fe;
+			rofl::openflow::cofflowmod fe(dpt->get_version_negotiated());
+			rule->fillFlowmodMessage(fe,dpt->get_version_negotiated(),ADD_RULE);
+#ifdef DEBUG_OPENFLOW
+			std::cout << "installing new Flow-Mod entry:" << std::endl << fe;
+#endif
 			dpt->send_flow_mod_message(cauxid(0),fe);
 		}
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%d rules installed!",rules.size());
@@ -148,10 +154,11 @@ bool Controller::removeRulesFromLSI(list<Rule> rules)
 		list<Rule>::iterator rule = rules.begin();
 		for(; rule != rules.end(); rule++)
 		{
-			rofl::openflow::cofflowmod fe(dpt->get_version());
-			rule->fillFlowmodMessage(fe,dpt->get_version(),RM_RULE);
-			if(LOGGING_LEVEL <= ORCH_DEBUG)
-				std::cout << "Removing Flow-Mod entry:" << std::endl << fe;
+			rofl::openflow::cofflowmod fe(dpt->get_version_negotiated());
+			rule->fillFlowmodMessage(fe,dpt->get_version_negotiated(),RM_RULE);
+#ifdef DEBUG_OPENFLOW
+			std::cout << "Removing Flow-Mod entry:" << std::endl << fe;
+#endif
 			dpt->send_flow_mod_message(cauxid(0),fe);
 		}
 		return true;
@@ -167,19 +174,20 @@ void *Controller::loop(void *param)
 	Controller *controller = (Controller*)param;
 
 	rofl::cparams socket_params = csocket::get_default_params(rofl::csocket::SOCKET_TYPE_PLAIN);
-	socket_params.set_param(csocket::PARAM_KEY_LOCAL_PORT).set_string() = controller->controllerPort;
-	socket_params.set_param(rofl::csocket::PARAM_KEY_DOMAIN) = string("inet"); 
+	socket_params.set_param(csocket::PARAM_KEY_LOCAL_PORT).set_string() = controller->controllerPort; 
 
-	controller->rpc_listen_for_dpts(rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
+	controller->add_dpt_listening(0,rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
 
 	if(LOGGING_LEVEL <= ORCH_DEBUG)
 		rofl::logging::set_debug_level(7);
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start...");
 	
-	rofl::cioloop::run();
+	rofl::cioloop::get_loop().run();
 
 	assert(0 && "Cannot be here!");
+	
+	rofl::cioloop::get_loop().shutdown();
 	
 	return NULL;
 }

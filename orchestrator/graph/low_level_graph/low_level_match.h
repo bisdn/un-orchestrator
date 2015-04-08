@@ -15,6 +15,7 @@
 
 #include "../../utils/logger.h"
 #include "../match.h"
+#include "../../xdpd_manager/lsi.h"
 
 using namespace rofl;
 using namespace std;
@@ -51,6 +52,7 @@ public:
 	void setInputPort(unsigned int input_port);
 	
 	void print();
+	string prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 };
 
 }

@@ -29,7 +29,7 @@ void Rule::fillFlowmodMessage(rofl::openflow::cofflowmod &message, uint8_t of_ve
 			if(command == ADD_RULE)
 				message.set_command(openflow10::OFPFC_ADD);
 			else
-				message.set_command(openflow10::OFPFC_DELETE);		
+				message.set_command(openflow10::OFPFC_DELETE_STRICT);		
 			break;
 		}
 		case openflow12::OFP_VERSION: 
@@ -37,7 +37,7 @@ void Rule::fillFlowmodMessage(rofl::openflow::cofflowmod &message, uint8_t of_ve
 			if(command == ADD_RULE)
 				message.set_command(openflow12::OFPFC_ADD);
 			else
-				message.set_command(openflow12::OFPFC_DELETE);
+				message.set_command(openflow12::OFPFC_DELETE_STRICT);
 			break;
 		}
 		case openflow13::OFP_VERSION: 
@@ -45,7 +45,7 @@ void Rule::fillFlowmodMessage(rofl::openflow::cofflowmod &message, uint8_t of_ve
 			if(command == ADD_RULE)
 				message.set_command(openflow13::OFPFC_ADD);
 			else
-				message.set_command(openflow13::OFPFC_DELETE);
+				message.set_command(openflow13::OFPFC_DELETE_STRICT);
 			break;
 		}
 		default:
@@ -85,6 +85,19 @@ void Rule::print()
 		action.print();
 		cout << "\t}" << endl;
 	}
+}
+
+void Rule::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
+{
+	int id;
+	sscanf(flowID.c_str(),"%d",&id);
+
+	if(id == 2)
+		coloredLogger(ANSI_COLOR_BLUE ,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tPriority-> %"PRIu64" -\t Match-> %s - \t Action-> output to '%s'",priority,match.prettyPrint(lsi0,lsis).c_str(),action.prettyPrint(lsi0,lsis).c_str());
+	else if(id == 3)
+		coloredLogger(ANSI_COLOR_RED ,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tPriority-> %"PRIu64" -\t Match-> %s - \t Action-> output to '%s'",priority,match.prettyPrint(lsi0,lsis).c_str(),action.prettyPrint(lsi0,lsis).c_str());
+	else
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tPriority-> %"PRIu64" -\t Match-> %s - \t Action-> output to '%s'",priority,match.prettyPrint(lsi0,lsis).c_str(),action.prettyPrint(lsi0,lsis).c_str());
 }
 
 }

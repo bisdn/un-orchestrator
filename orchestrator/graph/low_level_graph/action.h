@@ -11,6 +11,8 @@
 #include <ostream>
 
 #include "../../utils/logger.h"
+#include "../../utils/constants.h"
+#include "../../xdpd_manager/lsi.h"
 
 using namespace rofl;
 using namespace std;
@@ -42,8 +44,10 @@ public:
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message);
 	
 	void print();
+	string prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 };
 
 }
 
 #endif //ACTION_H_
+

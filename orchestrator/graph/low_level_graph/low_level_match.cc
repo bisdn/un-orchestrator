@@ -34,7 +34,7 @@ void Match::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 		
 	if(eth_src != NULL)
 	{
-		if(eth_src_mask)
+		if(eth_src_mask)	
 			message.set_match().set_eth_src(cmacaddr(eth_src), cmacaddr(eth_src_mask));		
 		else
 			message.set_match().set_eth_src(cmacaddr(eth_src));
@@ -168,5 +168,51 @@ void Match::print()
 	}
 }
 
+string Match::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
+{
+	stringstream ss;
+
+	ss << "port: ";
+
+	pair<string,unsigned int> wireless = lsi0->getWirelessPort();
+	map<string,unsigned int> ethernet = lsi0->getEthPorts();
+	
+	if(input_port == wireless.second)
+	{
+		ss << wireless.first << graph::Match::prettyPrint();
+		return ss.str();
+	}
+	else
+	{
+		for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
+		{
+			if(it->second == input_port)
+			{
+				ss << it->first << graph::Match::prettyPrint();
+				return ss.str();
+			}		
+		}
+	}
+	
+	
+	//The port corresponds to a virtual link... we search the corresponding graph
+	
+	for(map<string,LSI *>::iterator it = lsis.begin(); it != lsis.end(); it++)
+	{
+		vector<VLink> vlinks = it->second->getVirtualLinks();
+		for(vector<VLink>::iterator vl = vlinks.begin(); vl != vlinks.end(); vl++)
+		{
+			if(vl->getRemoteID() == input_port)
+			{
+				ss << input_port << " (graph: " << it->first << ")";
+				return ss.str();	
+			}
+		}
+	}
+	
+	//The code could be here only when a SIGINT is received and all the graph are going to be removed
+	ss << input_port << " (unknown graph)";
+	return ss.str();
+}
 
 }

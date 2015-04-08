@@ -3,6 +3,14 @@
 #include <stdio.h>	// vsnprintf
 #include <stdarg.h>	// va_list
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 /*
  * The following are the logging levels we have.
  *
@@ -48,6 +56,9 @@ extern "C" {
 	\param Format Format-control string, according to syntax of the printf() function.
 */
 extern void logger(int LoggingLevel, const char *ModuleName, const char *File, int Line, const char *Format, ...);
+
+//IVANO: TODO: fare una sola funzione
+extern void coloredLogger(char *color, int LoggingLevel, const char *ModuleName, const char *File, int Line, const char *Format, ...);
 
 
 #ifdef __cplusplus

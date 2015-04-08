@@ -2,6 +2,12 @@
 
 namespace lowlevel
 {	
+
+void Graph::addRules(list<Rule> rules)
+{
+	for(list<Rule>::iterator r = rules.begin(); r != rules.end(); r++)
+		addRule(*r);
+}
 	
 void Graph::addRule(Rule rule)
 {
@@ -34,6 +40,12 @@ Rule Graph::getRule(string ID)
 	
 	//The rule searched does not exist in this graph
 	throw new GraphException();
+}
+
+void Graph::removeRules(list<Rule> rules)
+{
+	for(list<Rule>::iterator r = rules.begin(); r != rules.end(); r++)
+		removeRule(*r);
 }
 
 void Graph::removeRule(Rule rule)
@@ -109,6 +121,12 @@ void Graph::print()
 			r->print();
 		cout << "}" << endl;
 	}
+}
+
+void Graph::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
+{
+	for(list<Rule>::iterator r = rules.begin(); r != rules.end(); r++)
+			r->prettyPrint(lsi0,lsis);
 }
 
 }

@@ -6,6 +6,7 @@
 #include "low_level_match.h"
 #include "action.h"
 #include "../../utils/logger.h"
+#include "../../xdpd_manager/lsi.h"
 
 #include <ostream>
 
@@ -47,6 +48,7 @@ public:
 	string getID();
 
 	void print();
+	void prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 };
 
 }

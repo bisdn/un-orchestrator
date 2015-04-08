@@ -98,6 +98,7 @@ private:
 	*/
 	GraphInfo graphInfoLSI0;
 	uint64_t dpid0;
+	lowlevel::Graph graphLSI0lowLevel; //FIXME: this is a trick for the log
 	
 	/**
 	*	Map containing the graph identifier of each tenant-LSI, and its desciption
@@ -282,6 +283,13 @@ public:
 	*		to the graphs (both ethernet and wifi)
 	*/
 	Object toJSONPhysicalInterfaces();
+		
+	/**
+	*	@brief: prints information on the graphs deployed
+	*/
+	void printInfo(bool complete = true);
+	
+	void printInfo(lowlevel::Graph graphLSI0, LSI *lsi0);
 	
 	static void mutexInit();
 };

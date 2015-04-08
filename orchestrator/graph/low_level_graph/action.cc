@@ -37,4 +37,48 @@ void Action::print()
 	}
 }
 
+string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
+{
+	stringstream ss;
+
+	pair<string,unsigned int> wireless = lsi0->getWirelessPort();
+	map<string,unsigned int> ethernet = lsi0->getEthPorts();
+	
+	if(port_id == wireless.second)
+	{
+		ss << wireless.first;
+		return ss.str();
+	}
+	else
+	{
+		for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
+		{
+			if(it->second == port_id)
+			{
+				ss << it->first;
+				return ss.str();
+			}		
+		}
+	}
+	
+	//The port corresponds to a virtual link... we search the corresponding graph
+	
+	for(map<string,LSI *>::iterator it = lsis.begin(); it != lsis.end(); it++)
+	{
+		vector<VLink> vlinks = it->second->getVirtualLinks();
+		for(vector<VLink>::iterator vl = vlinks.begin(); vl != vlinks.end(); vl++)
+		{
+			if(vl->getRemoteID() == port_id)
+			{
+				ss << port_id << " (graph: " << it->first << ")";
+				return ss.str();	
+			}
+		}
+	}
+	
+	//The code could be here only when a SIGINT is received and all the graph are going to be removed
+	ss << port_id << " (unknown graph)";
+	return ss.str();
+}
+
 }

@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_ 1
 
-#define MODULE_NAME 			"node-orchestrator"
+#define MODULE_NAME 			"Local-Orchestrator"
 
 /*
 *	Commands to xDPD - Answers from xDPD
@@ -122,5 +122,15 @@
 *	Network functions
 */
 #define CORE_MASK				0x2
+
+/*
+ * The following are the supported Openflow versions.
+ */ 
+enum
+{
+	OFP_10 = 1,
+	OFP_12,
+	OFP_13
+};
 
 #endif //CONSTANTS_H_

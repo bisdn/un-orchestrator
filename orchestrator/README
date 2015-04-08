@@ -41,7 +41,7 @@ Libraries required to compile:
 * ROFL
      git clone https://github.com/bisdn/rofl-core
      cd rofl-core/
-     git checkout -b devel0.6/nf_refactor origin/devel0.6/nf_refactor
+     git checkout -b devel-0.6 origin/devel-0.6
      Install it according to the description provided in the downloaded folderS
 
 ###############################################################################
@@ -60,11 +60,11 @@ Software required at runtime
 * xDPd
      git clone https://github.com/bisdn/xdpd
      cd xdpd/
-     git checkout -b devel0.6/config_plugin_nf_support origin/devel0.6/config_plugin_nf_support
+     git checkout -b devel-0.7 origin/devel-0.7/config_plugin_nf_support
      Install it according to the description provided in the downloaded folder.
      Note that you must use the the "gnu_linux_dpdk" driver, hence you have to
      add the text "--with-hw-support=gnu-linux-dpdk" when you run the "configure"
-     command. You have also to add "--with-plugins="node_orchestrator", in order
+     command. You have also to add "--with-plugins="node_orchestrator rest", in order
      to run the plugin that interact with the node-orchestrator.
      
 * Docker and LXC [optional]

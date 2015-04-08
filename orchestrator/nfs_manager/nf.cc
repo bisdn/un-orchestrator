@@ -28,3 +28,13 @@ Implementation *NF::getSelectedImplementation()
 {
 	return selectedImplementation;
 }
+
+bool NF::getRunning()
+{
+	return isRunning;
+}
+
+void NF::setRunning(bool val)
+{
+	isRunning = val;
+}

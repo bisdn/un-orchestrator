@@ -40,6 +40,9 @@ public:
 	
 	void setSelectedImplementation(Implementation *impl);
 	Implementation *getSelectedImplementation();
+	
+	void setRunning(bool val);
+	bool getRunning();
 };
 
 #endif //NF_H_ 1

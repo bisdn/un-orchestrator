@@ -36,6 +36,26 @@ IF(${LOGGING_LEVEL_INDEX} EQUAL 4)
 ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
+# Rather complicated CMake code for selecting the Openflow version
+SET(OFP_VERSION "OFP_12" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
+SET(OFP_VERSION_VALUES "OFP_10" "OFP_12" "OFP_13")
+SET_PROPERTY(CACHE OFP_VERSION PROPERTY STRINGS ${OFP_VERSION_VALUES})
+LIST(FIND OFP_VERSION_VALUES ${OFP_VERSION} OFP_VERSION_INDEX)
+
+IF(${OFP_VERSION_INDEX} EQUAL -1)
+	message(FATAL_ERROR "Option ${OFP_VERSION} not supported, valid entries are ${OFP_VERSION_VALUES}")
+ENDIF()
+IF(${OFP_VERSION_INDEX} EQUAL 0)
+	ADD_DEFINITIONS(-DOFP_VERSION=OFP_10)
+ENDIF()
+IF(${OFP_VERSION_INDEX} EQUAL 1)
+	ADD_DEFINITIONS(-DOFP_VERSION=OFP_12)
+ENDIF()
+IF(${OFP_VERSION_INDEX} EQUAL 2)
+	ADD_DEFINITIONS(-DOFP_VERSION=OFP_13)
+ENDIF()
+# End of the rather complicated CMake code for setting the Openflow version
+
 OPTION(
 	RUN_NFS
 	"Turn on the actually run the NFs"
@@ -81,6 +101,24 @@ OPTION(
 IF(POLITO_MESSAGE)
 	ADD_DEFINITIONS(-DPOLITO_MESSAGE)
 ENDIF(POLITO_MESSAGE)
+
+OPTION(
+	LOG_1024X768
+	"Turn on to print the log for a monitor of 1024 X 768"
+	OFF
+)
+IF(LOG_1024X768)
+	ADD_DEFINITIONS(-DLOG_1024X768)
+ENDIF(LOG_1024X768)
+
+OPTION(
+	DEBUG_OPENFLOW
+	"Turn on to enable the debug of Openflow flowmod messages"
+	OFF
+)
+IF(DEBUG_OPENFLOW)
+	ADD_DEFINITIONS(-DDEBUG_OPENFLOW)
+ENDIF(DEBUG_OPENFLOW)
 
 
 # Set source files

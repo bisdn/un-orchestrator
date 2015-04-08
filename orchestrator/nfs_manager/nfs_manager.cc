@@ -482,6 +482,8 @@ bool NFsManager::startNF(string nf_name, unsigned int number_of_ports, map<unsig
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while starting the NF \"%s\"",nf_name.c_str());
 		return false;
 	}
+	
+	nf->setRunning(true);
 
 	return true;
 }
@@ -531,6 +533,8 @@ bool NFsManager::stopNF(string nf_name)
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while stopping the NF \"%s\"",nf_name.c_str());
 		return false;
 	}
+	
+	nf->setRunning(false);
 
 	return true;
 }
@@ -571,4 +575,19 @@ unsigned int NFsManager::convertNetmask(string netmask)
 	}
 	
 	return slash;
+}
+
+void NFsManager::printInfo(int graph_id)
+{
+	for(map<string, NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
+	{
+		nf_t type = nf->second->getSelectedImplementation()->getType();
+		string str = NFType::toString(type);
+		if(graph_id == 2)
+			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");
+		else if(graph_id == 3)
+			coloredLogger(ANSI_COLOR_RED,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");
+		else
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");
+	}
 }

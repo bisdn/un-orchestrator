@@ -90,7 +90,7 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	lowlevel::Graph graph;
 
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+	versionbitmap.add_ofp_version(rofl::openflow10::OFP_VERSION);
 	
 	Controller *controller = new Controller(versionbitmap,graph,strControllerPort.str());
 	controller->start();
@@ -107,7 +107,6 @@ GraphManager::~GraphManager()
 	//Deleting tenants LSIs
 	for(map<string,GraphInfo>::iterator lsi = tenantLSIs.begin(); lsi != tenantLSIs.end();)
 	{	
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Deleting the graph'%s'...",lsi->first.c_str());
 		map<string,GraphInfo>::iterator tmp = lsi;
 		lsi++;
 		try
@@ -275,7 +274,8 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "1) Remove the rules from the LSI-0");
 	
 	lowlevel::Graph graphLSI0 = GraphTranslator::lowerGraphToLSI0(highLevelGraph,tenantLSI,graphInfoLSI0.getLSI(), endPointsDefinedInMatches, endPointsDefinedInActions, availableEndPoints, false);	
-	
+	graphLSI0lowLevel.removeRules(graphLSI0.getRules());
+		
 	//Remove rules from the LSI-0
 	graphInfoLSI0.getController()->removeRules(graphLSI0.getRules());
 	
@@ -346,6 +346,9 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 	tenantLSI = NULL;
 	nfsManager = NULL;
 	
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Tenant LSI (ID: %s) and its controller have been destroyed!",graphID.c_str());
+	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
+	
 	return true;
 }
 
@@ -393,6 +396,7 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 	stringstream lsi0FlowID;
 	lsi0FlowID << graph->getID() << "_" << flowID;
 	lsi0Controller->removeRuleFromID(lsi0FlowID.str());
+	graphLSI0lowLevel.removeRuleFromID(lsi0FlowID.str());
 	
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Removing the flow from the tenant-LSI graph");
 	Controller *tenantController = graphInfo.getController();
@@ -422,6 +426,8 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "endpoint \"%s\" still used %d times",endpointInvolved.c_str(), availableEndPoints[endpointInvolved]);
 		}
 	}
+	
+	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 	
 	return true;
 }
@@ -566,7 +572,19 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	strControllerPort << controllerPort;
 
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+
+	switch(OFP_VERSION)
+	{
+		case OFP_10:
+			versionbitmap.add_ofp_version(rofl::openflow10::OFP_VERSION);
+			break;
+		case OFP_12:
+			versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+			break;
+		case OFP_13:
+			versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
+			break;
+	}
 
 	lowlevel::Graph graphTmp ;
 	Controller *controller = new Controller(versionbitmap,graphTmp,strControllerPort.str());
@@ -810,6 +828,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		lowlevel::Graph graphLSI0 = GraphTranslator::lowerGraphToLSI0(graph,lsi,graphInfoLSI0.getLSI(), endPointsDefinedInMatches, endPointsDefinedInActions, availableEndPoints);
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "New graph for LSI-0:");
 		graphLSI0.print();
+		
+		graphLSI0lowLevel.addRules(graphLSI0.getRules());
 				
 		lowlevel::Graph graphTenant =  GraphTranslator::lowerGraphToTenantLSI(graph,lsi,graphInfoLSI0.getLSI());
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph for tenant LSI:");
@@ -830,7 +850,9 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding the new rules to the LSI-0");
 		(graphInfoLSI0.getController())->installNewRules(graphLSI0.getRules());
 	
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Tenant LSI and its controller are created");
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Tenant LSI (ID: %s) and its controller are created",graph->getID().c_str());	
+				
+		printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());	
 		
 	} catch (XDPDManagerException e)
 	{
@@ -860,7 +882,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	
 	
 	for(map<string, unsigned int >::iterator ep = availableEndPoints.begin(); ep != availableEndPoints.end(); ep++)
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Endpoint \"%s\" is used %d times in graph not defining it",ep->first.c_str(),ep->second);
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Endpoint \"%s\" is used %d times in graph not defining it",ep->first.c_str(),ep->second);		
 			
 	return true;
 }
@@ -1180,6 +1202,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		lowlevel::Graph graphLSI0 = GraphTranslator::lowerGraphToLSI0(newPiece,lsi,graphInfoLSI0.getLSI(), endPointsDefinedInMatches, endPointsDefinedInActions, availableEndPoints);
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "New piece of graph for LSI-0:");
 		graphLSI0.print();
+		graphLSI0lowLevel.addRules(graphLSI0.getRules());
 				
 		lowlevel::Graph graphTenant =  GraphTranslator::lowerGraphToTenantLSI(newPiece,lsi,graphInfoLSI0.getLSI());
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "New piece of graph for tenant LSI:");
@@ -1192,6 +1215,8 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		//Insert new rules into the tenant-LSI
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Adding the new rules to the tenant-LSI");
 		tenantController->installNewRules(graphTenant.getRules());
+		
+		printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 		
 	} catch (XDPDManagerException e)
 	{
@@ -1673,3 +1698,62 @@ bool GraphManager::canDeleteFlow(highlevel::Graph *graph, string flowID)
 	return true;
 }
 
+void GraphManager::printInfo(lowlevel::Graph graphLSI0, LSI *lsi0)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graphs deployed:");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tID: 'LSI-0'");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tRules: ");
+	
+	map<string,LSI *> lsis;
+	for(map<string,GraphInfo>::iterator graphs = tenantLSIs.begin(); graphs != tenantLSIs.end(); graphs++)
+		lsis[graphs->first] = graphs->second.getLSI();
+	
+	graphLSI0.prettyPrint(lsi0,lsis);
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+
+	printInfo(false);
+}
+
+void GraphManager::printInfo(bool completed)
+{
+	if(completed)
+	{
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graphs deployed:");
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+	}
+
+	map<string,GraphInfo>::iterator it;
+	for(it = tenantLSIs.begin(); it != tenantLSIs.end(); it++)
+	{
+		int id;
+		sscanf(it->first.c_str(),"%d",&id);
+		
+		if(id == 2)
+		{
+			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tGraph ID: '%s'",it->first.c_str());
+			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tVNF installed:");
+		}
+		else if(id == 3)
+		{
+			coloredLogger(ANSI_COLOR_RED,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tID: '%s'",it->first.c_str());
+			coloredLogger(ANSI_COLOR_RED,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tVNF installed:");
+		}
+		else
+		{
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tID: '%s'",it->first.c_str());
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tVNF installed:");
+		}
+			
+		NFsManager *nfsManager = it->second.getNFsManager();
+		nfsManager->printInfo(id);
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+	}
+	
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
+}

@@ -218,7 +218,7 @@ put_malformed_url:
 		return ret;
 	}
 	
-	const char *c_type = MHD_lookup_connection_value (connection,MHD_HEADER_KIND, "Content-Type");
+/*	const char *c_type = MHD_lookup_connection_value (connection,MHD_HEADER_KIND, "Content-Type");
 	if(strcmp(c_type,JSON_C_TYPE) != 0)
 	{
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content-Type must be: "JSON_C_TYPE);
@@ -226,7 +226,7 @@ put_malformed_url:
 		int ret = MHD_queue_response (connection, MHD_HTTP_UNSUPPORTED_MEDIA_TYPE, response);
 		MHD_destroy_response (response);
 		return ret;
-	}
+	}*/
 #else
 	char graphID[BUFFER_SIZE];
 	strcpy(graphID,"NF-FG");
@@ -309,6 +309,7 @@ put_malformed_url:
 
 #ifndef READ_JSON_FROM_FILE
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has been properly %s!",(newGraph)? "created" : "updated");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
 	
 	//TODO: put the proper content in the answer
 	response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
@@ -776,9 +777,9 @@ bool RestServer::parsePutBody(string toBeCreated,highlevel::Graph &graph, bool n
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found",FLOW_GRAPH);
 			return false;
 		}
-	}catch(...)
+	}catch(exception& e)
 	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax");
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: ",e.what());
 		return false;
 	}
     
@@ -1074,7 +1075,7 @@ delete_malformed_url:
 		return ret;
 	}
 	
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Delete resource: %s/%s",graphID,(specificFlow)?flowID:"");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Deleting resource: %s/%s",graphID,(specificFlow)?flowID:"");
 
 	if(!gm->graphExists(graphID) || (specificFlow && !gm->flowExists(graphID,flowID)))
 	{
@@ -1100,6 +1101,7 @@ delete_malformed_url:
 			}
 			else 
 				logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has been properly deleted!");
+				logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
 		}
 		else
 		{

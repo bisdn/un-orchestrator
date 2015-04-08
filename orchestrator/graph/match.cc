@@ -383,11 +383,11 @@ void Match::setAllCommonFields(Match match)
 	/*
 	*	Ethernet
 	*/
-	if(match.eth_src)
+	if(match.eth_src != NULL) 
 		setEthSrc(match.eth_src);
 	if(match.eth_src_mask)
 		setEthSrcMask(match.eth_src_mask);
-	if(match.eth_dst)
+	if(match.eth_dst != NULL)
 		setEthDst(match.eth_dst);
 	if(match.eth_dst_mask)
 		setEthDstMask(match.eth_dst_mask);
@@ -780,11 +780,11 @@ void Match::print()
 		/*
 		*	Ethernet
 		*/
-		if(eth_src)
+		if(eth_src != NULL)
 			cout << "\t\t\tethernet src: " << eth_src << endl;
 		if(eth_src_mask)
 			cout << "\t\t\tethernet src mask: " << eth_src_mask << endl;
-		if(eth_dst)
+		if(eth_dst != NULL)
 			cout << "\t\t\tethernet dst: " << eth_dst << endl;
 		if(eth_dst_mask)
 			cout << "\t\t\tethernet dst mask: " << eth_dst_mask << endl;
@@ -917,9 +917,9 @@ void Match::toJSON(Object &match)
 		/*
 		*	Ethernet
 		*/
-		if(eth_src)
+		if(eth_src != NULL)
 			match[ETH_SRC] = eth_src;
-		if(eth_src_mask)
+		if(eth_src_mask != NULL)
 			match[ETH_SRC_MASK] = eth_src_mask;
 		if(eth_dst)
 			match[ETH_DST] = eth_dst;
@@ -1126,5 +1126,23 @@ void Match::toJSON(Object &match)
 		}
 }
 
+
+string Match::prettyPrint()
+{
+	stringstream ss;
+	ss << "";
+
+	/*
+	*	Ethernet
+	*/	
+	if(eth_src != NULL)
+		ss << " - ethernet src: " << eth_src;
+	if(eth_dst != NULL)
+		ss << " - ethernet dst: " << eth_dst;
+
+	//TODO: other fields
+	
+	return ss.str();
 }
 
+}

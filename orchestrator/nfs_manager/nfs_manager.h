@@ -196,6 +196,11 @@ public:
 	*	@param:	core_mask	Mask representing the cores to be allocated to DPDK network functions
 	*/
 	static void setCoreMask(uint64_t core_mask);
+	
+	/**
+	*	@brief: prints information on the VNFs deployed
+	*/
+	void printInfo(int graph_id);
 };
 
 #endif //NFS_MANAGER_H_
