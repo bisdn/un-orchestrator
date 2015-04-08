@@ -167,10 +167,10 @@ set<string> NodeOrchestrator::discoverPhyPorts()
 {
 	set<string> availablePorts =  port_manager::list_available_port_names();
 	set<string>::iterator port = availablePorts.begin();
-	ROFL_INFO("[xdpd]["PLUGIN_NAME"] Number of ports available: %d\n", availablePorts.size());
+	ROFL_DEBUG("[xdpd]["PLUGIN_NAME"] Number of ports available: %d\n", availablePorts.size());
 	for(; port != availablePorts.end(); port++)
 	{
-		ROFL_INFO("[xdpd]["PLUGIN_NAME"] %s\n",(*port).c_str());	
+		ROFL_DEBUG("[xdpd]["PLUGIN_NAME"] %s\n",(*port).c_str());	
 	}
 	
 	return availablePorts;
@@ -197,11 +197,11 @@ pair<unsigned int, unsigned int> NodeOrchestrator::createVirtualLink(uint64_t dp
 {
 	string name_port_a;
 	string name_port_b;
-	unsigned int port_a, port_b;
+	unsigned int port_a = 0, port_b = 0;
 	
 	try
 	{
-		port_manager::connect_switches(dpid_a, name_port_a, dpid_b, name_port_b);
+		port_manager::connect_switches(dpid_a, &port_a, name_port_a, dpid_b, &port_b, name_port_b);
 	}catch(...)
 	{
 		ROFL_ERR("[xdpd]["PLUGIN_NAME"] Unable to create a virtual link between the switch '%d' and '%d'\n",dpid_a,dpid_b);
@@ -213,12 +213,12 @@ pair<unsigned int, unsigned int> NodeOrchestrator::createVirtualLink(uint64_t dp
 	xdpd::port_snapshot port_snapshot_a;
 	port_manager::get_port_info(name_port_a,port_snapshot_a);
 	
-	port_a = port_snapshot_a.of_port_num;
+	//port_a = port_snapshot_a.of_port_num;
 	
 	xdpd::port_snapshot port_snapshot_b;
 	port_manager::get_port_info(name_port_b,port_snapshot_b);
 	
-	port_b = port_snapshot_b.of_port_num;
+	//port_b = port_snapshot_b.of_port_num;
 				
 	return make_pair(port_a,port_b);
 }
