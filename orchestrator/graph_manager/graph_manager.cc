@@ -90,8 +90,21 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	lowlevel::Graph graph;
 
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	versionbitmap.add_ofp_version(rofl::openflow10::OFP_VERSION);
 	
+	
+	switch(OFP_VERSION)
+	{
+		case OFP_10:
+			versionbitmap.add_ofp_version(rofl::openflow10::OFP_VERSION);
+			break;
+		case OFP_12:
+			versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+			break;
+		case OFP_13:
+			versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
+			break;
+	}
+		
 	Controller *controller = new Controller(versionbitmap,graph,strControllerPort.str());
 	controller->start();
 
