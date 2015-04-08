@@ -279,7 +279,7 @@ int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 				}
 			}
 			
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for this resource");
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for resource '%s'",nf_name);
 			response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 			ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
 			MHD_destroy_response (response);
