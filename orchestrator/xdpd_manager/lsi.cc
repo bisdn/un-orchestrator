@@ -352,7 +352,5 @@ bool LSI::setWirelessPortID(uint64_t id)
 
 pair<string,unsigned int> LSI::getWirelessPort()
 {
-	assert(wireless);
-	
 	return wireless_port;
 }
