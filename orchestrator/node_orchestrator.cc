@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is started!",MODULE_NAME);
 	signal(SIGINT,singint_handler);
-	pause();
+	rofl::cioloop::get_loop().run();
+	//pause();
 	
 	return 0;
 }
