@@ -1,7 +1,7 @@
 #include "controller.h"
 
 Controller::Controller(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,Graph graph,string controllerPort)	:
-	crofbase(versionbitmap),
+	crofbase(versionbitmap, rofl::cioloop::add_thread()),
 	dpt(NULL),
 	isOpen(false),
 	graph(graph),
