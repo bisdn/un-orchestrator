@@ -15,7 +15,7 @@
 
 #include "../../utils/logger.h"
 #include "../match.h"
-#include "../../xdpd_manager/lsi.h"
+#include "../../switch_manager/lsi.h"
 
 using namespace rofl;
 using namespace std;

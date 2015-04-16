@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../controller/controller.h"
-#include "../xdpd_manager/lsi.h"
+#include "../switch_manager/lsi.h"
 #include "../nfs_manager/nfs_manager.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 

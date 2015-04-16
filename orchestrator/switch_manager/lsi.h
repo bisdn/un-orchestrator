@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include "xdpd_manager.h"
-#include "virtual_link.h"
+#include "xdpd/virtual_link.h" //TODO: replace with the abstract class
 #include "../nfs_manager/nf_type.h"
 
 #include <map>
@@ -23,7 +22,7 @@ class LSI
 
 friend class XDPDManager;
 
-private:
+protected:
 
 	/**
 	*	@brief: this is the address of the OF controller for this LSI
@@ -51,7 +50,7 @@ private:
 	bool wireless;
 	
 	/**
-	*	@brief: the pait is <port name, port id>
+	*	@brief: the pair is <port name, port id>
 	*/
 	pair<string, unsigned int> wireless_port;
 	
@@ -98,37 +97,43 @@ private:
 	*/
 	map<string, uint64_t> endpoints_vlinks;
 	
+protected:	
+	LSI(string controllerAddress, string controllerPort, map<string, vector<VLink> virtual_links,map<string,nf_t>  nf_types) :
+		controllerAddress(controllerAddress), controllerPort(controllerPort), 
+		nf_types(nf_types.begin(),nf_types.end()),
+		virtual_links(virtual_links.begin(),virtual_links.end())
+	
 public:
-	LSI(string controllerAddress, string controllerPort, map<string,string> ports, map<string, list <unsigned int> > network_functions,vector<VLink> virtual_links,map<string,nf_t>  nf_types, string wirelessPort = "");
+	virtual ~LSI() {}
 	
-	string getControllerAddress();
-	string getControllerPort();
+	virtual string getControllerAddress() = 0;
+	virtual string getControllerPort() = 0;
 	
-	list<string> getEthPortsName();
-	bool hasWireless();
-	string getWirelessPortName();
+	virtual list<string> getEthPortsName() = 0;
+	virtual bool hasWireless() = 0;
+	virtual string getWirelessPortName() = 0;
 	
-	set<string> getNetworkFunctionsName();
-	list<string> getNetworkFunctionsPortNames(string nf);
+	virtual set<string> getNetworkFunctionsName() = 0;
+	virtual list<string> getNetworkFunctionsPortNames(string nf) = 0;
 	
-	list<uint64_t> getVirtualLinksRemoteLSI();
+	virtual list<uint64_t> getVirtualLinksRemoteLSI() = 0;
 	
-	uint64_t getDpid();
+	virtual uint64_t getDpid() = 0;
 
 	
-	map<string,unsigned int> getEthPorts();
-	pair<string,unsigned int> getWirelessPort();
-	map<string,string> getPortsType();
+	virtual map<string,unsigned int> getEthPorts() = 0;
+	virtual pair<string,unsigned int> getWirelessPort() = 0;
+	virtual map<string,string> getPortsType() = 0;
 	
-	map<string,unsigned int> getNetworkFunctionsPorts(string nf);
+	virtual map<string,unsigned int> getNetworkFunctionsPorts(string nf) = 0;
 	
-	map<string,nf_t> getNetworkFunctionsType();
+	virtual map<string,nf_t> getNetworkFunctionsType() = 0;
 
-	vector<VLink> getVirtualLinks();
-	VLink getVirtualLink(uint64_t ID);	
-	map<string, uint64_t> getNFsVlinks();
-	map<string, uint64_t> getPortsVlinks();
-	map<string, uint64_t> getEndPointsVlinks();
+	virtual vector<VLink> getVirtualLinks() = 0;
+	virtual VLink getVirtualLink(uint64_t ID) = 0;	
+	virtual map<string, uint64_t> getNFsVlinks() = 0;
+	virtual map<string, uint64_t> getPortsVlinks() = 0;
+	virtual map<string, uint64_t> getEndPointsVlinks() = 0;
 	
 	//FIXME: public is not a good choice
 	void setNFsVLinks(map<string, uint64_t> nfs_vlinks);

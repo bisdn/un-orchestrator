@@ -6,8 +6,8 @@
 #include "../controller/controller.h"
 #include "graph_info.h"
 #include "graph_translator.h"
-#include "../xdpd_manager/xdpd_manager.h"
-#include "../xdpd_manager/lsi.h"
+#include "../switch_manager/xdpd/xdpd_manager.h"
+#include "../switch_manager/lsi.h"
 #include "../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
@@ -106,9 +106,9 @@ private:
 	map<string,GraphInfo> tenantLSIs;
 	
 	/**
-	*	The module that interacts with the xDPD
+	*	The module that interacts with the virtual switcj
 	*/
-	XDPDManager xDPDManager;
+	XDPDManager switchManager;
 	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action

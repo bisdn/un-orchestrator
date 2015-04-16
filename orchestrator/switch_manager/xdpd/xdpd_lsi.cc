@@ -1,9 +1,7 @@
-#include "lsi.h"
+#include "xdpd_lsi.h"
 
-LSI::LSI(string controllerAddress, string controllerPort, map<string,string> eth_ports, map<string, list<unsigned int> > network_functions,vector<VLink> virtual_links, map<string,nf_t>  nf_types, string wirelessPort) :
-		controllerAddress(controllerAddress), controllerPort(controllerPort), 
-		nf_types(nf_types.begin(),nf_types.end()),
-		virtual_links(virtual_links.begin(),virtual_links.end())
+XDPD_LSI::XDPD_LSI(string controllerAddress, string controllerPort, map<string,string> eth_ports, map<string, list<unsigned int> > network_functions,vector<VLink> virtual_links, map<string,nf_t>  nf_types, string wirelessPort) :
+		LSI(controllerAddress, controllerPort, virtual_links, nf_types)
 {
 	for(map<string,string>::iterator p = eth_ports.begin(); p != eth_ports.end(); p++)
 	{

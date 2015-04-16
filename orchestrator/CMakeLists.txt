@@ -152,12 +152,15 @@ SET(SOURCES
 	graph/high_level_graph/high_level_match.h
 	graph/high_level_graph/high_level_match.cc
 	
-	xdpd_manager/lsi.h
-	xdpd_manager/lsi.cc
-	xdpd_manager/xdpd_manager.h
-	xdpd_manager/xdpd_manager.cc
-	xdpd_manager/virtual_link.h
-	xdpd_manager/virtual_link.cc
+	switch_manager/switch_manager.h
+	switch_manager/lsi.h
+	
+	switch_manager/xdpd/xdpd_lsi.h
+	switch_manager/xdpd/xdpd_lsi.cc
+	switch_manager/xdpd/xdpd_manager.h
+	switch_manager/xdpd/xdpd_manager.cc
+	switch_manager/xdpd/virtual_link.h
+	switch_manager/xdpd/virtual_link.cc
 
 	graph_manager/graph_manager.h
 	graph_manager/graph_manager.cc

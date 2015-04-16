@@ -9,7 +9,7 @@ void GraphManager::mutexInit()
 }
 
 GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
-	xDPDManager(string(XDPD_PORT))
+	switchManager()
 {
 	//TODO: we may have two implementations: one with the LSI-0, the other that uses the queues of the NIC
 
@@ -29,7 +29,7 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Discovering the available physical interfaces...");
 	try
 	{
-		phyPorts = xDPDManager.discoverPhyPorts();
+		phyPorts = switchManager.discoverPhyPorts();
 	} catch (...)
 	{
 		throw GraphManagerException();
@@ -54,7 +54,7 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	
 	try
 	{
-		xDPDManager.createLsi(*lsi);
+		switchManager.createLsi(*lsi);
 	} catch (XDPDManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -137,7 +137,7 @@ GraphManager::~GraphManager()
 	detachWirelessPort(lsi0);
 	try
 	{
-		xDPDManager.destroyLsi(*lsi0);
+		switchManager.destroyLsi(*lsi0);
 	} catch (XDPDManagerException e)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -309,7 +309,7 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 	
 	try
 	{
-		xDPDManager.destroyLsi(*tenantLSI);
+		switchManager.destroyLsi(*tenantLSI);
 	} catch (XDPDManagerException e)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -655,11 +655,11 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	
 	try
 	{
-		xDPDManager.createLsi(*lsi);
+		switchManager.createLsi(*lsi);
 	} catch (XDPDManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
-		xDPDManager.destroyLsi(*lsi);
+		switchManager.destroyLsi(*lsi);
 		delete(graph);
 		delete(lsi);
 		delete(nfsManager);
@@ -808,7 +808,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 			nfsManager->stopNF(nf->first);
 
-		xDPDManager.destroyLsi(*lsi);
+		switchManager.destroyLsi(*lsi);
 	
 		delete(graph);
 		delete(lsi);
@@ -871,7 +871,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			nfsManager->stopNF(nf->first);
 #endif
 	
-		xDPDManager.destroyLsi(*lsi);
+		switchManager.destroyLsi(*lsi);
 	
 		if(tenantLSIs.count(graph->getID()) != 0)
 			tenantLSIs.erase(tenantLSIs.find(graph->getID()));
@@ -1089,7 +1089,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		for(; nf != vlNFs.end() || p != vlPhyPorts.end() ;)
 		{
 		
-			uint64_t vlinkID = xDPDManager.addVirtualLink(*lsi,VLink(dpid0));
+			uint64_t vlinkID = switchManager.addVirtualLink(*lsi,VLink(dpid0));
 			
 			VLink vlink = lsi->getVirtualLink(vlinkID);
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link: (ID: %x) %x:%d -> %x:%d",vlink.getID(),dpid,vlink.getLocalID(),vlink.getRemoteDpid(),vlink.getRemoteID());
@@ -1110,7 +1110,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	
 		for(set<string>::iterator ep = vlEndPoints.begin(); ep != vlEndPoints.end(); ep++)
 		{
-			uint64_t vlinkID = xDPDManager.addVirtualLink(*lsi,VLink(dpid0));
+			uint64_t vlinkID = switchManager.addVirtualLink(*lsi,VLink(dpid0));
 	
 			VLink vlink = lsi->getVirtualLink(vlinkID);
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link: (ID: %x) %x:%d -> %x:%d",vlink.getID(),dpid,vlink.getLocalID(),vlink.getRemoteDpid(),vlink.getRemoteID());
@@ -1167,7 +1167,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	{
 		try
 		{
-			xDPDManager.addNFPorts(*lsi,*nf,nfsManager->getNFType(nf->first));
+			switchManager.addNFPorts(*lsi,*nf,nfsManager->getNFType(nf->first));
 		}catch(XDPDManagerException e)
 		{
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1463,7 +1463,7 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 			
 			try
 			{
-				xDPDManager.destroyVirtualLink(*lsi,nfvlink);
+				switchManager.destroyVirtualLink(*lsi,nfvlink);
 			} catch (XDPDManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1519,7 +1519,7 @@ next:
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The virtual link must be removed");
 			try
 			{
-				xDPDManager.destroyVirtualLink(*lsi,portlink);
+				switchManager.destroyVirtualLink(*lsi,portlink);
 			} catch (XDPDManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1568,7 +1568,7 @@ next2:
 			
 			try
 			{
-				xDPDManager.destroyVirtualLink(*lsi,epvlink);
+				switchManager.destroyVirtualLink(*lsi,epvlink);
 			} catch (XDPDManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1592,7 +1592,7 @@ next2:
 #endif
 			try
 			{
-				xDPDManager.destroyNFPorts(*lsi,*nf);
+				switchManager.destroyNFPorts(*lsi,*nf);
 			} catch (XDPDManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());

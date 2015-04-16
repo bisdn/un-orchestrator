@@ -6,7 +6,7 @@
 #include "low_level_match.h"
 #include "action.h"
 #include "../../utils/logger.h"
-#include "../../xdpd_manager/lsi.h"
+#include "../../switch_manager/lsi.h"
 
 #include <ostream>
 
