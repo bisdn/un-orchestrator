@@ -78,12 +78,12 @@ public:
 	virtual map<string,string> discoverPhyPorts() = 0;
 };
 
-class XDPDManagerException: public exception		//TODO: not sure that this is the right place
+class SwitchManagerException: public exception
 {
 public:
 	virtual const char* what() const throw()
 	{
-		return "xDPDManagerException";
+		return "SwitchManagerException";
 	}
 };
 

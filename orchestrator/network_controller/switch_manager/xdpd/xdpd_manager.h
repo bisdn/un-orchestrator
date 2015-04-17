@@ -130,4 +130,14 @@ public:
 	map<string,string> discoverPhyPorts();
 };
 
+class XDPDManagerException: public SwitchManagerException
+{
+public:
+	virtual const char* what() const throw()
+	{
+		return "xDPDManagerException";
+	}
+};
+
 #endif //XDPDManager_H_
+

@@ -55,7 +55,7 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	try
 	{
 		switchManager.createLsi(*lsi);
-	} catch (XDPDManagerException e)
+	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		throw GraphManagerException();
@@ -138,7 +138,7 @@ GraphManager::~GraphManager()
 	try
 	{
 		switchManager.destroyLsi(*lsi0);
-	} catch (XDPDManagerException e)
+	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		//we don't throw any exception here, since the graph manager is terminating
@@ -310,7 +310,7 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 	try
 	{
 		switchManager.destroyLsi(*tenantLSI);
-	} catch (XDPDManagerException e)
+	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		throw GraphManagerException();
@@ -656,7 +656,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	try
 	{
 		switchManager.createLsi(*lsi);
-	} catch (XDPDManagerException e)
+	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		switchManager.destroyLsi(*lsi);
@@ -864,7 +864,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 				
 		printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());	
 		
-	} catch (XDPDManagerException e)
+	} catch (SwitchManagerException e)
 	{
 #ifdef RUN_NFS
 		for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
@@ -1133,7 +1133,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 			}
 			
 		}
-	}catch(XDPDManagerException e)
+	}catch(SwitchManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		delete(tmp);
@@ -1168,7 +1168,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		try
 		{
 			switchManager.addNFPorts(*lsi,*nf,nfsManager->getNFType(nf->first));
-		}catch(XDPDManagerException e)
+		}catch(SwitchManagerException e)
 		{
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 			delete(tmp);
@@ -1228,7 +1228,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		
 		printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 		
-	} catch (XDPDManagerException e)
+	} catch (SwitchManagerException e)
 	{
 		//TODO: no idea on what I have to do at this point
 		assert(0);
@@ -1464,7 +1464,7 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 			try
 			{
 				switchManager.destroyVirtualLink(*lsi,nfvlink);
-			} catch (XDPDManagerException e)
+			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 				throw GraphManagerException();
@@ -1520,7 +1520,7 @@ next:
 			try
 			{
 				switchManager.destroyVirtualLink(*lsi,portlink);
-			} catch (XDPDManagerException e)
+			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 				throw GraphManagerException();
@@ -1569,7 +1569,7 @@ next2:
 			try
 			{
 				switchManager.destroyVirtualLink(*lsi,epvlink);
-			} catch (XDPDManagerException e)
+			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 				throw GraphManagerException();
@@ -1593,7 +1593,7 @@ next2:
 			try
 			{
 				switchManager.destroyNFPorts(*lsi,*nf);
-			} catch (XDPDManagerException e)
+			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 				throw GraphManagerException();
