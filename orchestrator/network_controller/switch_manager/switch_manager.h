@@ -4,30 +4,19 @@
 #pragma once
 
 #include "lsi.h"
-#include "xdpd/virtual_link.h"	//IVANO: link the abstract virtual_link
+#include "virtual_link.h"
 
-#include "../nfs_manager/nf_type.h"
-
-#include <json_spirit/json_spirit.h>
-#include <json_spirit/value.h>
-#include <json_spirit/writer.h>
+#include "../../compute_controller/nf_type.h"
 
 #include <string>
 #include <list>
 #include <sstream>
 
 using namespace std;
-using namespace json_spirit;
 
 class SwitchManager
 {
-protected:
-
-	SwitchManager() {}
-
 public:
-
-	virtual ~SwitchManager() {}
 
 	/**
 	*	@brief: Cretes a new LSI
@@ -36,7 +25,7 @@ public:
 	*					to be created
 	*/
 	virtual void createLsi(LSI &lsi) = 0;
-	
+
 	/**
 	*	@brief: Create NF ports of a specific NF on an LSI
 	*
@@ -46,7 +35,7 @@ public:
 	*	@brief: type	Type of the NF associated with the ports to be created
 	*/
 	virtual void addNFPorts(LSI &lsi,pair<string, list<unsigned int> > nf, nf_t type) = 0;
-	
+
 	/**
 	*	@brief: Destroy add a virtual link to an LSI
 	*
@@ -56,7 +45,7 @@ public:
 	*					to be added to the LSI
 	*/
 	virtual uint64_t addVirtualLink(LSI &lsi, VLink vlink) = 0;
-	
+
 	/**
 	*	@brief: Destroy an existing LSI
 	*
@@ -64,7 +53,7 @@ public:
 	*					to be destroyed
 	*/
 	virtual void destroyLsi(LSI &lis) = 0;
-	
+
 	/**
 	*	@brief: Destroy all the NF ports of a specific NF
 	*
@@ -73,7 +62,7 @@ public:
 	*	@brief: nf		Name of the NF whose ports must be removed
 	*/
 	virtual void destroyNFPorts(LSI &lsi,string nf) = 0;
-	
+
 	/**
 	*	@brief: Destroy an virtual link from an LSI
 	*
@@ -82,14 +71,14 @@ public:
 	*	@param: vlinkID	Identifier of the vlink to be removed
 	*/
 	virtual void destroyVirtualLink(LSI &lsi, uint64_t vlinkID) = 0; 
-	
+
 	/**
 	*	@brief: Discover the physical interfaces
 	*/
 	virtual map<string,string> discoverPhyPorts() = 0;
 };
 
-class XDPDManagerException: public exception
+class XDPDManagerException: public exception		//TODO: not sure that this is the right place
 {
 public:
 	virtual const char* what() const throw()

@@ -1,9 +1,8 @@
 #include "xdpd_manager.h"
 
 XDPDManager::XDPDManager()
+	: xDPDport(XDPD_PORT)
 {
-
-//TODO: set the XDPDport
 	char ErrBuf[BUFFER_SIZE];
 	struct addrinfo Hints;
 	

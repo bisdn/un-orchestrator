@@ -13,9 +13,9 @@
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/logging.h>
 
-#include "../../utils/logger.h"
+#include "../../../utils/logger.h"
 #include "../match.h"
-#include "../../switch_manager/lsi.h"
+#include "../../../network_controller/switch_manager/lsi.h"
 
 using namespace rofl;
 using namespace std;

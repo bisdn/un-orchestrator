@@ -10,9 +10,9 @@
 
 #include <ostream>
 
-#include "../../utils/logger.h"
-#include "../../utils/constants.h"
-#include "../../switch_manager/lsi.h"
+#include "../../../utils/logger.h"
+#include "../../../utils/constants.h"
+#include "../../../network_controller/switch_manager/lsi.h"
 
 using namespace rofl;
 using namespace std;

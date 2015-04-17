@@ -4,22 +4,8 @@
 #define MODULE_NAME 			"Local-Orchestrator"
 
 /*
-*	Commands to xDPD - Answers from xDPD
-*/
-#define DISCOVER_PHY_PORTS		"discover-physical-ports"
-#define CREATE_LSI				"create-lsi"
-#define CREATE_NF_PORTS			"create-nfs-ports"
-#define CREATE_VLINKS			"create-virtual-links"
-#define DESTROY_LSI				"destroy-lsi"
-#define DESTROY_NF_PORTS		"destroy-nfs-ports"
-#define DESTROY_VLINKS			"destroy-virtual-links"
-#define OK						"ok"
-#define XDPD_ERROR				"error"
-
-/*
 *	Connections
 */
-#define	XDPD_ADDRESS				"127.0.0.1"
 #define OF_CONTROLLER_ADDRESS 		"127.0.0.1"
 #define FIRTS_OF_CONTROLLER_PORT	6653
 

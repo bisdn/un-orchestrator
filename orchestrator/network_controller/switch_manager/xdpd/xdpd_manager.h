@@ -5,14 +5,11 @@
 
 #include "../switch_manager.h"
 
-#include "../../utils/constants.h"
-#include "../../utils/sockutils.h"
-#include "../../utils/logger.h"
+#include "../../../utils/constants.h"
+#include "../../../utils/sockutils.h"
+#include "../../../utils/logger.h"
 
-#include "xdpd_lsi.h"
-#include "virtual_link.h"
-
-#include "../../nfs_manager/nf_type.h"
+#include "xdpd_constants.h"
 
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
@@ -25,16 +22,16 @@
 using namespace std;
 using namespace json_spirit;
 
-class XDPD_LSI;
+class LSI;
 
 class XDPDManager : public SwitchManager
 {
 private:
 	/**
-	*	@brief: remote TCP port to be used to send commands to xDPD
+	*	@brief: remote TCP port to be used to send commands to xDPd
 	*/
 	string xDPDport;
-	
+
 	/**
 	*	@brief: keeps the addrinfo chain; required to open a new socket
 	*/
@@ -47,30 +44,30 @@ private:
 	*/
 	string sendMessage(string message);
 	
-	string prepareCreateLSIrequest(XDPD_LSI lsi);
-	void parseCreateLSIresponse(XDPD_LSI &lsi, Object message);
+	string prepareCreateLSIrequest(LSI lsi);
+	void parseCreateLSIresponse(LSI &lsi, Object message);
 	
-	string prepareDestroyLSIrequest(XDPD_LSI lsi);
-	void parseDestroyLSIresponse(XDPD_LSI &lsi, Object message);
+	string prepareDestroyLSIrequest(LSI lsi);
+	void parseDestroyLSIresponse(LSI &lsi, Object message);
 	
-	string prepareCreateVirtualLinkRequest(XDPD_LSI lsi,VLink vlinkID);
-	void parseCreateVirtualLinkResponse(XDPD_LSI &lsi, int vlink_position, Object message);
+	string prepareCreateVirtualLinkRequest(LSI lsi,VLink vlinkID);
+	void parseCreateVirtualLinkResponse(LSI &lsi, int vlink_position, Object message);
 	
-	string prepareDestroyVirtualLinkRequest(XDPD_LSI lsi, uint64_t vlinkID);
+	string prepareDestroyVirtualLinkRequest(LSI lsi, uint64_t vlinkID);
 	void parseDestroyVirtualLinkResponse(Object message);
 	
-	string prepareCreateNFPortsRequest(XDPD_LSI lsi, nf_t type, string name);
-	void parseCreateNFPortsResponse(XDPD_LSI &lsi, Object message);
+	string prepareCreateNFPortsRequest(LSI lsi, nf_t type, string name);
+	void parseCreateNFPortsResponse(LSI &lsi, Object message);
 	
-	string prepareDestroyNFPortsRequest(XDPD_LSI lsi, string nf);
-	void parseDestroyNFPortsResponse(XDPD_LSI &lsi, Object message);
+	string prepareDestroyNFPortsRequest(LSI lsi, string nf);
+	void parseDestroyNFPortsResponse(LSI &lsi, Object message);
 	
 	bool findCommand(Object message, string expected);
 	bool findStatus(Object message);
 
 public:
 	XDPDManager();
-	
+
 	~XDPDManager();
 
 	/**
@@ -80,7 +77,7 @@ public:
 	*					to be created
 	*/
 	void createLsi(LSI &lsi);
-	
+
 	/**
 	*	@brief: Create NF ports of a specific NF on an LSI in xDPD
 	*
@@ -90,7 +87,7 @@ public:
 	*	@brief: type	Type of the NF associated with the ports to be created
 	*/
 	void addNFPorts(LSI &lsi,pair<string, list<unsigned int> > nf, nf_t type);
-	
+
 	/**
 	*	@brief: Destroy add a virtual link to an LSI in xDPDP
 	*
@@ -100,7 +97,7 @@ public:
 	*					to be added to the LSI
 	*/
 	uint64_t addVirtualLink(LSI &lsi, VLink vlink);
-	
+
 	/**
 	*	@brief: Destroy an existing LSI in xDPD
 	*
@@ -108,7 +105,7 @@ public:
 	*					to be destroyed
 	*/
 	void destroyLsi(LSI &lis);
-	
+
 	/**
 	*	@brief: Destroy all the NF ports of a specific NF
 	*
@@ -117,7 +114,7 @@ public:
 	*	@brief: nf		Name of the NF whose ports must be removed
 	*/
 	void destroyNFPorts(LSI &lsi,string nf);
-	
+
 	/**
 	*	@brief: Destroy an virtual link from an LSI in xDPDP
 	*
@@ -126,7 +123,7 @@ public:
 	*	@param: vlinkID	Identifier of the vlink to be removed
 	*/
 	void destroyVirtualLink(LSI &lsi, uint64_t vlinkID); 
-	
+
 	/**
 	*	@brief: Connect to xDPD to discover the physical interfaces
 	*/

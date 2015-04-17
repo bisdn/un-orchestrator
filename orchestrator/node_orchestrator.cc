@@ -1,7 +1,6 @@
 #include "utils/constants.h"
-
 #include "utils/logger.h"
-#include "rest_server/rest_server.h"
+#include "node_resource_manager/rest_server/rest_server.h"
 
 #include <unistd.h>
 #include <stdlib.h>

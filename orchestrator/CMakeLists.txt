@@ -125,66 +125,66 @@ ENDIF(DEBUG_OPENFLOW)
 SET(SOURCES
 	node_orchestrator.cc
 	
-	graph/match.h
-	graph/match.cc
+	node_resource_manager/graph/match.h
+	node_resource_manager/graph/match.cc
 	
-	graph/low_level_graph/action.h
-	graph/low_level_graph/action.cc
-	graph/low_level_graph/graph.h
-	graph/low_level_graph/graph.cc
-	graph/low_level_graph/low_level_match.h
-	graph/low_level_graph/low_level_match.cc
-	graph/low_level_graph/rule.h
-	graph/low_level_graph/rule.cc
+	node_resource_manager/graph/low_level_graph/action.h
+	node_resource_manager/graph/low_level_graph/action.cc
+	node_resource_manager/graph/low_level_graph/graph.h
+	node_resource_manager/graph/low_level_graph/graph.cc
+	node_resource_manager/graph/low_level_graph/low_level_match.h
+	node_resource_manager/graph/low_level_graph/low_level_match.cc
+	node_resource_manager/graph/low_level_graph/rule.h
+	node_resource_manager/graph/low_level_graph/rule.cc
 	
-	graph/high_level_graph/high_level_action.h
-	graph/high_level_graph/high_level_action.cc
-	graph/high_level_graph/high_level_action_nf.h
-	graph/high_level_graph/high_level_action_nf.cc
-	graph/high_level_graph/high_level_action_port.h
-	graph/high_level_graph/high_level_action_port.cc
-	graph/high_level_graph/high_level_action_endpoint.h
-	graph/high_level_graph/high_level_action_endpoint.cc
-	graph/high_level_graph/high_level_rule.h
-	graph/high_level_graph/high_level_rule.cc
-	graph/high_level_graph/high_level_graph.h
-	graph/high_level_graph/high_level_graph.cc
-	graph/high_level_graph/high_level_match.h
-	graph/high_level_graph/high_level_match.cc
+	node_resource_manager/graph/high_level_graph/high_level_action.h
+	node_resource_manager/graph/high_level_graph/high_level_action.cc
+	node_resource_manager/graph/high_level_graph/high_level_action_nf.h
+	node_resource_manager/graph/high_level_graph/high_level_action_nf.cc
+	node_resource_manager/graph/high_level_graph/high_level_action_port.h
+	node_resource_manager/graph/high_level_graph/high_level_action_port.cc
+	node_resource_manager/graph/high_level_graph/high_level_action_endpoint.h
+	node_resource_manager/graph/high_level_graph/high_level_action_endpoint.cc
+	node_resource_manager/graph/high_level_graph/high_level_rule.h
+	node_resource_manager/graph/high_level_graph/high_level_rule.cc
+	node_resource_manager/graph/high_level_graph/high_level_graph.h
+	node_resource_manager/graph/high_level_graph/high_level_graph.cc
+	node_resource_manager/graph/high_level_graph/high_level_match.h
+	node_resource_manager/graph/high_level_graph/high_level_match.cc
 	
-	switch_manager/switch_manager.h
-	switch_manager/lsi.h
-	
-	switch_manager/xdpd/xdpd_lsi.h
-	switch_manager/xdpd/xdpd_lsi.cc
-	switch_manager/xdpd/xdpd_manager.h
-	switch_manager/xdpd/xdpd_manager.cc
-	switch_manager/xdpd/virtual_link.h
-	switch_manager/xdpd/virtual_link.cc
+	network_controller/switch_manager/switch_manager.h		
+	network_controller/switch_manager/lsi.h
+	network_controller/switch_manager/lsi.cc
+	network_controller/switch_manager/virtual_link.h
+	network_controller/switch_manager/virtual_link.cc
 
-	graph_manager/graph_manager.h
-	graph_manager/graph_manager.cc
-	graph_manager/graph_info.h
-	graph_manager/graph_info.cc
-	graph_manager/graph_translator.h
-	graph_manager/graph_translator.cc
-	graph_manager/rule_removed_info.h
+	network_controller/switch_manager/xdpd/xdpd_manager.h
+	network_controller/switch_manager/xdpd/xdpd_manager.cc
+	network_controller/switch_manager/xdpd/xdpd_constants.h
+
+	node_resource_manager/graph_manager/graph_manager.h
+	node_resource_manager/graph_manager/graph_manager.cc
+	node_resource_manager/graph_manager/graph_info.h
+	node_resource_manager/graph_manager/graph_info.cc
+	node_resource_manager/graph_manager/graph_translator.h
+	node_resource_manager/graph_manager/graph_translator.cc
+	node_resource_manager/graph_manager/rule_removed_info.h
 	
-	controller/controller.h
-	controller/controller.cc
+	network_controller/openflow_controller/controller.h
+	network_controller/openflow_controller/controller.cc
 	
-	nfs_manager/nfs_manager.h
-	nfs_manager/nfs_manager.cc
-	nfs_manager/nf.h
-	nfs_manager/nf.cc
-	nfs_manager/nf_type.h
-	nfs_manager/implementation.h
-	nfs_manager/implementation.cc
+	compute_controller/nfs_manager.h
+	compute_controller/nfs_manager.cc
+	compute_controller/nf.h
+	compute_controller/nf.cc
+	compute_controller/nf_type.h
+	compute_controller/implementation.h
+	compute_controller/implementation.cc
 	
-	rest_server/rest_server.h
-	rest_server/rest_server.cc
-	rest_server/match_parser.h
-	rest_server/match_parser.cc
+	node_resource_manager/rest_server/rest_server.h
+	node_resource_manager/rest_server/rest_server.cc
+	node_resource_manager/rest_server/match_parser.h
+	node_resource_manager/rest_server/match_parser.cc
 
 	utils/logger.h
 	utils/logger.c

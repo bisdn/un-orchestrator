@@ -3,14 +3,15 @@
 
 #pragma once
 
-#include "xdpd/virtual_link.h" //TODO: replace with the abstract class
-#include "../nfs_manager/nf_type.h"
+#include "virtual_link.h"
+#include "../../compute_controller/nf_type.h"
 
 #include <map>
 #include <set>
 #include <list>
 #include <string>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 
@@ -20,9 +21,10 @@ class LSI
 {
 //XXX: this class is a mess!
 
+friend class SwitchManager;
 friend class XDPDManager;
 
-protected:
+private:
 
 	/**
 	*	@brief: this is the address of the OF controller for this LSI
@@ -50,7 +52,7 @@ protected:
 	bool wireless;
 	
 	/**
-	*	@brief: the pair is <port name, port id>
+	*	@brief: the pait is <port name, port id>
 	*/
 	pair<string, unsigned int> wireless_port;
 	
@@ -61,8 +63,8 @@ protected:
 	
 	/**
 	*	@brief: NFs connected to the LSI.
-	*		The map is 
-	*			<nf name, map <nf port name, id> >  
+	*		The map is
+	*			<nf name, map <nf port name, id> >
 	*/
 	map<string,map<string, unsigned int> >  network_functions;
 	
@@ -71,83 +73,77 @@ protected:
 	*		The map is
 	*			<nf_name, nf_type>
 	*/
-	map<string,nf_t>  nf_types; 
+	map<string,nf_t>  nf_types;
 
 	/**
 	*	@brief: virtual links attached to the LSI
 	*	FIXME although supported in this class VLink, the code does not support vlinks connected to multiple LSIs
 	*/
 	vector<VLink> virtual_links;
-	
+
 	/**
 	*	@brief: the map is <nf name, vlink id>
 	*		A NF port generates a vlink if it is defined in the action part of a rule
 	*/
 	map<string, uint64_t> nfs_vlinks;
-	
+
 	/**
 	*	@brief: the map is <port name, vlink id>
 	*		A physical port generates a vlink if it is defined in the action part of a rule
 	*/
 	map<string, uint64_t> ports_vlinks;
-	
+
 	/**
 	*	@brief: the map is <endpoint name, vlink id>
 	*		An endpoint generates a vlink if it is defined in the action part of a rule
 	*/
 	map<string, uint64_t> endpoints_vlinks;
-	
-protected:	
-	LSI(string controllerAddress, string controllerPort, map<string, vector<VLink> virtual_links,map<string,nf_t>  nf_types) :
-		controllerAddress(controllerAddress), controllerPort(controllerPort), 
-		nf_types(nf_types.begin(),nf_types.end()),
-		virtual_links(virtual_links.begin(),virtual_links.end())
-	
+
 public:
-	virtual ~LSI() {}
-	
-	virtual string getControllerAddress() = 0;
-	virtual string getControllerPort() = 0;
-	
-	virtual list<string> getEthPortsName() = 0;
-	virtual bool hasWireless() = 0;
-	virtual string getWirelessPortName() = 0;
-	
-	virtual set<string> getNetworkFunctionsName() = 0;
-	virtual list<string> getNetworkFunctionsPortNames(string nf) = 0;
-	
-	virtual list<uint64_t> getVirtualLinksRemoteLSI() = 0;
-	
-	virtual uint64_t getDpid() = 0;
+	LSI(string controllerAddress, string controllerPort, map<string,string> ports, map<string, list <unsigned int> > network_functions,vector<VLink> virtual_links,map<string,nf_t>  nf_types, string wirelessPort = "");
 
-	
-	virtual map<string,unsigned int> getEthPorts() = 0;
-	virtual pair<string,unsigned int> getWirelessPort() = 0;
-	virtual map<string,string> getPortsType() = 0;
-	
-	virtual map<string,unsigned int> getNetworkFunctionsPorts(string nf) = 0;
-	
-	virtual map<string,nf_t> getNetworkFunctionsType() = 0;
+	string getControllerAddress();
+	string getControllerPort();
 
-	virtual vector<VLink> getVirtualLinks() = 0;
-	virtual VLink getVirtualLink(uint64_t ID) = 0;	
-	virtual map<string, uint64_t> getNFsVlinks() = 0;
-	virtual map<string, uint64_t> getPortsVlinks() = 0;
-	virtual map<string, uint64_t> getEndPointsVlinks() = 0;
-	
+	list<string> getEthPortsName();
+	bool hasWireless();
+	string getWirelessPortName();
+
+	set<string> getNetworkFunctionsName();
+	list<string> getNetworkFunctionsPortNames(string nf);
+
+	list<uint64_t> getVirtualLinksRemoteLSI();
+
+	uint64_t getDpid();
+
+
+	map<string,unsigned int> getEthPorts();
+	pair<string,unsigned int> getWirelessPort();
+	map<string,string> getPortsType();
+
+	map<string,unsigned int> getNetworkFunctionsPorts(string nf);
+
+	map<string,nf_t> getNetworkFunctionsType();
+
+	vector<VLink> getVirtualLinks();
+	VLink getVirtualLink(uint64_t ID);
+	map<string, uint64_t> getNFsVlinks();
+	map<string, uint64_t> getPortsVlinks();
+	map<string, uint64_t> getEndPointsVlinks();
+
 	//FIXME: public is not a good choice
 	void setNFsVLinks(map<string, uint64_t> nfs_vlinks);
 	void addNFvlink(string NF, uint64_t vlinkID);
 	void removeNFvlink(string nf_port);
-	
+
 	void setPortsVLinks(map<string, uint64_t> ports_vlinks);
 	void addPortvlink(string port, uint64_t vlinkID);
 	void removePortvlink(string port);
-	
+
 	void setEndPointsVLinks(map<string, uint64_t> endpoints_vlinks);
 	void addEndpointvlink(string endpoint, uint64_t vlinkID);
 	void removeEndPointvlink(string endpoint);
-	
+
 protected:
 	void setDpid(uint64_t dpid);
 	bool setEthPortID(string port, uint64_t id);
@@ -157,7 +153,7 @@ protected:
 
 	int addVlink(VLink vlink);
 	void removeVlink(uint64_t ID);
-	
+
 	void addNF(string name, list< unsigned int> ports);
 	void removeNF(string nf);
 };

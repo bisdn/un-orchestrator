@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "../controller/controller.h"
 #include "graph_info.h"
 #include "graph_translator.h"
-#include "../switch_manager/xdpd/xdpd_manager.h"
-#include "../switch_manager/lsi.h"
-#include "../utils/constants.h"
+#include "../../network_controller/openflow_controller/controller.h"
+#include "../../network_controller/switch_manager/xdpd/xdpd_manager.h"
+#include "../../network_controller/switch_manager/lsi.h"
+#include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
 #include "../graph/high_level_graph/high_level_action_nf.h"
@@ -25,8 +25,6 @@
 #include <stdexcept>
 
 using namespace std;
-
-#define XDPD_PORT	"2525" //FIXME: read it from command line
 
 /**
 *	@brief: constant related to wireless interface
