@@ -17,9 +17,9 @@
 *	Private prototypes
 */
 #ifndef READ_JSON_FROM_FILE
-bool parse_command_line(int argc, char *argv[],int *rest_port,int *core_mask, char **wirelessName);
+bool parse_command_line(int argc, char *argv[],int *rest_port,int *core_mask);
 #else
-bool parse_command_line(int argc, char *argv[], char **file_name,int *core_mask, char **wirelessName);
+bool parse_command_line(int argc, char *argv[], char **file_name,int *core_mask);
 #endif
 bool usage(void);
 
@@ -66,13 +66,12 @@ int main(int argc, char *argv[])
 #endif
 	
 	int core_mask;
-	char *wirelessName = NULL;
 #ifdef READ_JSON_FROM_FILE
 	char *file_name = NULL;
-	if(!parse_command_line(argc,argv,&file_name,&core_mask,&wirelessName))
+	if(!parse_command_line(argc,argv,&file_name,&core_mask))
 #else
 	int rest_port;
-	if(!parse_command_line(argc,argv,&rest_port,&core_mask,&wirelessName))
+	if(!parse_command_line(argc,argv,&rest_port,&core_mask))
 #endif
 		exit(EXIT_FAILURE);	
 
@@ -82,9 +81,9 @@ int main(int argc, char *argv[])
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
 #ifdef READ_JSON_FROM_FILE
-	if(!RestServer::init(file_name,core_mask,(wirelessName == NULL)? false : true, wirelessName))
+	if(!RestServer::init(file_name,core_mask))
 #else
-	if(!RestServer::init(core_mask,(wirelessName == NULL)? false : true, wirelessName))
+	if(!RestServer::init(core_mask))
 #endif
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
@@ -111,9 +110,9 @@ int main(int argc, char *argv[])
 }
 
 #ifndef READ_JSON_FROM_FILE
-bool parse_command_line(int argc, char *argv[], int *rest_port, int *core_mask, char **wirelessName)
+bool parse_command_line(int argc, char *argv[], int *rest_port, int *core_mask)
 #else
-bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask, char **wirelessName)
+bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask)
 #endif
 {
 	int opt;
@@ -139,7 +138,7 @@ static struct option lgopts[] = {
 #endif
 
 	argvopt = argv;
-	uint32_t arg_c = 0, arg_w;
+	uint32_t arg_c = 0;
 #ifdef READ_JSON_FROM_FILE
 	uint32_t arg_f = 0;
 #else
@@ -147,7 +146,6 @@ static struct option lgopts[] = {
 #endif
 
 	*core_mask = CORE_MASK;
-	wirelessName[0] = '\0';
 #ifdef READ_JSON_FROM_FILE
 	file_name[0] = '\0';
 #else
@@ -173,12 +171,6 @@ static struct option lgopts[] = {
 	   				sscanf(port,"%x",&(*core_mask));
 	   				
 	   				arg_c++;
-	   			}
-	   			else if (!strcmp(lgopts[option_index].name, "w"))/* wireless */
-	   			{
-	   				*wirelessName = optarg;
-	   				
-	   				arg_w++;
 	   			}
 #ifdef READ_JSON_FROM_FILE
 				else if (!strcmp(lgopts[option_index].name, "f"))/* file */
@@ -247,8 +239,6 @@ bool usage(void)
 	"        Mask that specifies which cores must be used for DPDK network functions. These   \n" \
 	"        cores will be allocated to the DPDK network functions in a round robin fashion   \n" \
 	"        (default is 0x2)                                                                 \n" \
-	"  --w                                                                                    \n" \
-	"        name of a wireless interface (existing on the node) to be attached to the system \n" \
 	"  --h                                                                                    \n" \
 	"        Print this help.                                                                 \n" \
 	"                                                                                         \n" \
@@ -267,8 +257,6 @@ bool usage(void)
 	"        Mask that specifies which cores must be used for DPDK network functions. These   \n" \
 	"        cores will be allocated to the DPDK network functions in a round robin fashion   \n" \
 	"        (default is 0x2)                                                                 \n" \
-	"  --w                                                                                    \n" \
-	"        name of a wireless interface (existing on the node) to be attached to the system \n" \
 	"  --h                                                                                    \n" \
 	"        Print this help.                                                                 \n" \
 	"                                                                                         \n" \

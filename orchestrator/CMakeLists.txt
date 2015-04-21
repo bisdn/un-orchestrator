@@ -56,6 +56,21 @@ IF(${OFP_VERSION_INDEX} EQUAL 2)
 ENDIF()
 # End of the rather complicated CMake code for setting the Openflow version
 
+
+# Rather complicated CMake code for selecting the virtual switch implementation
+SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD") #Add here other implementations
+SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
+LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
+
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL -1)
+	message(FATAL_ERROR "Option ${VSWITCH_IMPLEMENTATION} not supported, valid entries are ${VSWITCH_IMPLEMENTATION_VALUES}")
+ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0)
+	ADD_DEFINITIONS(-DOFP_VSWITCH_IMPLEMENTATION=XDPD)
+ENDIF()
+# End of the rather complicated CMake code for setting the Openflow version
+
 OPTION(
 	RUN_NFS
 	"Turn on the actually run the NFs"

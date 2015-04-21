@@ -26,12 +26,6 @@
 
 using namespace std;
 
-/**
-*	@brief: constant related to wireless interface
-*/
-#define ATTACH_WIRELESS_INTERFACE	"./node_resource_manager/graph_manager/scripts/attachWirelessInterface.sh"
-#define DETACH_WIRELESS_INTERFACE	"./node_resource_manager/graph_manager/scripts/detachWirelessInterface.sh"
-
 typedef struct
 	{
 		string nf_name;
@@ -106,7 +100,11 @@ private:
 	/**
 	*	The module that interacts with the virtual switch
 	*/
+#if (VSWITCH_IMPLEMENTATION == XDPD)
 	XDPDManager switchManager;
+	
+	//[+] Add here other implementations for the virtual switch
+#endif
 	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action
@@ -162,21 +160,6 @@ private:
 	void removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo tbr, NFsManager *nfsManager,highlevel::Graph *graph, LSI * lsi);
 	
 	/**
-	*	@brief: attach the wireless interface of the LSI to a real wireless port, by means of a Linux bridge.
-	*		The bridge is created by this function.
-	*
-	*	@param: lsi	LSI with the port to manage
-	*/
-	bool attachWirelessPort(LSI *lsi);
-	
-	/**
-	*	@brief: detach the wireless port of the LSI from a real wireless port, by destroyng the Linux bridge
-	*
-	*	@param: lsi	LSI with the port to manage
-	*/
-	void detachWirelessPort(LSI *lsi);
-	
-	/**
 	*	@brief: given a NF of the graph (in the form NF_port), return the endpoint expressed in the match of a rule
 	*		whose action is expressed on the function.
 	*
@@ -201,7 +184,7 @@ public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
 	//(plus other fields)
 
-	GraphManager(int core_mask, bool wireless = false, char *wirelessName = "wlan0");
+	GraphManager(int core_mask);
 	~GraphManager();
 		
 	/**

@@ -5,10 +5,6 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating rules for LSI-0");
 	
 	map<string,unsigned int> ports_lsi0 = lsi0->getEthPorts();
-	pair<string, unsigned int> wireless_port_lsi0;
-	
-	if(lsi0->hasWireless())
-		wireless_port_lsi0 = lsi0->getWirelessPort();
 	
 	vector<VLink> tenantVirtualLinks = tenantLSI->getVirtualLinks();//FIXME: a map <emulated port name, vlink> would be better
 	
@@ -106,7 +102,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			//The port name must be replaced with the port identifier
 		
 			string port = match.getPhysicalPort();
-			if( (ports_lsi0.count(port) == 0) && (wireless_port_lsi0.first != port) )
+			if(ports_lsi0.count(port) == 0)
 			{
 				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The tenant graph expresses a match on port \"%s\", which is not attached to LSI-0",port.c_str());
 				throw GraphManagerException();
@@ -115,15 +111,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			//Translate the match
 			lowlevel::Match lsi0Match;
 			lsi0Match.setAllCommonFields(match);		
-	
-			if(ports_lsi0.count(port) != 0)
-			{
-				map<string,unsigned int>::iterator translation = ports_lsi0.find(port);
-				lsi0Match.setInputPort(translation->second);
-			}
-			else
-				//the port is wireless
-				lsi0Match.setInputPort(wireless_port_lsi0.second);
+			map<string,unsigned int>::iterator translation = ports_lsi0.find(port);
+			lsi0Match.setInputPort(translation->second);
 			
 			//Translate the action
 			string action_info = action->getInfo();
@@ -132,21 +121,14 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\tIt matches the port \"%s\", and the action is output to port %s",port.c_str(),action_info.c_str());
 			
 				//The port name must be replaced with the port identifier
-				if( (ports_lsi0.count(action_info) == 0) && (wireless_port_lsi0.first != action_info) )
+				if(ports_lsi0.count(action_info) == 0)
 				{
 					logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",port.c_str());
 					throw GraphManagerException();
 				}
 				
-				unsigned int portForAction;
-				if(ports_lsi0.count(action_info) != 0)
-				{
-					map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
-					portForAction = translation->second;
-				}
-				else
-					//the port is wireless
-					portForAction = wireless_port_lsi0.second;
+				map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+				unsigned int portForAction = translation->second;
 					
 				lowlevel::Action lsi0Action(portForAction);	
 	
@@ -273,7 +255,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 		
 			string action_info = action->getInfo();
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Match on NF \"%s\", action is on port \"%s\"",match.getNF().c_str(),action_info.c_str());
-			if((ports_lsi0.count(action_info) == 0) && (wireless_port_lsi0.first != action_info) )
+			if(ports_lsi0.count(action_info) == 0)
 			{
 				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The tenant graph expresses an action on port \"%s\", which is not attached to LSI-0",action_info.c_str());
 				throw GraphManagerException();
@@ -299,15 +281,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			lsi0Match.setInputPort(vlink->getRemoteID());
 
 			//Translate the action
-			unsigned int portForAction;
-			if(ports_lsi0.count(action_info) != 0)
-			{
-				map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
-				portForAction = translation->second;
-			}
-			else
-				//The port is wireless
-				portForAction = wireless_port_lsi0.second;
+			map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
+			unsigned int portForAction = translation->second;
 			
 			lowlevel::Action lsi0Action(portForAction);			
 

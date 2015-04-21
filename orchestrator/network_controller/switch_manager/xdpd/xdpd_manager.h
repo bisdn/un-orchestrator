@@ -38,11 +38,30 @@ private:
 	struct addrinfo *AddrInfo;
 	
 	/**
-	*	@brief: Send a message to xDPD
+	*	@brief: set of ethernet interfaces available
+	*/
+	set<string> ethernetInterfaces;
+	
+	/**
+	*	@brief: set of wireless interfaces available
+	*/
+	set<string> wirelessInterfaces;
+	
+	/**
+	*	@brief: map of dpid, list of wireless interfaces commected
+	*/
+	map<uint16_t,list<string> > dpdiWirelessInterfaces;
+	
+	/**
+	*	@brief: Send a message to xDPd
 	*
 	*	@param: message	Message to be sent
 	*/
 	string sendMessage(string message);
+	
+	/**
+	*	@brief: the following methods are used to interact with xDPd
+	*/
 	
 	string prepareCreateLSIrequest(CreateLsiIn cli);
 	CreateLsiOut *parseCreateLSIresponse(CreateLsiIn cli, Object message);
@@ -64,70 +83,40 @@ private:
 	
 	bool findCommand(Object message, string expected);
 	bool findStatus(Object message);
+	
+	/**
+	*	@brief: attach the wireless interface of an lsi to a physical wireless port, by means of a Linux bridge.
+	*		The bridge is created by this function.
+	*
+	*	@param: lsi	LSI with the port to manage
+	*/
+	bool attachWirelessPort(uint64_t dpid, string wirelessInterfaceName);
+	
+	/**
+	*	@brief: detach the wireless interface of an lsi from a physical wireless port, by destroyng the Linux bridge
+	*
+	*	@param: lsi	LSI with the port to manage
+	*/
+	void detachWirelessPort(uint64_t dpid, string wirelessInterfaceName);
 
 public:
 	XDPDManager();
 
 	~XDPDManager();
 
-	/**
-	*	@brief: Cretes a new LSI in xDPD
-	*
-	*	@param: lsi		Description of the LSI
-	*					to be created
-	*/
 	CreateLsiOut *createLsi(CreateLsiIn cli);
 
-	/**
-	*	@brief: Create NF ports of a specific NF on an LSI in xDPD
-	*
-	*	@brief: lsi		Description of the LSI containing the
-	*					NF ports to be created
-	*	@brief: nf		Name and port idendifiers of the NF whose ports must be created
-	*	@brief: type	Type of the NF associated with the ports to be created
-	*/
 	AddNFportsOut *addNFPorts(AddNFportsIn anpi);
 
-	/**
-	*	@brief: Destroy add a virtual link to an LSI in xDPDP
-	*
-	*	@param: lsi		Description of the LSI containing the vlink
-	*					to be added
-	*	@param: vlink	Structure representing the virtual link to
-	*					to be added to the LSI
-	*/
 	AddVirtualLinkOut *addVirtualLink(AddVirtualLinkIn avli);
 
-	/**
-	*	@brief: Destroy an existing LSI in xDPD
-	*
-	*	@param: lsi		Description of the LSI
-	*					to be destroyed
-	*/
 	void destroyLsi(uint64_t dpid);
 
-	/**
-	*	@brief: Destroy all the NF ports of a specific NF
-	*
-	*	@brief: lsi		Description of the LSI containing the
-	*					NF ports to be removed
-	*	@brief: nf		Name of the NF whose ports must be removed
-	*/
 	void destroyNFPorts(DestroyNFportsIn dnpi);
 
-	/**
-	*	@brief: Destroy an virtual link from an LSI in xDPDP
-	*
-	*	@param: lsi		Description of the LSI containing the vlink
-	*					to be removed
-	*	@param: vlinkID	Identifier of the vlink to be removed
-	*/
 	void destroyVirtualLink(DestroyVirtualLinkIn dvli); 
 
-	/**
-	*	@brief: Connect to xDPD to discover the physical interfaces
-	*/
-	map<string,string> discoverEthernetInterfaces();
+	map<string,string> discoverPhysicalInterfaces();
 };
 
 class XDPDManagerException: public SwitchManagerException

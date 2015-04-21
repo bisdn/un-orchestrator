@@ -16,7 +16,6 @@ XDPDManager::XDPDManager()
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error resolving given address/port (%s/%s): %s",  XDPD_ADDRESS, xDPDport.c_str(), ErrBuf);
 		throw XDPDManagerException();
 	}
-
 }
 
 XDPDManager::~XDPDManager()
@@ -72,7 +71,7 @@ string XDPDManager::sendMessage(string message)
 	return string(DataBuffer);
 }
 	
-map<string,string> XDPDManager::discoverEthernetInterfaces()
+map<string,string> XDPDManager::discoverPhysicalInterfaces()
 {
 	//Prepare the request
 	Object json;	
@@ -148,6 +147,7 @@ map<string,string> XDPDManager::discoverEthernetInterfaces()
 					throw XDPDManagerException();	
 				}
 				phyPorts[port_name] = port_type;
+				ethernetInterfaces.insert(port_name);
 			}
 
 			foundPorts = true;
@@ -165,6 +165,14 @@ map<string,string> XDPDManager::discoverEthernetInterfaces()
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" without \"ports\" received",DISCOVER_PHY_PORTS);
 		throw XDPDManagerException();
 	}
+	
+	/**
+	*	So far, only the ethernet interfaces have been discovered. Then we still have to add the wireless interfaces.
+	*/
+	//FIXME: tmp code. Find a way to provide the wireless interface from the extern
+	wirelessInterfaces.insert(string(WIRELESS_INTERFACE));
+	phyPorts[string(WIRELESS_INTERFACE)] = string(WIRELESS_DESCRIPTION);
+	
 	return phyPorts;
 }
 
@@ -172,9 +180,14 @@ CreateLsiOut *XDPDManager::createLsi(CreateLsiIn cli)
 {	
 	Value value;
 
-	string message = prepareCreateLSIrequest(cli);
-	string answer = sendMessage(message);
-		
+	string answer;
+	try
+	{
+		answer = sendMessage(prepareCreateLSIrequest(cli));
+	} catch(...) {
+		throw;
+	}
+	
 	read( answer, value );
 	Object obj = value.getObject();
 
@@ -203,15 +216,35 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
 	
 	json["controller"] = controller;
 	
-	list<string> ports = cli.getEthPortsName();
+	list<string> ports = cli.getPhysicalPortsName();
+	
+	//FIXME: currently a single wifi port is supported. The message toward xDPd should be extended
+	//to support an unbounded number of wifi ports.
+	
 	Array ports_array;
+	bool foundWireless = false;
 	for(list<string>::iterator p = ports.begin(); p != ports.end(); p++)
-		ports_array.push_back(*p);	
+	{
+		if(ethernetInterfaces.count(*p) != 0)
+			ports_array.push_back(*p);
+		else if(wirelessInterfaces.count(*p) != 0)
+		{
+			if(foundWireless)
+			{
+				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Only a single wireless interface is currently supported in xDPd",(*p).c_str());
+				throw XDPDManagerException();
+			}	
+			json["wireless"] = *p;
+			foundWireless = true;
+		}
+		else
+		{
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Interface \"%s\" was not discovered by xDPd",(*p).c_str());
+			throw XDPDManagerException();
+		}
+	}
 	if(ports.size() > 0)
 		json["ports"] = ports_array;
-		
-	if(cli.hasWireless())
-		json["wireless"] = cli.getWirelessPortName();
 
 	set<string> nfs = cli.getNetworkFunctionsName();
 	map<string,nf_t> nf_type = cli.getNetworkFunctionsType(); 	
@@ -271,10 +304,24 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
 CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object message)
 {
 	uint64_t dpid = 0;
-	map<string,unsigned int> eth_ports;
+	map<string,unsigned int> physical_ports;
 	pair<string,unsigned int> wireless_port;
 	map<string,map<string, unsigned int> >  network_functions_ports;
 	list<pair<unsigned int, unsigned int> > virtual_links;
+	
+	
+	list<string> ports = cli.getPhysicalPortsName();
+	bool hasWireless = false;
+	string wirelessName;
+	for(list<string>::iterator p = ports.begin(); p != ports.end(); p++)
+	{
+		if(wirelessInterfaces.count(*p) != 0)
+		{
+			hasWireless = true;
+			wirelessName = *p;
+			break;
+		}
+	}
 
 	bool foundLSIid = false;
 	bool foundWireless = false;
@@ -296,7 +343,7 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
         {
 			const Array& ports_array = value.getArray();
 			
-			if(ports_array.size() != cli.getEthPortsName().size())
+			if(ports_array.size() != (cli.getPhysicalPortsName().size() - ((hasWireless)?1:0)))
 			{
 				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a wrong number of physical ports",CREATE_LSI);
 				throw XDPDManagerException();
@@ -327,8 +374,8 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 		    	}
 		    	if(foundName && foundID)
 		    	{
-		    		eth_ports[name] = id;
-		    		list<string> ep = cli.getEthPortsName();
+		    		physical_ports[name] = id;
+		    		list<string> ep = cli.getPhysicalPortsName();
 		    		set<string> tmp_ep(ep.begin(),ep.end());
 		    		if(tmp_ep.count(name) == 0)
 		    		{
@@ -344,14 +391,19 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 			} //end iteration on the array
         } //end name=="ports"
         else if(name == "wireless")
-        {
+        {        
         	foundWireless = true;
-			wireless_port = make_pair(cli.getWirelessPortName(),value.getInt());        	
-        	if(!cli.hasWireless())
-        	{
-        		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required wireless port \"%d\"",CREATE_LSI,name.c_str());
+        	unsigned int wirelessID = value.getInt();
+        	
+        	physical_ports[wirelessName] = wirelessID;
+        	
+        	list<string> ep = cli.getPhysicalPortsName();
+    		set<string> tmp_ep(ep.begin(),ep.end());
+    		if(tmp_ep.count(wirelessName) == 0)
+    		{
+    			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required port \"%d\"",CREATE_LSI,wirelessName.c_str());
 				throw XDPDManagerException();
-        	}
+    		}
         } //end name=="wireless"
         else if(name == "network-functions")
         {
@@ -500,16 +552,31 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 		throw XDPDManagerException();
 	}
 	
-	if(cli.hasWireless() && !foundWireless)
+	if(hasWireless && !foundWireless)
 	{
+		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%d %d",hasWireless,foundWireless);
+	
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" without \"wireless\" received, although a wireless interface was required",CREATE_LSI);
 		throw XDPDManagerException();
 	}
 	
-	CreateLsiOut *clo = new CreateLsiOut(dpid,eth_ports,cli.hasWireless(),wireless_port,network_functions_ports, virtual_links);
+	if(hasWireless)
+	{
+		//The virtual wireless interface created on xDPd must be connected to a physical wireless interface through a Linux bridge
+		if(!attachWirelessPort(dpid, wirelessName))
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while attaching the wireless interface \"%s\" to a Linux bridge",wirelessName.c_str());
+			throw XDPDManagerException();
+		}
+	}
+	
+	list<string> wirelessList;
+	wirelessList.push_back(wirelessName);
+	dpdiWirelessInterfaces[dpid] = wirelessList;
+	
+	CreateLsiOut *clo = new CreateLsiOut(dpid,physical_ports,network_functions_ports, virtual_links);
 	return clo;
 }
-
 bool XDPDManager::findCommand(Object message, string expected)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
@@ -870,11 +937,14 @@ void XDPDManager::destroyLsi(uint64_t dpid)
     if(!findCommand(obj,string(DESTROY_LSI)))
 		throw XDPDManagerException();    
 	if(!findStatus(obj))
-		throw XDPDManagerException();
+		throw XDPDManagerException();		 
 		
 	try
 	{
 		parseDestroyLSIresponse(obj);
+		list<string> wirelessInterface = dpdiWirelessInterfaces[dpid];
+		for(list<string>::iterator w = wirelessInterface.begin(); w != wirelessInterface.end(); w++)
+			detachWirelessPort(dpid,*w);
 	} catch(...) {
 		throw;
 	}
@@ -1048,5 +1118,37 @@ void XDPDManager::parseDestroyNFPortsResponse(Object message)
 			throw XDPDManagerException();
         }
 	} //end parsing the message
+}
+
+
+bool XDPDManager::attachWirelessPort(uint64_t dpid, string wirelessInterfaceName)
+{
+	//The virtual wireless interface created by xDPd must be attached to the real wireles interface through a bridge
+
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Attaching the wireless interface '%s'...",wirelessInterfaceName.c_str());
+	
+	stringstream command;
+	command << ATTACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+
+	int retVal = system(command.str().c_str());
+	retVal = retVal >> 8;
+	
+	if(retVal == 0)
+		return false;
+	else
+		return true;
+}
+
+void XDPDManager::detachWirelessPort(uint64_t dpid, string wirelessInterfaceName)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Detaching the wireless interface '%s'...",wirelessInterfaceName.c_str());
+	stringstream command;
+	command << DETACH_WIRELESS_INTERFACE << " " << dpid << " " << wirelessInterfaceName;
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+	int retVal = system(command.str().c_str());
+	retVal += 1; //XXX: just to remove a warning
+	
+	//FIXME: no error can occur here?
 }
 

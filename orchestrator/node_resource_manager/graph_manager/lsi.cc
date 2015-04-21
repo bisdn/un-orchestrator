@@ -1,23 +1,15 @@
 #include "lsi.h"
 
-LSI::LSI(string controllerAddress, string controllerPort, map<string,string> eth_ports, map<string, list<unsigned int> > network_functions,vector<VLink> virtual_links, map<string,nf_t>  nf_types, string wirelessPort) :
+LSI::LSI(string controllerAddress, string controllerPort, map<string,string> physical_ports, map<string, list<unsigned int> > network_functions,vector<VLink> virtual_links, map<string,nf_t>  nf_types) :
 		controllerAddress(controllerAddress), controllerPort(controllerPort), 
 		nf_types(nf_types.begin(),nf_types.end()),
 		virtual_links(virtual_links.begin(),virtual_links.end())
 {
-	for(map<string,string>::iterator p = eth_ports.begin(); p != eth_ports.end(); p++)
+	for(map<string,string>::iterator p = physical_ports.begin(); p != physical_ports.end(); p++)
 	{
-		this->eth_ports[p->first] = 0;
+		this->physical_ports[p->first] = 0;
 		ports_type[p->first] = p->second;	
 	}
-	
-	if(wirelessPort != "")
-	{
-		wireless = true;
-		wireless_port = make_pair<string, unsigned int>(wirelessPort,0);
-	}
-	else
-		wireless = false;
 
 	//create a port name for the NF, by appending to the real name the identifier
 	//of the port
@@ -52,12 +44,12 @@ string LSI::getControllerPort()
 	return controllerPort;
 }
 
-list<string> LSI::getEthPortsName()
+list<string> LSI::getPhysicalPortsName()
 {
 	list<string> names;
 	
-	map<string,unsigned int>::iterator p = eth_ports.begin();
-	for(; p != eth_ports.end(); p++)
+	map<string,unsigned int>::iterator p = physical_ports.begin();
+	for(; p != physical_ports.end(); p++)
 		names.push_back(p->first);
 	
 	return names;
@@ -108,13 +100,13 @@ void LSI::setDpid(uint64_t dpid)
 
 bool LSI::setEthPortID(string port, uint64_t id)
 {
-	if(eth_ports.count(port) == 0)
+	if(physicalok arri_ports.count(port) == 0)
 	{
 		assert(0);
 		return false;
 	}
 	
-	eth_ports[port] = id;
+	physical_ports[port] = id;
 	return true;
 }
 
@@ -324,32 +316,4 @@ void LSI::removeNF(string nf)
 	map<string,nf_t>::iterator jt = nf_types.find(nf); 
 	nf_types.erase(jt);
 	return;
-}
-
-bool LSI::hasWireless()
-{
-	return wireless;
-}
-
-string LSI::getWirelessPortName()
-{
-	assert(wireless);
-	return wireless_port.first;
-}
-
-bool LSI::setWirelessPortID(uint64_t id)
-{
-	if(!wireless)
-	{
-		assert(0);
-		return false;
-	}
-	
-	wireless_port.second = id;
-	return true;
-}
-
-pair<string,unsigned int> LSI::getWirelessPort()
-{
-	return wireless_port;
 }

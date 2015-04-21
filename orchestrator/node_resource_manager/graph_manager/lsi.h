@@ -40,19 +40,10 @@ private:
 	uint64_t dpid;
 	
 	/**
-	*	@brief: the pair is <port name, port id>. It only contains physical Ethernet ports
+	*	@brief: the pair is <port name, port id>. It contains physical ports
 	*/
-	map<string,unsigned int> eth_ports;
+	map<string,unsigned int> physical_ports;
 	
-	/**
-	*	@brief: the variable is true if the LSI has a wireless interface
-	*/
-	bool wireless;
-	
-	/**
-	*	@brief: the pait is <port name, port id>
-	*/
-	pair<string, unsigned int> wireless_port;
 	
 	/**
 	*	@brief: the pair is <port name, port type>
@@ -98,14 +89,12 @@ private:
 	map<string, uint64_t> endpoints_vlinks;
 
 public:
-	LSI(string controllerAddress, string controllerPort, map<string,string> ports, map<string, list <unsigned int> > network_functions,vector<VLink> virtual_links,map<string,nf_t>  nf_types, string wirelessPort = "");
+	LSI(string controllerAddress, string controllerPort, map<string,string> ports, map<string, list <unsigned int> > network_functions,vector<VLink> virtual_links,map<string,nf_t>  nf_types);
 
 	string getControllerAddress();
 	string getControllerPort();
 
-	list<string> getEthPortsName();
-	bool hasWireless();
-	string getWirelessPortName();
+	list<string> getPhysicalPortsName();
 
 	set<string> getNetworkFunctionsName();
 	list<string> getNetworkFunctionsPortNames(string nf);
@@ -115,8 +104,7 @@ public:
 	uint64_t getDpid();
 
 
-	map<string,unsigned int> getEthPorts();
-	pair<string,unsigned int> getWirelessPort();
+	map<string,unsigned int> getPhysicalPorts();
 	map<string,string> getPortsType();
 
 	map<string,unsigned int> getNetworkFunctionsPorts(string nf);
@@ -144,8 +132,7 @@ public:
 
 protected:
 	void setDpid(uint64_t dpid);
-	bool setEthPortID(string port, uint64_t id);
-	bool setWirelessPortID(uint64_t id);
+	bool setPhysicalPortID(string port, uint64_t id);
 	bool setNfPortsID(string nf, map<string, unsigned int>);
 	void setVLinkIDs(unsigned int position, unsigned int localID, unsigned int remoteID);
 

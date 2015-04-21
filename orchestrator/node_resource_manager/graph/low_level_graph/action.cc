@@ -41,24 +41,14 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 {
 	stringstream ss;
 
-	pair<string,unsigned int> wireless = lsi0->getWirelessPort();
 	map<string,unsigned int> ethernet = lsi0->getEthPorts();
-	
-	if(port_id == wireless.second)
+	for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
 	{
-		ss << wireless.first;
-		return ss.str();
-	}
-	else
-	{
-		for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
+		if(it->second == port_id)
 		{
-			if(it->second == port_id)
-			{
-				ss << it->first;
-				return ss.str();
-			}		
-		}
+			ss << it->first;
+			return ss.str();
+		}		
 	}
 	
 	//The port corresponds to a virtual link... we search the corresponding graph

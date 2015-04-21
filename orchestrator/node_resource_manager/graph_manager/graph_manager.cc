@@ -8,7 +8,7 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
+GraphManager::GraphManager(int core_mask) :
 	switchManager()
 {
 	//TODO: we may have two implementations: one with the LSI-0, the other that uses the queues of the NIC
@@ -30,7 +30,7 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	try
 	{
 		//Discover the available ethernet ports
-		phyPorts = switchManager.discoverEthernetInterfaces();
+		phyPorts = switchManager.discoverPhysicalInterfaces();
 	} catch (...)
 	{
 		throw GraphManagerException();
@@ -48,22 +48,19 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	vector<VLink> dummy_virtual_links;
 	map<string,nf_t>  nf_types;
 	
-	//XXX: if(wireless == true), the node has a wireless interface. This kind of interface is not supported 
-	//by the DPDK (and hence by xDPd), then it is attached to xDPd with a trick.
-	
-	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions,dummy_virtual_links,nf_types, (wireless)? string(wirelessName) : "" );
+	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions,dummy_virtual_links,nf_types);
 	
 	try
 	{
 		//Create a new LSI, which is the LSI-0 of the node
 		
 		map<string,list<string> > netFunctionsPortsName;		
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getEthPortsName(),lsi->hasWireless(),(lsi->hasWireless())? lsi->getWirelessPortName() : "",nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getEthPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
 		
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 		
 		lsi->setDpid(clo->getDpid());
-		map<string,unsigned int> ethPorts = clo->getEthernetPorts();
+		map<string,unsigned int> ethPorts = clo->getPhysicalPorts();
 		//TODO check that the ethernet ports returned are the same provided to the switch manager
 		for(map<string,unsigned int>::iterator it = ethPorts.begin(); it != ethPorts.end(); it++)
 		{
@@ -74,14 +71,6 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 				throw GraphManagerException();
 			}
 		}
-		if(!lsi->hasWireless() && clo->hasWireless())
-		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required wireless interface has been attached to the lsi-0");
-			delete(clo);
-			throw GraphManagerException();
-		}
-		if(clo->hasWireless())
-			lsi->setWirelessPortID(clo->getWirelessPort().second);
 		
 		map<string,map<string, unsigned int> > nfsports = clo->getNetworkFunctionsPorts();
 		if(!nfsports.empty())
@@ -114,19 +103,6 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	for(map<string,unsigned int>::iterator p = lsi_ports.begin(); p != lsi_ports.end(); p++)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%s -> %d",(p->first).c_str(),p->second);
 		
-	if(wireless)
-	{
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Wireless port: %s -> %d",wirelessName, lsi->getWirelessPort().second);
-	
-		
-		if(!attachWirelessPort(lsi))
-		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the initialization of the wireless interface \"%s\"",wirelessName);
-			throw GraphManagerException();
-		}
-
-	}
-
 	graphInfoLSI0.setLSI(lsi);
 
 	//Create the openflow controller for the lsi-0
@@ -179,7 +155,6 @@ GraphManager::~GraphManager()
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Deleting the graph for the LSI-0...");
 	LSI *lsi0 = graphInfoLSI0.getLSI();
 	
-	detachWirelessPort(lsi0);
 	try
 	{
 		switchManager.destroyLsi(lsi0->getDpid());
@@ -268,14 +243,6 @@ Object GraphManager::toJSONPhysicalInterfaces()
 		interfaces_array.push_back(iface);	
 	}
 	
-	if(lsi0->hasWireless())
-	{
-		Object iface;
-		iface["name"] = lsi0->getWirelessPortName();
-		iface["type"] = "edge";
-		interfaces_array.push_back(iface);
-	}
-	
 	interfaces["interfaces"] = interfaces_array;
 	
 	return interfaces;
@@ -360,8 +327,6 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
 		throw GraphManagerException();
 	}
-
-	detachWirelessPort(tenantLSI);
 	
 	/**
 	*		4) delete the endpoints defined by the graph
@@ -499,14 +464,10 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsMa
 	
 	LSI *lsi0 = graphInfoLSI0.getLSI();
 	map<string,unsigned int> ethPorts = lsi0->getEthPorts();
-	pair<string,unsigned int> wirelessPort;
-	
-	if(lsi0->hasWireless())
-		wirelessPort = lsi0->getWirelessPort();
 	
 	for(set<string>::iterator p = phyPorts.begin(); p != phyPorts.end(); p++)
 	{
-		if((ethPorts.count(*p)) == 0 && (wirelessPort.first != *p))
+		if((ethPorts.count(*p)) == 0)
 		{
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Physical port \"%s\" does not exist",(*p).c_str());
 			return false;		
@@ -708,22 +669,15 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			netFunctionsPortsName[nf->first] = lsi->getNetworkFunctionsPortNames(nf->first);
 		}
 		
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getEthPortsName(),lsi->hasWireless(),(lsi->hasWireless())? lsi->getWirelessPortName() : "",nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getEthPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
 		
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
 		lsi->setDpid(clo->getDpid());
-		map<string,unsigned int> ethPorts = clo->getEthernetPorts();
+		map<string,unsigned int> ethPorts = clo->getPhysicalPorts();
 		if(!ethPorts.empty())
 		{
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Non required ethernet ports have been attached to the tenant-lsi");
-			delete(clo);
-			throw GraphManagerException();
-		}
-		
-		if(clo->hasWireless())
-		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required wireless interface has been attached to the tenant-lsi");
 			delete(clo);
 			throw GraphManagerException();
 		}
@@ -1775,39 +1729,6 @@ next2:
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The endpoint '%s' is no longer part of the graph",rri.endpoint.c_str());	
 }
 
-bool GraphManager::attachWirelessPort(LSI *lsi)
-{
-	//The interface created by xDPd for the wireless, must be attached to the real wireles interface through a bridge
-
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Attaching the wireless interface '%s'...",lsi->getWirelessPortName().c_str());
-	
-	stringstream command;
-	command << ATTACH_WIRELESS_INTERFACE << " " << lsi->getDpid() << " " << lsi->getWirelessPortName();
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
-
-	int retVal = system(command.str().c_str());
-	retVal = retVal >> 8;
-	
-	if(retVal == 0)
-		return false;
-	else
-		return true;
-}
-
-void GraphManager::detachWirelessPort(LSI *lsi)
-{
-	if(lsi->hasWireless())
-	{
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Detaching the wireless interface '%s'...",lsi->getWirelessPortName().c_str());
-		stringstream command;
-		command << DETACH_WIRELESS_INTERFACE << " " << lsi->getDpid() << " " << lsi->getWirelessPortName();
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
-
-		int retVal = system(command.str().c_str());
-		retVal += 1; //XXX: just to remove a warning
-	}
-}
-
 string GraphManager::findEndPointTowardsNF(highlevel::Graph *graph, string nf)
 {
 	list<highlevel::Rule> rules = graph->getRules();
@@ -1929,3 +1850,4 @@ void GraphManager::printInfo(bool completed)
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
 }
+

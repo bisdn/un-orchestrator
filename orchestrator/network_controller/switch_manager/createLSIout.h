@@ -24,20 +24,10 @@ private:
 	uint64_t dpid;
 	
 	/**
-	* @brief: list of ethernet port name, identifier on the lsi
+	* @brief: list of physical port name, identifier on the lsi
 	*/
-	map<string,unsigned int> eth_ports;
-	
-	/**
-	*	@brief: is a wireless port to be connected to the lsi?
-	*/
-	bool wireless;
-	
-	/**
-	* @brief: wireless port name, identifier on the lsi
-	*/
-	pair<string,unsigned int> wireless_port;
-	
+	map<string,unsigned int> physical_ports;
+		
 	/**
 	*	@brief: map of network functions name, map of network fuction ports name, network function ports identifier on the lsi
 	*/
@@ -55,19 +45,9 @@ protected:
 		return dpid;
 	}
 	
-	map<string,unsigned int> getEthernetPorts()
+	map<string,unsigned int> getPhysicalPorts()
 	{
-		return eth_ports;
-	}
-	
-	bool hasWireless()
-	{
-		return wireless;
-	}
-	
-	pair<string,unsigned int> getWirelessPort()
-	{
-		return wireless_port;
+		return physical_ports;
 	}
 	
 	map<string,map<string, unsigned int> > getNetworkFunctionsPorts()
@@ -81,8 +61,8 @@ protected:
 	}
 
 public:
-	CreateLsiOut(uint64_t dpid, map<string,unsigned int> eth_ports, bool wireless, pair<string,unsigned int> wireless_port, map<string,map<string, unsigned int> >  network_functions_ports, list<pair<unsigned int, unsigned int> > virtual_links) 
-		: dpid(dpid), eth_ports(eth_ports.begin(),eth_ports.end()), wireless(wireless), wireless_port(wireless_port),network_functions_ports(network_functions_ports.begin(),network_functions_ports.end()),virtual_links(virtual_links.begin(),virtual_links.end())
+	CreateLsiOut(uint64_t dpid, map<string,unsigned int> physical_ports, map<string,map<string, unsigned int> >  network_functions_ports, list<pair<unsigned int, unsigned int> > virtual_links) 
+		: dpid(dpid), physical_ports(physical_ports.begin(),physical_ports.end()),network_functions_ports(network_functions_ports.begin(),network_functions_ports.end()),virtual_links(virtual_links.begin(),virtual_links.end())
 	{}
 	
 };

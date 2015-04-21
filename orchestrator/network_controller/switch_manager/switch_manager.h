@@ -69,11 +69,11 @@ public:
 	virtual void destroyVirtualLink(DestroyVirtualLinkIn dvli) = 0; 
 
 	/**
-	*	@brief: Discover the ethernet interfaces available
+	*	@brief: Discover the available physical interfaces
 	*
 	*	@return:		Map of physical interfaces and the related description
 	*/
-	virtual map<string,string> discoverEthernetInterfaces() = 0;
+	virtual map<string,string> discoverPhysicalInterfaces() = 0;
 };
 
 class SwitchManagerException: public exception

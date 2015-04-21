@@ -37,19 +37,9 @@ private:
 	string controllerPort;
 	
 	/**
-	*	@brief: list of ethernet ports to be connected to the lsi
+	*	@brief: list of physical ports to be connected to the lsi
 	*/
-	list<string> ethernetPortsName;
-	
-	/**
-	*	@brief: is a wireless port to be connected to the lsi?
-	*/
-	bool wireless;
-	
-	/**
-	*	@brief: wireless port to be connected to the lsi
-	*/
-	string wirelessPortName;
+	list<string> physicalPortsName;
 	
 	/**
 	*	@brief: map of network functions name, network functions type
@@ -73,10 +63,10 @@ private:
 	list<uint64_t> vlinksRemoteLsi;
 
 protected:
-	CreateLsiIn(string controllerAddress, string controllerPort, list<string> ethernetPortsName, bool wireless, string wirelessPortName, map<string,nf_t>  nf_types, map<string,list<string> > netFunctionsPortsName, list<uint64_t> vlinksRemoteLsi) 
+	CreateLsiIn(string controllerAddress, string controllerPort, list<string> physicalPortsName, map<string,nf_t>  nf_types, map<string,list<string> > netFunctionsPortsName, list<uint64_t> vlinksRemoteLsi) 
 		: controllerAddress(controllerAddress), controllerPort(controllerPort), 
-		ethernetPortsName(ethernetPortsName.begin(),ethernetPortsName.end()),
-		wireless(wireless), wirelessPortName(wirelessPortName), nf_types(nf_types.begin(),nf_types.end()),
+		physicalPortsName(physicalPortsName.begin(),physicalPortsName.end()),
+		nf_types(nf_types.begin(),nf_types.end()),
 		netFunctionsPortsName(netFunctionsPortsName.begin(),netFunctionsPortsName.end()),
 		vlinksRemoteLsi(vlinksRemoteLsi.begin(),vlinksRemoteLsi.end())
 	{
@@ -97,20 +87,9 @@ public:
 		return controllerPort;
 	}
 	
-	list<string> getEthPortsName()
+	list<string> getPhysicalPortsName()
 	{	
-		return ethernetPortsName;
-	}
-
-	bool hasWireless()
-	{
-		return wireless;
-	}
-	
-	string getWirelessPortName()
-	{
-		assert(wireless);
-		return wirelessPortName;
+		return physicalPortsName;
 	}
 	
 	map<string,nf_t> getNetworkFunctionsType()

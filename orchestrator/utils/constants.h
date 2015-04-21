@@ -110,7 +110,16 @@
 #define CORE_MASK				0x2
 
 /*
- * The following are the supported Openflow versions.
+ * Supported virtual switch implementations.
+ */ 
+enum
+{
+	XDPD = 1
+	//[+] Add here new implementations
+};
+
+/*
+ * Supported Openflow versions.
  */ 
 enum
 {

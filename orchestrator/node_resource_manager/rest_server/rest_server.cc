@@ -3,14 +3,14 @@
 GraphManager *RestServer::gm = NULL;
 
 #ifdef READ_JSON_FROM_FILE
-	bool RestServer::init(char *filename, int core_mask, bool wireless, char *wirelessName)
+	bool RestServer::init(char *filename, int core_mask)
 #else
-	bool RestServer::init(int core_mask, bool wireless, char *wirelessName)
+	bool RestServer::init(int core_mask)
 #endif
 {	
 	try
 	{
-		gm = new GraphManager(core_mask, wireless, wirelessName);
+		gm = new GraphManager(core_mask);
 		
 	}catch (...)
 	{
@@ -958,7 +958,7 @@ int RestServer::doGetGraph(struct MHD_Connection *connection,char *graphID)
 		Object json = gm->toJSON(graphID);
 		stringstream ssj;
  		write_formatted(json, ssj );
- 		string sssj = ssj.str();
+ 		string sssj = ssj.str();		
  		char *aux = (char*)malloc(sizeof(char) * (sssj.length()+1));
  		strcpy(aux,sssj.c_str());
 		response = MHD_create_response_from_buffer (strlen(aux),(void*) aux, MHD_RESPMEM_PERSISTENT);		

@@ -91,9 +91,9 @@ private:
 
 public:
 #ifdef READ_JSON_FROM_FILE
-	static bool init(char *filename,int core_mask, bool wireless = false, char *wirelessName = "wlan0");
+	static bool init(char *filename,int core_mask);
 #else
-	static bool init(int core_mask, bool wireless = false, char *wirelessName = "wlan0");
+	static bool init(int core_mask);
 #endif
 	
 	static void terminate();

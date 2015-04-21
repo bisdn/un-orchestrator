@@ -174,26 +174,15 @@ string Match::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 
 	ss << "port: ";
 
-	pair<string,unsigned int> wireless = lsi0->getWirelessPort();
 	map<string,unsigned int> ethernet = lsi0->getEthPorts();
-	
-	if(input_port == wireless.second)
+	for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
 	{
-		ss << wireless.first << graph::Match::prettyPrint();
-		return ss.str();
-	}
-	else
-	{
-		for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
+		if(it->second == input_port)
 		{
-			if(it->second == input_port)
-			{
-				ss << it->first << graph::Match::prettyPrint();
-				return ss.str();
-			}		
-		}
+			ss << it->first << graph::Match::prettyPrint();
+			return ss.str();
+		}		
 	}
-	
 	
 	//The port corresponds to a virtual link... we search the corresponding graph
 	
