@@ -174,8 +174,8 @@ string Match::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 
 	ss << "port: ";
 
-	map<string,unsigned int> ethernet = lsi0->getEthPorts();
-	for(map<string,unsigned int>::iterator it = ethernet.begin(); it != ethernet.end(); it++)
+	map<string,unsigned int> pysicalPorts = lsi0->getPhysicalPorts();
+	for(map<string,unsigned int>::iterator it = pysicalPorts.begin(); it != pysicalPorts.end(); it++)
 	{
 		if(it->second == input_port)
 		{

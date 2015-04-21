@@ -98,9 +98,9 @@ void LSI::setDpid(uint64_t dpid)
 	this->dpid = dpid;
 }
 
-bool LSI::setEthPortID(string port, uint64_t id)
+bool LSI::setPhysicalPortID(string port, uint64_t id)
 {
-	if(physicalok arri_ports.count(port) == 0)
+	if(physical_ports.count(port) == 0)
 	{
 		assert(0);
 		return false;
@@ -139,9 +139,9 @@ uint64_t LSI::getDpid()
 	return dpid;
 }
 
-map<string,unsigned int> LSI::getEthPorts()
+map<string,unsigned int> LSI::getPhysicalPorts()
 {
-	return eth_ports;
+	return physical_ports;
 }
 
 map<string,string> LSI::getPortsType()

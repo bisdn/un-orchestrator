@@ -23,13 +23,13 @@ GraphManager::GraphManager(int core_mask) :
 	ostringstream strControllerPort;
 	strControllerPort << controllerPort;
 
-	//Create the LSI-0 with all the ethernet ports available on the node
+	//Create the LSI-0 with all the physical ports available on the node
 	map<string,string> phyPorts;
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Discovering the available physical interfaces...");
 	try
 	{
-		//Discover the available ethernet ports
+		//Discover the available physical ports
 		phyPorts = switchManager.discoverPhysicalInterfaces();
 	} catch (...)
 	{
@@ -55,18 +55,18 @@ GraphManager::GraphManager(int core_mask) :
 		//Create a new LSI, which is the LSI-0 of the node
 		
 		map<string,list<string> > netFunctionsPortsName;		
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getEthPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
 		
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 		
 		lsi->setDpid(clo->getDpid());
-		map<string,unsigned int> ethPorts = clo->getPhysicalPorts();
-		//TODO check that the ethernet ports returned are the same provided to the switch manager
-		for(map<string,unsigned int>::iterator it = ethPorts.begin(); it != ethPorts.end(); it++)
+		map<string,unsigned int> physicalPorts = clo->getPhysicalPorts();
+		//TODO check that the physical ports returned are the same provided to the switch manager
+		for(map<string,unsigned int>::iterator it = physicalPorts.begin(); it != physicalPorts.end(); it++)
 		{
-			if(!lsi->setEthPortID(it->first,it->second))
+			if(!lsi->setPhysicalPortID(it->first,it->second))
 			{
-				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An unknow ethernet interface \"%s\" has been attached to the lsi-0",it->first.c_str());
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An unknow physical interface \"%s\" has been attached to the lsi-0",it->first.c_str());
 				delete(clo);
 				throw GraphManagerException();
 			}
@@ -96,10 +96,10 @@ GraphManager::GraphManager(int core_mask) :
 	}
 	
 	dpid0 = lsi->getDpid();
-	map<string,unsigned int> lsi_ports = lsi->getEthPorts();
+	map<string,unsigned int> lsi_ports = lsi->getPhysicalPorts();
 			
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "LSI ID: %d",dpid0);
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Ethernet ports:",lsi_ports.size());
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Physical ports:",lsi_ports.size());
 	for(map<string,unsigned int>::iterator p = lsi_ports.begin(); p != lsi_ports.end(); p++)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%s -> %d",(p->first).c_str(),p->second);
 		
@@ -463,11 +463,11 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsMa
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The command requires %d new physical ports",phyPorts.size());
 	
 	LSI *lsi0 = graphInfoLSI0.getLSI();
-	map<string,unsigned int> ethPorts = lsi0->getEthPorts();
+	map<string,unsigned int> physicalPorts = lsi0->getPhysicalPorts();
 	
 	for(set<string>::iterator p = phyPorts.begin(); p != phyPorts.end(); p++)
 	{
-		if((ethPorts.count(*p)) == 0)
+		if((physicalPorts.count(*p)) == 0)
 		{
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Physical port \"%s\" does not exist",(*p).c_str());
 			return false;		
@@ -669,15 +669,15 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			netFunctionsPortsName[nf->first] = lsi->getNetworkFunctionsPortNames(nf->first);
 		}
 		
-		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getEthPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
 		
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 
 		lsi->setDpid(clo->getDpid());
-		map<string,unsigned int> ethPorts = clo->getPhysicalPorts();
-		if(!ethPorts.empty())
+		map<string,unsigned int> physicalPorts = clo->getPhysicalPorts();
+		if(!physicalPorts.empty())
 		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Non required ethernet ports have been attached to the tenant-lsi");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Non required physical ports have been attached to the tenant-lsi");
 			delete(clo);
 			throw GraphManagerException();
 		}
@@ -723,7 +723,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	
 	uint64_t dpid = lsi->getDpid();
 	
-	map<string,unsigned int> lsi_ports = lsi->getEthPorts();
+	map<string,unsigned int> lsi_ports = lsi->getPhysicalPorts();
 	set<string> nfs = lsi->getNetworkFunctionsName();
 	vector<VLink> vls = lsi->getVirtualLinks();
 		

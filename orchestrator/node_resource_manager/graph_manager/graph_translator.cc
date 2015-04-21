@@ -4,7 +4,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 {
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating rules for LSI-0");
 	
-	map<string,unsigned int> ports_lsi0 = lsi0->getEthPorts();
+	map<string,unsigned int> ports_lsi0 = lsi0->getPhysicalPorts();
 	
 	vector<VLink> tenantVirtualLinks = tenantLSI->getVirtualLinks();//FIXME: a map <emulated port name, vlink> would be better
 	
@@ -302,7 +302,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 {
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating rules for the tenant LSI");
 	
-	map<string,unsigned int> ports_lsi0 = lsi0->getEthPorts();
+	map<string,unsigned int> ports_lsi0 = lsi0->getPhysicalPorts();
 	
 	vector<VLink> tenantVirtualLinks = tenantLSI->getVirtualLinks();//FIXME: a map <emulated port name, vlink> would be better
 	set<string> tenantNetworkFunctions = tenantLSI->getNetworkFunctionsName();
