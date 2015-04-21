@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+<!-- definition of attributes -->
+
+<xsd:attribute name="type">	
+	<xsd:simpleType>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="ethernet" />
+			<xsd:enumeration value="wifi" />
+		</xsd:restriction>
+	</xsd:simpleType>
+</xsd:attribute>
+
+<xsd:attribute name="side">	
+	<xsd:simpleType>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="edge" />
+			<xsd:enumeration value="core" />
+		</xsd:restriction>
+	</xsd:simpleType>
+</xsd:attribute>
+
+<!-- definition of elements -->
+<xsd:element name="xdpd-ports">
+	<xsd:complexType>
+		<xsd:sequence>
+			<xsd:element name="port" minOccurs="1" maxOccurs="unbounded">
+				<xsd:complexType>
+					<xsd:attribute name="name" type="xsd:string" use="required"/>
+					<xsd:attribute ref="type" use="required"/>
+					<xsd:attribute ref="side" use="required"/>
+				</xsd:complexType>
+			</xsd:element> 
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:unique name="unique-xdpd-port">
+		<xsd:selector xpath="xdpd-ports/port" />
+		<xsd:field xpath="@name" />
+	</xsd:unique>
+</xsd:element>
+
+
+</xsd:schema>

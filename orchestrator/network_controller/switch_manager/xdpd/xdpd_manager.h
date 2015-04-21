@@ -15,9 +15,14 @@
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
 
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xmlschemas.h>
+
 #include <string>
 #include <list>
 #include <sstream>
+#include <getopt.h>
 
 using namespace std;
 using namespace json_spirit;
@@ -36,6 +41,7 @@ private:
 	*	@brief: keeps the addrinfo chain; required to open a new socket
 	*/
 	struct addrinfo *AddrInfo;
+	
 	
 	/**
 	*	@brief: set of ethernet interfaces available
@@ -98,11 +104,28 @@ private:
 	*	@param: lsi	LSI with the port to manage
 	*/
 	void detachWirelessPort(uint64_t dpid, string wirelessInterfaceName);
+	
+	/**
+	*	@brief: check the command line provided to the xDPd module
+	*/
+	bool parseInputParams(int argc, char *argv[], char **file_name);
+	
+	/**
+	*	 @brief: read the configuration file
+	*/
+	bool parseInputFile(char *fileName);
+	
+	/**
+	*	@brief: release resources needed to parse the configuration file
+	*/
+	void freeXMLResources(xmlSchemaParserCtxtPtr parser_ctxt, xmlSchemaValidCtxtPtr valid_ctxt, xmlDocPtr schema_doc, xmlSchemaPtr schema, xmlDocPtr doc);
 
 public:
 	XDPDManager();
 
 	~XDPDManager();
+	
+	void setInputParameters(int argc, char *argv[]);
 
 	CreateLsiOut *createLsi(CreateLsiIn cli);
 

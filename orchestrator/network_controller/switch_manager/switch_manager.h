@@ -12,6 +12,8 @@
 #include "addVirtualLink_out.h"
 #include "destroyVirtualLink_in.h"
 
+#include <stdio.h>
+
 /**
 * @file switch_manager.h
 *
@@ -23,6 +25,7 @@ using namespace std;
 class SwitchManager
 {
 public:
+
 	/**
 	*	@brief: Cretes a new LSI
 	*
@@ -74,6 +77,15 @@ public:
 	*	@return:		Map of physical interfaces and the related description
 	*/
 	virtual map<string,string> discoverPhysicalInterfaces() = 0;
+	
+	/**
+	*	@brief: Provide input parameters specific for the switch manager
+	*
+	*	@param: arcg	Number of input parameters
+	*	@param: argv	List of input parameters
+	*/
+	virtual void setInputParameters(int argc, char *argv[]) = 0;
+	
 };
 
 class SwitchManagerException: public exception

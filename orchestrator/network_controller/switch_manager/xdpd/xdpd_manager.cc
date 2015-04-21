@@ -23,6 +23,19 @@ XDPDManager::~XDPDManager()
 	sock_freeaddrinfo(AddrInfo);
 }
 
+
+void XDPDManager::setInputParameters(int argc, char *argv[])
+{
+	char *fileName;
+	if(!parseInputParams(argc, argv, &fileName))
+		throw XDPDManagerException();
+		
+	fileName = (char*)malloc(sizeof(char)*sizeof("network_controller/switch_manager/xdpd/config/example.xml"));
+  	strcpy(fileName,"network_controller/switch_manager/xdpd/config/example.xml");
+	parseInputFile(fileName);
+}
+
+
 string XDPDManager::sendMessage(string message)	
 {
 	char ErrBuf[BUFFER_SIZE];
@@ -1150,5 +1163,171 @@ void XDPDManager::detachWirelessPort(uint64_t dpid, string wirelessInterfaceName
 	retVal += 1; //XXX: just to remove a warning
 	
 	//FIXME: no error can occur here?
+}
+
+
+bool XDPDManager::parseInputParams(int argc, char *argv[], char **file_name)
+{
+	int opt;
+	char **argvopt;
+	int option_index;
+
+	static struct option lgopts[] = {
+		{"f", 1, 0, 0},
+		{NULL, 0, 0, 0}
+	};
+
+	argvopt = argv;
+	uint32_t arg_f = 0;
+
+	file_name[0] = '\0';
+
+
+	while ((opt = getopt_long(argc, argvopt, "", lgopts, &option_index)) != EOF)
+    {
+    	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "!!!!!!!!!!!!!");
+		switch (opt)
+		{
+			/* long options */
+			case 0:
+
+				if (!strcmp(lgopts[option_index].name, "f"))/* file */
+	   			{
+	   				*file_name = optarg;
+	   				arg_f++;
+	   			}
+	   			else
+	   			{
+	   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Invalid command line parameter '%s'\n",lgopts[option_index].name);
+	   				return false;
+	   			}
+				break;
+			default:
+				return false;
+		}
+	}
+
+	/* Check that all mandatory arguments are provided */
+	/*if (arg_f == 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Not all mandatory arguments are present in the command line");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The xDPd vswitch module requires the following parameters:");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "\t--f filename");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "\t\tName of the file containing the description of the physical ports to be attached to xDPd");
+		return false;
+	}*/
+	
+
+	return true;
+}
+
+bool XDPDManager::parseInputFile(char *fileName)
+{
+	set<std::string>::iterator it;
+	xmlDocPtr schema_doc=NULL;
+ 	xmlSchemaParserCtxtPtr parser_ctxt=NULL;
+	xmlSchemaPtr schema=NULL;
+	xmlSchemaValidCtxtPtr valid_ctxt=NULL;
+	xmlDocPtr doc=NULL;
+
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Reading configuration file: %s",fileName);
+
+	//Validate the configuration file with the schema
+	schema_doc = xmlReadFile(XDPD_PORTS_XSD, NULL, XML_PARSE_NONET);
+	if (schema_doc == NULL) 
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The schema cannot be loaded or is not well-formed.");
+		/*Free the allocated resources*/
+		freeXMLResources(parser_ctxt, valid_ctxt, schema_doc, schema, doc);
+		return false;
+	}
+	
+	parser_ctxt = xmlSchemaNewDocParserCtxt(schema_doc);
+	if (parser_ctxt == NULL) 
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to create a parser context for the schema.");
+		/*Free the allocated resources*/
+		freeXMLResources(parser_ctxt, valid_ctxt, schema_doc, schema, doc);
+		return false;
+	}
+
+	schema = xmlSchemaParse(parser_ctxt);
+	if (schema == NULL) 
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The XML schema is not valid.");
+		/*Free the allocated resources*/
+		freeXMLResources(parser_ctxt, valid_ctxt, schema_doc, schema, doc);
+		return false;
+	}
+
+	valid_ctxt = xmlSchemaNewValidCtxt(schema);
+	if (valid_ctxt == NULL) 
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to create a validation context for the XML schema.");
+		/*Free the allocated resources*/
+		freeXMLResources(parser_ctxt, valid_ctxt, schema_doc, schema, doc);
+		return false;
+	}
+	
+	doc = xmlParseFile(fileName); /*Parse the XML file*/
+	if (doc==NULL)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "XML file '%s' parsing failed.", fileName);
+		/*Free the allocated resources*/
+		freeXMLResources(parser_ctxt, valid_ctxt, schema_doc, schema, doc);
+		return false;
+	}
+
+	if(xmlSchemaValidateDoc(valid_ctxt, doc) != 0)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Configuration file '%s' is not valid", fileName);
+		/*Free the allocated resources*/
+		freeXMLResources(parser_ctxt, valid_ctxt, schema_doc, schema, doc);
+		return false;
+	}
+	
+	///Retrieve the names of the NFs
+	xmlNodePtr root = xmlDocGetRootElement(doc);
+
+	//Load the file describing NFs
+	for(xmlNodePtr cur_root_child=root->xmlChildrenNode; cur_root_child!=NULL; cur_root_child=cur_root_child->next) 
+	{
+		if ((cur_root_child->type == XML_ELEMENT_NODE)&&(!xmlStrcmp(cur_root_child->name, (const xmlChar*)PORT_ELEMENT)))
+		{
+			xmlChar* attr_name = xmlGetProp(cur_root_child, (const xmlChar*)NAME_ATTRIBUTE);
+			xmlChar* attr_type = xmlGetProp(cur_root_child, (const xmlChar*)TYPE_ATTRIBUTE);
+			xmlChar* attr_side = xmlGetProp(cur_root_child, (const xmlChar*)SIDE_ATTRIBUTE);
+
+			assert(attr_name != NULL);
+			assert(attr_type != NULL);
+			assert(attr_side != NULL);
+
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Port: %s - Type: %s - Side: %s",attr_name,attr_type,attr_side);
+
+			string name((const char*)attr_name);
+		}
+	}
+
+	return true;
+}
+
+void XDPDManager::freeXMLResources(xmlSchemaParserCtxtPtr parser_ctxt, xmlSchemaValidCtxtPtr valid_ctxt, xmlDocPtr schema_doc, xmlSchemaPtr schema, xmlDocPtr doc)
+{
+	if(valid_ctxt!=NULL)
+		xmlSchemaFreeValidCtxt(valid_ctxt);
+
+	if(schema!=NULL)
+		xmlSchemaFree(schema);
+
+	if(parser_ctxt!=NULL)
+	    xmlSchemaFreeParserCtxt(parser_ctxt);
+
+	if(schema_doc!=NULL)    
+		xmlFreeDoc(schema_doc);
+
+	if(doc!=NULL)
+		xmlFreeDoc(doc); 
+
+	xmlCleanupParser();
 }
 

@@ -220,6 +220,7 @@ SET(SOURCES
 
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
+	/usr/include/libxml2
 )
 
 
@@ -245,6 +246,7 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so
+	libxml2.so
 	-lrt
 )
 

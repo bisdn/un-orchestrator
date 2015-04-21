@@ -11,7 +11,19 @@ void GraphManager::mutexInit()
 GraphManager::GraphManager(int core_mask) :
 	switchManager()
 {
-	//TODO: we may have two implementations: one with the LSI-0, the other that uses the queues of the NIC
+	//TODO not embed this path!
+	
+	char** parameters; 
+	parameters = (char**)malloc(sizeof(char*)*3);
+	parameters[0] = (char*)malloc(sizeof(char)*sizeof("prova"));
+  	strcpy(parameters[0],"prova");
+  	parameters[1] = (char*)malloc(sizeof(char)*sizeof("--f"));
+  	strcpy(parameters[1],"--f");
+  	parameters[2] = (char*)malloc(sizeof(char)*sizeof("network_controller/switch_manager/xdpd/config/example.xml"));
+  	strcpy(parameters[2],"network_controller/switch_manager/xdpd/config/example.xml");
+  	parameters[3]="\0";
+	
+	switchManager.setInputParameters(3, parameters);
 
 	//Create the openflow controller for the LSI-0
 
