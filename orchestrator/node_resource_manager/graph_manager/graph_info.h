@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include "lsi.h"
 #include "../../network_controller/openflow_controller/controller.h"
-#include "../../network_controller/switch_manager/lsi.h"
 #include "../../compute_controller/nfs_manager.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 

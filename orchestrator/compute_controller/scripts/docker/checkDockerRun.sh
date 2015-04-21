@@ -20,7 +20,7 @@ version=`cat /etc/*-release | grep "ID=ubuntu" | wc -l`
 if [ $version -ge 1 ]
 then
 	#The distribution is Ubuntu
-	num=`ps aux | grep "docker -d" | grep "lxc" | grep -v "grep" | wc -l`
+	num=`ps aux | grep "docker" | grep "lxc" | grep -v "grep" | wc -l`
 else
 	#I'm assuming that the distribution is Debian
 	num=`ps aux | grep "/usr/bin/docker -d" | grep "lxc" | grep -v "grep" | wc -l`

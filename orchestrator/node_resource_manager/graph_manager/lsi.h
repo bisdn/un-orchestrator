@@ -20,9 +20,7 @@ class VLink;
 class LSI
 {
 //XXX: this class is a mess!
-
-friend class SwitchManager;
-friend class XDPDManager;
+friend class GraphManager;
 
 private:
 
@@ -154,7 +152,7 @@ protected:
 	int addVlink(VLink vlink);
 	void removeVlink(uint64_t ID);
 
-	void addNF(string name, list< unsigned int> ports);
+	void addNF(string name, list< unsigned int> ports, nf_t type);
 	void removeNF(string nf);
 };
 

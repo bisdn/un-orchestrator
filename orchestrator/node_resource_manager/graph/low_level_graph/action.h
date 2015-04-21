@@ -12,7 +12,7 @@
 
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
-#include "../../../network_controller/switch_manager/lsi.h"
+#include "../../graph_manager/lsi.h"
 
 using namespace rofl;
 using namespace std;

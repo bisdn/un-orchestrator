@@ -268,7 +268,7 @@ void LSI::removeEndPointvlink(string endpoint)
 	endpoints_vlinks.erase(it);
 }
 
-void LSI::addNF(string name, list< unsigned int> ports)
+void LSI::addNF(string name, list< unsigned int> ports, nf_t type)
 {
 	//FIXME: save the the content of nf->second, and not just its size
 	//FIXME: don't use _1, _2 ecc for the name, but the ID specified by the user
@@ -284,6 +284,8 @@ void LSI::addNF(string name, list< unsigned int> ports)
 		nf_ports[ss.str()] = 0;
 	}
 	network_functions[name] = nf_ports;
+	
+	nf_types[name] = type;
 }
 
 int LSI::addVlink(VLink vlink)
@@ -310,20 +312,17 @@ void LSI::removeVlink(uint64_t ID)
 	return;
 }
 
+#include <stdio.h>
+
 void LSI::removeNF(string nf)
 {
+	assert(network_functions.count(nf) == nf_types.count(nf));
 
-	if(network_functions.count(nf) != 0 && nf_types.count(nf) != 0)
-	{
-		map<string,map<string, unsigned int> >::iterator it =  network_functions.find(nf);
-		network_functions.erase(it);
-	
-		map<string,nf_t>::iterator jt = nf_types.find(nf); 
-		nf_types.erase(jt);
-		return;
-	}
+	map<string,map<string, unsigned int> >::iterator it =  network_functions.find(nf);
+	network_functions.erase(it);
 
-	assert(0);
+	map<string,nf_t>::iterator jt = nf_types.find(nf); 
+	nf_types.erase(jt);
 	return;
 }
 

@@ -35,23 +35,23 @@ using namespace json_spirit;
 /**
 *	@brief: constants related to Docker NFs
 */
-#define CHECK_DOCKER			"./nfs_manager/scripts/docker/checkDockerRun.sh"
-#define PULL_AND_RUN_DOCKER_NF	"./nfs_manager/scripts/docker/pullAndRunNF.sh"
-#define STOP_DOCKER_NF			"./nfs_manager/scripts/docker/stopNF.sh"
+#define CHECK_DOCKER			"./compute_controller/scripts/docker/checkDockerRun.sh"
+#define PULL_AND_RUN_DOCKER_NF	"./compute_controller/scripts/docker/pullAndRunNF.sh"
+#define STOP_DOCKER_NF			"./compute_controller/scripts/docker/stopNF.sh"
 
 /**
 *	@brief: constants related to DPDK NFs
 */
-#define PULL_AND_RUN_DPDK_NF	"./nfs_manager/scripts/dpdk/pullAndRunNF.sh"
-#define STOP_DPDK_NF			"./nfs_manager/scripts/dpdk/stopNF.sh"
+#define PULL_AND_RUN_DPDK_NF	"./compute_controller/scripts/dpdk/pullAndRunNF.sh"
+#define STOP_DPDK_NF			"./compute_controller/scripts/dpdk/stopNF.sh"
 #define NUM_MEMORY_CHANNELS 	2
 
 /**
 *	@brief: constants related to KVM NFs
 */
-#define CHECK_KVM				"./nfs_manager/scripts/kvm/checkKvmRun.sh"
-#define PULL_AND_RUN_KVM_NF		"./nfs_manager/scripts/kvm/pullAndRunNF.sh"
-#define STOP_KVM_NF				"./nfs_manager/scripts/kvm/stopNF.sh"
+#define CHECK_KVM				"./compute_controller/scripts/kvm/checkKvmRun.sh"
+#define PULL_AND_RUN_KVM_NF		"./compute_controller/scripts/kvm/pullAndRunNF.sh"
+#define STOP_KVM_NF				"./compute_controller/scripts/kvm/stopNF.sh"
 
 class Implementation;
 

@@ -72,7 +72,7 @@ string XDPDManager::sendMessage(string message)
 	return string(DataBuffer);
 }
 	
-map<string,string> XDPDManager::discoverPhyPorts()
+map<string,string> XDPDManager::discoverEthernetInterfaces()
 {
 	//Prepare the request
 	Object json;	
@@ -168,11 +168,11 @@ map<string,string> XDPDManager::discoverPhyPorts()
 	return phyPorts;
 }
 
-void XDPDManager::createLsi(LSI &lsi)
+CreateLsiOut *XDPDManager::createLsi(CreateLsiIn cli)
 {	
 	Value value;
 
-	string message = prepareCreateLSIrequest(lsi);
+	string message = prepareCreateLSIrequest(cli);
 	string answer = sendMessage(message);
 		
 	read( answer, value );
@@ -180,38 +180,41 @@ void XDPDManager::createLsi(LSI &lsi)
 
 	if(!findCommand(obj,string(CREATE_LSI)) || !findStatus(obj))
 		throw XDPDManagerException();
-		
+	
+	CreateLsiOut *clo = 0;	
 	try
 	{
-		parseCreateLSIresponse(lsi, obj);
+		clo = parseCreateLSIresponse(cli, obj);
 	} catch(...) {
 		throw;
 	}
+	
+	return clo;
 }
 
-string XDPDManager::prepareCreateLSIrequest(LSI lsi)
+string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
 {
 	Object json;
 	json["command"] = CREATE_LSI;
  	
  	Object controller;
-   	controller["address"] = lsi.getControllerAddress();
-	controller["port"] = lsi.getControllerPort();
+   	controller["address"] = cli.getControllerAddress();
+	controller["port"] = cli.getControllerPort();
 	
 	json["controller"] = controller;
 	
-	list<string> ports = lsi.getEthPortsName();
+	list<string> ports = cli.getEthPortsName();
 	Array ports_array;
 	for(list<string>::iterator p = ports.begin(); p != ports.end(); p++)
 		ports_array.push_back(*p);	
 	if(ports.size() > 0)
 		json["ports"] = ports_array;
 		
-	if(lsi.hasWireless())
-		json["wireless"] = lsi.getWirelessPortName();
+	if(cli.hasWireless())
+		json["wireless"] = cli.getWirelessPortName();
 
-	set<string> nfs = lsi.getNetworkFunctionsName();
-	map<string,nf_t> nf_type = lsi.getNetworkFunctionsType(); 	
+	set<string> nfs = cli.getNetworkFunctionsName();
+	map<string,nf_t> nf_type = cli.getNetworkFunctionsType(); 	
 	Array nfs_array;
 	for(set<string>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
 	{
@@ -228,7 +231,7 @@ string XDPDManager::prepareCreateLSIrequest(LSI lsi)
 		network_function["type"] = NFType::toString(nft);
 		
 		Array nfs_ports_array;
-		list<string> nfs_ports = lsi.getNetworkFunctionsPortNames(*nf);
+		list<string> nfs_ports = cli.getNetworkFunctionsPortNames(*nf);
 		for(list<string>::iterator nfp = nfs_ports.begin(); nfp != nfs_ports.end(); nfp++)
 			nfs_ports_array.push_back(*nfp);
 		network_function["ports"] = nfs_ports_array;
@@ -238,7 +241,7 @@ string XDPDManager::prepareCreateLSIrequest(LSI lsi)
 	if(nfs.size() > 0)
 		json["network-functions"] = nfs_array;
 	 
-	list<uint64_t> vlinks = lsi.getVirtualLinksRemoteLSI();
+	list<uint64_t> vlinks = cli.getVirtualLinksRemoteLSI();
 	//XXX: it supports only the case in which all the vlinks are shered with the same LSI
 	if(vlinks.size() > 0)
 	{
@@ -265,8 +268,14 @@ string XDPDManager::prepareCreateLSIrequest(LSI lsi)
  	return ss.str();
 }
 
-void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
+CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object message)
 {
+	uint64_t dpid = 0;
+	map<string,unsigned int> eth_ports;
+	pair<string,unsigned int> wireless_port;
+	map<string,map<string, unsigned int> >  network_functions_ports;
+	list<pair<unsigned int, unsigned int> > virtual_links;
+
 	bool foundLSIid = false;
 	bool foundWireless = false;
 	
@@ -281,13 +290,13 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
         else if(name == "lsi-id")
         {
         	foundLSIid = true;
-        	lsi.setDpid(value.getInt()); //FIXME: it is not an int
+        	dpid = value.getInt(); //FIXME: it is not an int
         }
         else if(name == "ports")
         {
 			const Array& ports_array = value.getArray();
 			
-			if(ports_array.size() != lsi.getEthPorts().size())
+			if(ports_array.size() != cli.getEthPortsName().size())
 			{
 				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a wrong number of physical ports",CREATE_LSI);
 				throw XDPDManagerException();
@@ -318,7 +327,10 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
 		    	}
 		    	if(foundName && foundID)
 		    	{
-		    		if(!lsi.setEthPortID(name,id))
+		    		eth_ports[name] = id;
+		    		list<string> ep = cli.getEthPortsName();
+		    		set<string> tmp_ep(ep.begin(),ep.end());
+		    		if(tmp_ep.count(name) == 0)
 		    		{
 		    			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required port \"%d\"",CREATE_LSI,name.c_str());
 						throw XDPDManagerException();
@@ -334,7 +346,8 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
         else if(name == "wireless")
         {
         	foundWireless = true;
-        	if(!lsi.setWirelessPortID(value.getInt()))
+			wireless_port = make_pair(cli.getWirelessPortName(),value.getInt());        	
+        	if(!cli.hasWireless())
         	{
         		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required wireless port \"%d\"",CREATE_LSI,name.c_str());
 				throw XDPDManagerException();
@@ -344,9 +357,9 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
         {
 			const Array& nfs_array = value.getArray();
 			
-			if(nfs_array.size() != lsi.getNetworkFunctionsName().size())
+			if(nfs_array.size() != cli.getNetworkFunctionsName().size())
 			{
-				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a wrong number of network functions (expected: %d - received: %d)",CREATE_LSI,lsi.getNetworkFunctionsName().size(),nfs_array.size());
+				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a wrong number of network functions (expected: %d - received: %d)",CREATE_LSI,cli.getNetworkFunctionsName().size(),nfs_array.size());
 				throw XDPDManagerException();
 			}
 			
@@ -412,8 +425,10 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
 		    	}
 		    	if(foundName && foundPorts)
 		    	{
+		    		network_functions_ports[name] = ports;
 
-		    		if(!lsi.setNfPortsID(name,ports))
+					set<string> names = cli.getNetworkFunctionsName();
+		    		if(names.count(name) == 0)
 		    		{
 		    			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
 						throw XDPDManagerException();
@@ -430,13 +445,13 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
         {
 			const Array& vls_array = value.getArray();
 			
-			if(vls_array.size() != lsi.getVirtualLinks().size())
+			if(vls_array.size() != cli.getVirtualLinksRemoteLSI().size())
 			{
 				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains virtual links",CREATE_LSI);
 				throw XDPDManagerException();
 			}
 			
-			unsigned int currentTranslation = 0;
+			//unsigned int currentTranslation = 0; //XXX: this may be useful to associate the endpoints of a virtual link with a specific position
 			for( unsigned int j = 0; j < vls_array.size(); ++j )
 			{			
 				Object vl = vls_array[j].getObject();
@@ -462,8 +477,7 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
 		    	}
 		    	if(foundLocalID && foundRemoteID)
 		    	{
-		    		lsi.setVLinkIDs(currentTranslation,localID,remoteID);
-		    		currentTranslation++;
+		    		virtual_links.push_back(make_pair(localID,remoteID));
 		    	}
 		    	else
 	    		{
@@ -486,11 +500,14 @@ void XDPDManager::parseCreateLSIresponse(LSI &lsi, Object message)
 		throw XDPDManagerException();
 	}
 	
-	if(lsi.hasWireless() && !foundWireless)
+	if(cli.hasWireless() && !foundWireless)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" without \"wireless\" received, although a wireless interface was required",CREATE_LSI);
 		throw XDPDManagerException();
 	}
+	
+	CreateLsiOut *clo = new CreateLsiOut(dpid,eth_ports,cli.hasWireless(),wireless_port,network_functions_ports, virtual_links);
+	return clo;
 }
 
 bool XDPDManager::findCommand(Object message, string expected)
@@ -537,46 +554,51 @@ bool XDPDManager::findStatus(Object message)
  	return false;	
 }
 
-void XDPDManager::addNFPorts(LSI &lsi,pair<string, list<unsigned int> > nf, nf_t type)
+AddNFportsOut *XDPDManager::addNFPorts(AddNFportsIn anpi)
 {
-	lsi.addNF(nf.first, nf.second);
+//	lsi.addNF(nf.first, nf.second);
 
-	string answer = sendMessage(prepareCreateNFPortsRequest(lsi,type,nf.first));
+	string answer = sendMessage(prepareCreateNFPortsRequest(anpi));
 	
 	Value value;
-    read( answer, value );
-    Object obj = value.getObject();
-    if(!findCommand(obj,string(CREATE_NF_PORTS)))
+	read( answer, value );
+	Object obj = value.getObject();
+	if(!findCommand(obj,string(CREATE_NF_PORTS)))
 		throw XDPDManagerException();    
 	if(!findStatus(obj))
 		throw XDPDManagerException();
+		
+	AddNFportsOut *anpo = 0;
 	try
 	{
-		parseCreateNFPortsResponse(lsi,obj);
+		anpo = parseCreateNFPortsResponse(anpi,obj);
 	} catch(...) {
-		lsi.removeNF(nf.first);
+	//	lsi.removeNF(nf.first); lo dovro' fare fuori (posso evitarlo, se faccio la add dopo a sta chiamata)
 		throw;
 	}
+	
+	return anpo;
 }
 
-string XDPDManager::prepareCreateNFPortsRequest(LSI lsi, nf_t type, string name)
+string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 {
 	Object json;
 	json["command"] = CREATE_NF_PORTS;
- 	json["lsi-id"] = lsi.getDpid();
+ 	json["lsi-id"] = anpi.getDpid();
 	
 	Array nfs_array;
 	Object network_function;
-	network_function["name"] = name;
+	network_function["name"] = anpi.getNFname();
 	
 	//XXX: this is a trick since xDPd does not support kvm ports
+	nf_t type = anpi.getNFtype();
 	if(type == KVM)
 		type = DOCKER;
 			
 	network_function["type"] = NFType::toString(type);
 		
 	Array nfs_ports_array;
-	list<string> nfs_ports = lsi.getNetworkFunctionsPortNames(name);
+	list<string> nfs_ports = anpi.getNetworkFunctionsPorts();
 	for(list<string>::iterator nfp = nfs_ports.begin(); nfp != nfs_ports.end(); nfp++)
 		nfs_ports_array.push_back(*nfp);
 			
@@ -594,9 +616,10 @@ string XDPDManager::prepareCreateNFPortsRequest(LSI lsi, nf_t type, string name)
  	return ss.str();
 }
 
-void XDPDManager::parseCreateNFPortsResponse(LSI &lsi, Object message)
+AddNFportsOut *XDPDManager::parseCreateNFPortsResponse(AddNFportsIn anpi, Object message)
 {
 	bool foundNFs = false;
+	map<string, unsigned int> ports;
 	
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
     {
@@ -624,7 +647,6 @@ void XDPDManager::parseCreateNFPortsResponse(LSI &lsi, Object message)
 				Object nf = nfs_array[j].getObject();
 			
 				string name;
-				map<string,unsigned int> ports;
 				
 				bool foundName = false;
 				bool foundPorts = false;
@@ -637,6 +659,12 @@ void XDPDManager::parseCreateNFPortsResponse(LSI &lsi, Object message)
 		    		if(n_name == "name")
 		    		{
 		    			name = n_value.getString();
+		    			if(name != anpi.getNFname())
+		    			{
+							logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
+							throw XDPDManagerException();
+						}
+		    			
 		    			foundName = true;
 		    		}
 		    		else if(n_name == "ports")
@@ -672,23 +700,23 @@ void XDPDManager::parseCreateNFPortsResponse(LSI &lsi, Object message)
 	    						logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_LSI);
 								throw XDPDManagerException();		    					
 	    					}
+	    					
+	    					list<string> ports_to_be_translated = anpi.getNetworkFunctionsPorts();
+	    					set<string> tmp_ptbt(ports_to_be_translated.begin(),ports_to_be_translated.end());
+	    					if(tmp_ptbt.count(port_name) == 0)
+							{
+								logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function port",CREATE_LSI,port_name.c_str());
+								throw XDPDManagerException();
+							}
+	    					
 							ports[port_name] = port_id;
 						}
 						if(ports_array.size() > 0)
 			    			foundPorts = true;
 		    		} //end if(n_name == "ports")
 		    	}
-		    	if(foundName && foundPorts)
+		    	if(!foundName || !foundPorts)
 		    	{
-
-		    		if(!lsi.setNfPortsID(name,ports))
-		    		{
-		    			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a non-required network function",CREATE_LSI,name.c_str());
-						throw XDPDManagerException();
-		    		}
-		    	}
-		    	else
-	    		{
 	    			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a network function without the name, the ports, or both",CREATE_NF_PORTS);
 	    			throw XDPDManagerException();
 	    		}
@@ -707,11 +735,15 @@ void XDPDManager::parseCreateNFPortsResponse(LSI &lsi, Object message)
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" without \"network-functions\" received",CREATE_NF_PORTS);
 		throw XDPDManagerException();
 	}
+	
+	AddNFportsOut *anpo = new AddNFportsOut(anpi.getNFname(),ports);
+	
+	return anpo;
 }
 
-uint64_t XDPDManager::addVirtualLink(LSI &lsi, VLink vlink)
+AddVirtualLinkOut *XDPDManager::addVirtualLink(AddVirtualLinkIn avli)
 {
-	string answer = sendMessage(prepareCreateVirtualLinkRequest(lsi,vlink));
+	string answer = sendMessage(prepareCreateVirtualLinkRequest(avli));
 	
 	Value value;
     read( answer, value );
@@ -721,30 +753,32 @@ uint64_t XDPDManager::addVirtualLink(LSI &lsi, VLink vlink)
 	if(!findStatus(obj))
 		throw XDPDManagerException();
 	
-	int vlink_position = lsi.addVlink(vlink);	
+	//int vlink_position = lsi.addVlink(vlink);	
 	
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Virtual link with ID %d inserted in position %d",vlink.getID(),vlink_position);
+	//logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Virtual link with ID %d inserted in position %d",vlink.getID(),vlink_position);
 	
+	AddVirtualLinkOut *avlo = NULL;
 	try
 	{
-		parseCreateVirtualLinkResponse(lsi, vlink_position, obj);
+		avlo = parseCreateVirtualLinkResponse(avli, obj);
 	} catch(...) {
-		lsi.removeVlink(vlink.getID());
+//		lsi.removeVlink(vlink.getID());
 		assert(0);
 		throw;
 	}
 	
-	return vlink.getID();
+	//return vlink.getID();
+	return avlo;
 }
 
-string XDPDManager::prepareCreateVirtualLinkRequest(LSI lsi,VLink vlink)
+string XDPDManager::prepareCreateVirtualLinkRequest(AddVirtualLinkIn avli)
 {
 	Object json;
 	json["command"] = CREATE_VLINKS;
 	json["number"] = 1;
 	
-	json["lsi-a"] = lsi.getDpid();
-	json["lsi-b"] = vlink.getRemoteDpid();
+	json["lsi-a"] = avli.getDpidA();
+	json["lsi-b"] = avli.getDpidB();
 	 
  	stringstream ss;
  	write_formatted(json, ss );
@@ -756,9 +790,10 @@ string XDPDManager::prepareCreateVirtualLinkRequest(LSI lsi,VLink vlink)
 
 }
 
-void XDPDManager::parseCreateVirtualLinkResponse(LSI &lsi, int vlink_position, Object message)
+AddVirtualLinkOut *XDPDManager::parseCreateVirtualLinkResponse(AddVirtualLinkIn avli, Object message)
 {
 	bool foundVlinks = false;
+	uint64_t idA = 0, idB = 0;
 	
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
     {
@@ -779,12 +814,9 @@ void XDPDManager::parseCreateVirtualLinkResponse(LSI &lsi, int vlink_position, O
 				throw XDPDManagerException();
 			}
 			
-			unsigned int currentTranslation = 0;
 			for( unsigned int j = 0; j < vls_array.size(); ++j )
 			{			
 				Object vl = vls_array[j].getObject();
-				unsigned int localID = 0;
-				unsigned int remoteID = 0;
 				bool foundA = false;
 				bool foundB = false;
 				for( Object::const_iterator v = vl.begin(); v != vl.end(); ++v )
@@ -794,21 +826,16 @@ void XDPDManager::parseCreateVirtualLinkResponse(LSI &lsi, int vlink_position, O
 		    		
 		    		if(v_name == "id-a")
 		    		{
-		    			localID = v_value.getInt(); //FIXME: it isn't an int!
+		    			idA = v_value.getInt(); //FIXME: it isn't an int!
 		    			foundA = true;
 		    		}
 		    		else if(v_name == "id-b")
 		    		{
-		    			remoteID = v_value.getInt(); //FIXME: it isn't an int!
+		    			idB = v_value.getInt(); //FIXME: it isn't an int!
 		    			foundB = true;
 		    		}
 		    	}
-		    	if(foundA && foundB)
-		    	{
-		    		lsi.setVLinkIDs(vlink_position,localID,remoteID);
-		    		currentTranslation++;
-		    	}
-		    	else
+		    	if(!foundA || !foundB)
 	    		{
 	    			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" contains a virtual link without the id-a, the id-b, or both",CREATE_VLINKS);
 					throw XDPDManagerException();
@@ -828,11 +855,14 @@ void XDPDManager::parseCreateVirtualLinkResponse(LSI &lsi, int vlink_position, O
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Answer to command \"%s\" without \"virtual-links\" received",CREATE_VLINKS);
 		throw XDPDManagerException();
 	}
+	
+	AddVirtualLinkOut *avlo = new AddVirtualLinkOut(idA,idB);
+	return avlo;
 }
 
-void XDPDManager::destroyLsi(LSI &lsi)
+void XDPDManager::destroyLsi(uint64_t dpid)
 {
-	string answer = sendMessage(prepareDestroyLSIrequest(lsi));
+	string answer = sendMessage(prepareDestroyLSIrequest(dpid));
 	
 	Value value;
     read( answer, value );
@@ -844,18 +874,18 @@ void XDPDManager::destroyLsi(LSI &lsi)
 		
 	try
 	{
-		parseDestroyLSIresponse(lsi, obj);
+		parseDestroyLSIresponse(obj);
 	} catch(...) {
 		throw;
 	}
 }
 
-void XDPDManager::destroyVirtualLink(LSI &lsi, uint64_t vlinkID)
+void XDPDManager::destroyVirtualLink(DestroyVirtualLinkIn dvli)
 {	
-	string answer = sendMessage(prepareDestroyVirtualLinkRequest(lsi,vlinkID));
+	string answer = sendMessage(prepareDestroyVirtualLinkRequest(dvli));
 	
 	Value value;
-    read( answer, value );
+    read(answer, value);
     Object obj = value.getObject();
     if(!findCommand(obj,string(DESTROY_VLINKS)))
 		throw XDPDManagerException();    
@@ -865,15 +895,14 @@ void XDPDManager::destroyVirtualLink(LSI &lsi, uint64_t vlinkID)
 	try
 	{
 		parseDestroyVirtualLinkResponse(obj);
-		lsi.removeVlink(vlinkID);
 	} catch(...) {
 		throw;
 	}
 }
 
-void XDPDManager::destroyNFPorts(LSI &lsi,string nf)
+void XDPDManager::destroyNFPorts(DestroyNFportsIn dnpi)
 {
-	string answer = sendMessage(prepareDestroyNFPortsRequest(lsi,nf));
+	string answer = sendMessage(prepareDestroyNFPortsRequest(dnpi));
 	
 	Value value;
     read( answer, value );
@@ -885,20 +914,19 @@ void XDPDManager::destroyNFPorts(LSI &lsi,string nf)
 		
 	try
 	{
-		parseDestroyNFPortsResponse(lsi, obj);
-		lsi.removeNF(nf);
+		parseDestroyNFPortsResponse(obj);
 	} catch(...) {
 		throw;
 	}
 }
 
-string XDPDManager::prepareDestroyLSIrequest(LSI lsi)
+string XDPDManager::prepareDestroyLSIrequest(uint64_t dpid)
 {
 	Object json;
 	json["command"] = DESTROY_LSI;
  	
  	Object controller;
-   	json["lsi-id"] = lsi.getDpid();
+   	json["lsi-id"] = dpid;
 	 
  	stringstream ss;
  	write_formatted(json, ss );
@@ -909,7 +937,7 @@ string XDPDManager::prepareDestroyLSIrequest(LSI lsi)
  	return ss.str();
 }
 
-void XDPDManager::parseDestroyLSIresponse(LSI &lsi, Object message)
+void XDPDManager::parseDestroyLSIresponse(Object message)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
     {
@@ -927,29 +955,14 @@ void XDPDManager::parseDestroyLSIresponse(LSI &lsi, Object message)
 	} //end parsing the message
 }
 
-string XDPDManager::prepareDestroyVirtualLinkRequest(LSI lsi, uint64_t vlinkID)
+string XDPDManager::prepareDestroyVirtualLinkRequest(DestroyVirtualLinkIn dvli)
 {
 	Object json;
 	json["command"] = DESTROY_VLINKS;
 
 	Object vlink;
-	vlink["lsi-id"] = lsi.getDpid();
-
-	vector<VLink> virtual_links = lsi.getVirtualLinks();
-	vector<VLink>::iterator v = virtual_links.begin();
-	for(; v != virtual_links.end(); v++)
-	{
-		if(v->getID() == vlinkID)
-			break;
-	}
-	if( v == virtual_links.end())
-	{
-       	//error
-	    logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Cannot find virtual link with ID: %d",vlinkID);
-		assert(0);
-		throw XDPDManagerException();
-	}
-	vlink["vlink-id"] = v->getLocalID();
+	vlink["lsi-id"] = dvli.getDpidA();
+	vlink["vlink-id"] = dvli.getIdA();
 	
 	Array vlinks_array;
 	vlinks_array.push_back(vlink);
@@ -983,27 +996,28 @@ void XDPDManager::parseDestroyVirtualLinkResponse(Object message)
 	} //end parsing the message
 }
 
-string XDPDManager::prepareDestroyNFPortsRequest(LSI lsi, string nf)
+string XDPDManager::prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi)
 {
 	Object json;
 	json["command"] = DESTROY_NF_PORTS;
-	json["lsi-id"] = lsi.getDpid();
+	json["lsi-id"] = dnpi.getDpid();
 
 	Array ports_array;
 
-	map<string,unsigned int> nf_ports = lsi.getNetworkFunctionsPorts(nf);
-	map<string,unsigned int>::iterator p = nf_ports.begin();
+	set<string> nf_ports = dnpi.getNFports();
+
+	set<string>::iterator p = nf_ports.begin();
 	for(; p != nf_ports.end(); p++)
 	{
 		stringstream ss;
-		ss << lsi.getDpid() << "_" << p->first;
+		ss << dnpi.getDpid() << "_" << *p;
 		ports_array.push_back(ss.str());
 	}
 
 	if( ports_array.size() == 0)
 	{
        	//error
-	    logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "It seems that NF '%s' does not have any port!",nf.c_str());
+	    logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "It seems that NF '%s' does not have any port!",dnpi.getNFname().c_str());
 		assert(0);
 		throw XDPDManagerException();
 	}
@@ -1018,7 +1032,7 @@ string XDPDManager::prepareDestroyNFPortsRequest(LSI lsi, string nf)
  	return ss.str();
 }
 
-void XDPDManager::parseDestroyNFPortsResponse(LSI &lsi, Object message)
+void XDPDManager::parseDestroyNFPortsResponse(Object message)
 {
 	for( Object::const_iterator i = message.begin(); i != message.end(); ++i )
     {

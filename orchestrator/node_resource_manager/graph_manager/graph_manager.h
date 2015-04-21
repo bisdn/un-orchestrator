@@ -4,10 +4,10 @@
 #pragma once
 
 #include "graph_info.h"
+#include "lsi.h"
 #include "graph_translator.h"
 #include "../../network_controller/openflow_controller/controller.h"
 #include "../../network_controller/switch_manager/xdpd/xdpd_manager.h"
-#include "../../network_controller/switch_manager/lsi.h"
 #include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
@@ -29,8 +29,8 @@ using namespace std;
 /**
 *	@brief: constant related to wireless interface
 */
-#define ATTACH_WIRELESS_INTERFACE	"./graph_manager/scripts/attachWirelessInterface.sh"
-#define DETACH_WIRELESS_INTERFACE	"./graph_manager/scripts/detachWirelessInterface.sh"
+#define ATTACH_WIRELESS_INTERFACE	"./node_resource_manager/graph_manager/scripts/attachWirelessInterface.sh"
+#define DETACH_WIRELESS_INTERFACE	"./node_resource_manager/graph_manager/scripts/detachWirelessInterface.sh"
 
 typedef struct
 	{
@@ -104,7 +104,7 @@ private:
 	map<string,GraphInfo> tenantLSIs;
 	
 	/**
-	*	The module that interacts with the virtual switcj
+	*	The module that interacts with the virtual switch
 	*/
 	XDPDManager switchManager;
 	
@@ -157,7 +157,7 @@ private:
 	*		- NFs are no longer used
 	*		- physical ports are no longer used
 	*		- endpoints are no longer used
-	*	and then remove the useles things from the LSI on xDPD
+	*	and then remove the useles things from the LSI
 	*/
 	void removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo tbr, NFsManager *nfsManager,highlevel::Graph *graph, LSI * lsi);
 	

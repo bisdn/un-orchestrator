@@ -23,13 +23,14 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 	ostringstream strControllerPort;
 	strControllerPort << controllerPort;
 
-	//Create the LSI-0 with all the phy ports managed by xDPD
+	//Create the LSI-0 with all the ethernet ports available on the node
 	map<string,string> phyPorts;
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Discovering the available physical interfaces...");
 	try
 	{
-		phyPorts = switchManager.discoverPhyPorts();
+		//Discover the available ethernet ports
+		phyPorts = switchManager.discoverEthernetInterfaces();
 	} catch (...)
 	{
 		throw GraphManagerException();
@@ -41,20 +42,64 @@ GraphManager::GraphManager(int core_mask, bool wireless, char *wirelessName) :
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating the LSI-0...");
 
+
 	//The three following strunctures are empty. No NF and no virtual link is attached.	
 	map<string, list<unsigned int> > dummy_network_functions;
 	vector<VLink> dummy_virtual_links;
 	map<string,nf_t>  nf_types;
 	
 	//XXX: if(wireless == true), the node has a wireless interface. This kind of interface is not supported 
-	//by the DPDK (and hence by xDPd), then it is attached to xDPd with a trick. In practice, xDPd creates a 
-	//KNI port, and then we attach this KNI to a bride, which is in turn connected to the wireless interface
+	//by the DPDK (and hence by xDPd), then it is attached to xDPd with a trick.
 	
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), phyPorts, dummy_network_functions,dummy_virtual_links,nf_types, (wireless)? string(wirelessName) : "" );
 	
 	try
 	{
-		switchManager.createLsi(*lsi);
+		//Create a new LSI, which is the LSI-0 of the node
+		
+		map<string,list<string> > netFunctionsPortsName;		
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getEthPortsName(),lsi->hasWireless(),(lsi->hasWireless())? lsi->getWirelessPortName() : "",nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
+		
+		CreateLsiOut *clo = switchManager.createLsi(cli);
+		
+		lsi->setDpid(clo->getDpid());
+		map<string,unsigned int> ethPorts = clo->getEthernetPorts();
+		//TODO check that the ethernet ports returned are the same provided to the switch manager
+		for(map<string,unsigned int>::iterator it = ethPorts.begin(); it != ethPorts.end(); it++)
+		{
+			if(!lsi->setEthPortID(it->first,it->second))
+			{
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An unknow ethernet interface \"%s\" has been attached to the lsi-0",it->first.c_str());
+				delete(clo);
+				throw GraphManagerException();
+			}
+		}
+		if(!lsi->hasWireless() && clo->hasWireless())
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required wireless interface has been attached to the lsi-0");
+			delete(clo);
+			throw GraphManagerException();
+		}
+		if(clo->hasWireless())
+			lsi->setWirelessPortID(clo->getWirelessPort().second);
+		
+		map<string,map<string, unsigned int> > nfsports = clo->getNetworkFunctionsPorts();
+		if(!nfsports.empty())
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Non required NFs ports have been attached to the lsi-0");
+			delete(clo);
+			throw GraphManagerException();
+		}
+		
+		list<pair<unsigned int, unsigned int> > vl = clo->getVirtualLinks();
+		if(!vl.empty())
+		{
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Non required connections have been created between the lsi-0 and other(?) lsis");
+			delete(clo);
+			throw GraphManagerException();
+		}
+		
+		delete(clo);
 	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -137,7 +182,7 @@ GraphManager::~GraphManager()
 	detachWirelessPort(lsi0);
 	try
 	{
-		switchManager.destroyLsi(*lsi0);
+		switchManager.destroyLsi(lsi0->getDpid());
 	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -309,7 +354,7 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 	
 	try
 	{
-		switchManager.destroyLsi(*tenantLSI);
+		switchManager.destroyLsi(tenantLSI->getDpid());
 	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -653,13 +698,64 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	//Prepare the structure representing the new tenant-LSI
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), dummyPhyPorts, network_functions,virtual_links,nf_types);
 	
+	CreateLsiOut *clo = NULL;
 	try
 	{
-		switchManager.createLsi(*lsi);
+		//Create a new tenant-LSI		
+		map<string,list<string> > netFunctionsPortsName;
+		for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
+		{
+			netFunctionsPortsName[nf->first] = lsi->getNetworkFunctionsPortNames(nf->first);
+		}
+		
+		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getEthPortsName(),lsi->hasWireless(),(lsi->hasWireless())? lsi->getWirelessPortName() : "",nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
+		
+		CreateLsiOut *clo = switchManager.createLsi(cli);
+
+		lsi->setDpid(clo->getDpid());
+		map<string,unsigned int> ethPorts = clo->getEthernetPorts();
+		if(!ethPorts.empty())
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Non required ethernet ports have been attached to the tenant-lsi");
+			delete(clo);
+			throw GraphManagerException();
+		}
+		
+		if(clo->hasWireless())
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required wireless interface has been attached to the tenant-lsi");
+			delete(clo);
+			throw GraphManagerException();
+		}
+			
+		map<string,map<string, unsigned int> > nfsports = clo->getNetworkFunctionsPorts();
+		//TODO: check if the number of vnfs and ports is the same required 
+		for(map<string,map<string, unsigned int> >::iterator nfp = nfsports.begin(); nfp != nfsports.end(); nfp++)
+		{
+			if(!lsi->setNfPortsID(nfp->first,nfp->second))
+			{
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required network function port  related to the network function \"%s\" has been attached to the tenant-lsi",nfp->first.c_str());
+				delete(clo);
+				throw GraphManagerException();
+			}
+		}
+				
+		list<pair<unsigned int, unsigned int> > vl = clo->getVirtualLinks();
+		//TODO: check if the number of vlinks is the same required 
+		unsigned int currentTranslation = 0;
+		for(list<pair<unsigned int, unsigned int> >::iterator it = vl.begin(); it != vl.end(); it++)
+		{
+			lsi->setVLinkIDs(currentTranslation,it->first,it->second);
+			currentTranslation++;
+		}	
+		delete(clo);
+		
 	} catch (SwitchManagerException e)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
-		switchManager.destroyLsi(*lsi);
+		switchManager.destroyLsi(lsi->getDpid());
+		if(clo != NULL)
+			delete(clo);
 		delete(graph);
 		delete(lsi);
 		delete(nfsManager);
@@ -808,7 +904,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 			nfsManager->stopNF(nf->first);
 
-		switchManager.destroyLsi(*lsi);
+		switchManager.destroyLsi(lsi->getDpid());
 	
 		delete(graph);
 		delete(lsi);
@@ -871,7 +967,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			nfsManager->stopNF(nf->first);
 #endif
 	
-		switchManager.destroyLsi(*lsi);
+		switchManager.destroyLsi(lsi->getDpid());
 	
 		if(tenantLSIs.count(graph->getID()) != 0)
 			tenantLSIs.erase(tenantLSIs.find(graph->getID()));
@@ -1082,18 +1178,29 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%d virtual links are required to connect the new part of the LSI with LSI-0",numberOfVLrequired);
 
-	try
+	set<string>::iterator nf = vlNFs.begin();
+	set<string>::iterator p = vlPhyPorts.begin();
+	for(; nf != vlNFs.end() || p != vlPhyPorts.end() ;)
 	{
-		set<string>::iterator nf = vlNFs.begin();
-		set<string>::iterator p = vlPhyPorts.begin();
-		for(; nf != vlNFs.end() || p != vlPhyPorts.end() ;)
+		//FIXME: here I am referring to a vlink through its position. It would be really better to use its ID
+		AddVirtualLinkOut *avlo;
+		try
 		{
-		
-			uint64_t vlinkID = switchManager.addVirtualLink(*lsi,VLink(dpid0));
-			
-			VLink vlink = lsi->getVirtualLink(vlinkID);
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link: (ID: %x) %x:%d -> %x:%d",vlink.getID(),dpid,vlink.getLocalID(),vlink.getRemoteDpid(),vlink.getRemoteID());
+			VLink newLink(dpid0);
+			int vlinkPosition = lsi->addVlink(newLink);
 	
+			AddVirtualLinkIn avli(dpid,dpid0);
+			avlo = switchManager.addVirtualLink(avli);
+	
+			lsi->setVLinkIDs(vlinkPosition,avlo->getIdA(),avlo->getIdB());
+		
+			delete(avlo);
+	
+			uint64_t vlinkID = newLink.getID();
+		
+			VLink vlink = lsi->getVirtualLink(vlinkID); //FIXME: vlink is the same of newLink
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link: (ID: %x) %x:%d -> %x:%d",vlink.getID(),dpid,vlink.getLocalID(),vlink.getRemoteDpid(),vlink.getRemoteID());
+
 			if(nf != vlNFs.end())
 			{
 				lsi->addNFvlink(*nf,vlinkID);
@@ -1106,39 +1213,64 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Physical port '%s' uses the vlink '%x'",(*p).c_str(),vlink.getID());
 				p++;
 			}
-		}
-	
-		for(set<string>::iterator ep = vlEndPoints.begin(); ep != vlEndPoints.end(); ep++)
+		}catch(SwitchManagerException e)
 		{
-			uint64_t vlinkID = switchManager.addVirtualLink(*lsi,VLink(dpid0));
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
+			if(avlo != NULL)
+				delete(avlo);
+			delete(tmp);
+			tmp = NULL;	
+			throw GraphManagerException();
+		}
+	}
+
+	for(set<string>::iterator ep = vlEndPoints.begin(); ep != vlEndPoints.end(); ep++)
+	{
+		//FIXME: here I am referring to a vlink through its position. It would be really better to use its ID
+		AddVirtualLinkOut *avlo;
+		try
+		{
+			VLink newLink(dpid0);
+			int vlinkPosition = lsi->addVlink(newLink);
 	
+			AddVirtualLinkIn avli(dpid,dpid0);
+			avlo = switchManager.addVirtualLink(avli);
+	
+			lsi->setVLinkIDs(vlinkPosition,avlo->getIdA(),avlo->getIdB());
+		
+			delete(avlo);
+	
+			uint64_t vlinkID = newLink.getID();
+
 			VLink vlink = lsi->getVirtualLink(vlinkID);
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link: (ID: %x) %x:%d -> %x:%d",vlink.getID(),dpid,vlink.getLocalID(),vlink.getRemoteDpid(),vlink.getRemoteID());
 
 			lsi->addEndpointvlink(*ep,vlinkID);
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Endpoint '%s' uses the vlink '%x'",(*ep).c_str(),vlink.getID());
-			
+		
 			if(graph->isDefinedHere(*ep))
 			{
 				//since this endpoint is in an action (hence it requires a virtual link), and it is defined in this
 				//graph, we save the port of the vlink in LSI-0, so that other graphs can use this endpoint
 				//Since we are considering this endpoint now, it means that is defined for the first time in this update
 				//of the graph.
-					
+				
 				logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The endpoint \"%s\" is defined in an action of the current Graph. Other graph can use it expressing a match on the port %d of the LSI-0",(*ep).c_str(),vlink.getRemoteID());
 				endPointsDefinedInActions[*ep] = vlink.getRemoteID();
-			
+		
 				//This endpoint is currently not used in any other graph, since it is defined in the current graph
 				availableEndPoints[*ep] = 0; 
 			}
-			
+		}catch(SwitchManagerException e)
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
+			if(avlo != NULL)
+				delete(avlo);
+			delete(tmp);
+			tmp = NULL;	
+			throw GraphManagerException();
 		}
-	}catch(SwitchManagerException e)
-	{
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
-		delete(tmp);
-		tmp = NULL;	
-		throw GraphManagerException();
+		
 	}
 	
 	for(set<string>::iterator nf = NFsFromEndPoint.begin(); nf != NFsFromEndPoint.end(); nf++)
@@ -1165,12 +1297,29 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 
 	for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
+		AddNFportsOut *anpo = NULL;
 		try
 		{
-			switchManager.addNFPorts(*lsi,*nf,nfsManager->getNFType(nf->first));
+			lsi->addNF(nf->first,nf->second,nfsManager->getNFType(nf->first));
+			AddNFportsIn anpi(dpid,nf->first,nfsManager->getNFType(nf->first),lsi->getNetworkFunctionsPortNames(nf->first));
+			
+			anpo = switchManager.addNFPorts(anpi);
+			
+			if(!lsi->setNfPortsID(anpo->getNFname(), anpo->getPorts()))
+			{
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "A non-required network function port related to the network function \"%s\" has been attached to the tenant-lsi",nf->first.c_str());
+				lsi->removeNF(nf->first);
+				delete(anpo);
+				throw GraphManagerException();
+			}
+			
+			delete(anpo);
 		}catch(SwitchManagerException e)
 		{
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
+			lsi->removeNF(nf->first);
+			if(anpo != NULL)
+				delete(anpo);
 			delete(tmp);
 			tmp = NULL;	
 			throw GraphManagerException();
@@ -1446,13 +1595,13 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 			//We just know that the vlink is no longer used for a NF. However, it might used in the opposite
 			//direction, for a port
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link no longer required for NF port: %s",rri.nf_port.c_str());
-			uint64_t nfvlink = nfs_vlinks.find(rri.nf_port)->second;
+			uint64_t tobeRemovedID = nfs_vlinks.find(rri.nf_port)->second;
 			
 			lsi->removeNFvlink(rri.nf_port);
 			
 			for(map<string, uint64_t>::iterator pvl = ports_vlinks.begin(); pvl != ports_vlinks.end(); pvl++)
 			{
-				if(pvl->second == nfvlink)
+				if(pvl->second == tobeRemovedID)
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The virtual link cannot be removed because it is still used by the port: %s",pvl->first.c_str());
 					goto next;
@@ -1463,7 +1612,10 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 			
 			try
 			{
-				switchManager.destroyVirtualLink(*lsi,nfvlink);
+				VLink toBeRemoved = lsi->getVirtualLink(tobeRemovedID);
+				DestroyVirtualLinkIn dvli(lsi->getDpid(), toBeRemoved.getLocalID(), toBeRemoved.getRemoteDpid(), toBeRemoved.getRemoteID());	
+				switchManager.destroyVirtualLink(dvli);
+				lsi->removeVlink(tobeRemovedID);
 			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1503,13 +1655,13 @@ next:
 			//We just know that the vlink is no longer used for a port. However, it might used in the opposite
 			//direction, for a NF port
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link no longer required for port: %s",rri.port.c_str());
-			uint64_t portlink = ports_vlinks.find(rri.port)->second;
+			uint64_t tobeRemovedID = ports_vlinks.find(rri.port)->second;
 			
 			lsi->removePortvlink(rri.port);
 			
 			for(map<string, uint64_t>::iterator nfvl = nfs_vlinks.begin(); nfvl != nfs_vlinks.end(); nfvl++)
 			{
-				if(nfvl->second == portlink)
+				if(nfvl->second == tobeRemovedID)
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The virtual link cannot be removed because it is still used by the NF port: %s",nfvl->first.c_str());
 					goto next2;
@@ -1518,8 +1670,11 @@ next:
 			
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The virtual link must be removed");
 			try
-			{
-				switchManager.destroyVirtualLink(*lsi,portlink);
+			{			
+				VLink toBeRemoved = lsi->getVirtualLink(tobeRemovedID);
+				DestroyVirtualLinkIn dvli(lsi->getDpid(), toBeRemoved.getLocalID(), toBeRemoved.getRemoteDpid(), toBeRemoved.getRemoteID());	
+				switchManager.destroyVirtualLink(dvli);
+				lsi->removeVlink(tobeRemovedID);
 			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1561,14 +1716,16 @@ next2:
 		{
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link no longer required for the endpoint: %s",rri.endpoint.c_str());
 			
-			uint64_t epvlink = endpoints_vlinks.find(rri.endpoint)->second;			
+			uint64_t tobeRemovedID = endpoints_vlinks.find(rri.endpoint)->second;			
 			lsi->removeEndPointvlink(rri.endpoint);
-			
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The virtual link must be removed");
 			
 			try
 			{
-				switchManager.destroyVirtualLink(*lsi,epvlink);
+				VLink toBeRemoved = lsi->getVirtualLink(tobeRemovedID);
+				DestroyVirtualLinkIn dvli(lsi->getDpid(), toBeRemoved.getLocalID(), toBeRemoved.getRemoteDpid(), toBeRemoved.getRemoteID());	
+				switchManager.destroyVirtualLink(dvli);
+				lsi->removeVlink(tobeRemovedID);
 			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -1592,7 +1749,12 @@ next2:
 #endif
 			try
 			{
-				switchManager.destroyNFPorts(*lsi,*nf);
+				list<string> tmpListPorts = lsi->getNetworkFunctionsPortNames(*nf);
+				set<string> portsToBeRemoved(tmpListPorts.begin(),tmpListPorts.end());
+				
+				DestroyNFportsIn dnpi(lsi->getDpid(),*nf,portsToBeRemoved);
+				switchManager.destroyNFPorts(dnpi);
+				lsi->removeNF(*nf);
 			} catch (SwitchManagerException e)
 			{
 				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());

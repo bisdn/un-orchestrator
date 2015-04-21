@@ -40,27 +40,27 @@ private:
 	/**
 	*	@brief: Send a message to xDPD
 	*
-	*	@param: message	Mwssage to be sent
+	*	@param: message	Message to be sent
 	*/
 	string sendMessage(string message);
 	
-	string prepareCreateLSIrequest(LSI lsi);
-	void parseCreateLSIresponse(LSI &lsi, Object message);
+	string prepareCreateLSIrequest(CreateLsiIn cli);
+	CreateLsiOut *parseCreateLSIresponse(CreateLsiIn cli, Object message);
 	
-	string prepareDestroyLSIrequest(LSI lsi);
-	void parseDestroyLSIresponse(LSI &lsi, Object message);
+	string prepareDestroyLSIrequest(uint64_t dpid);
+	void parseDestroyLSIresponse(Object message);
 	
-	string prepareCreateVirtualLinkRequest(LSI lsi,VLink vlinkID);
-	void parseCreateVirtualLinkResponse(LSI &lsi, int vlink_position, Object message);
+	string prepareCreateVirtualLinkRequest(AddVirtualLinkIn avli);
+	AddVirtualLinkOut *parseCreateVirtualLinkResponse(AddVirtualLinkIn avli, Object message);
 	
-	string prepareDestroyVirtualLinkRequest(LSI lsi, uint64_t vlinkID);
+	string prepareDestroyVirtualLinkRequest(DestroyVirtualLinkIn dvli);
 	void parseDestroyVirtualLinkResponse(Object message);
 	
-	string prepareCreateNFPortsRequest(LSI lsi, nf_t type, string name);
-	void parseCreateNFPortsResponse(LSI &lsi, Object message);
+	string prepareCreateNFPortsRequest(AddNFportsIn anpi);
+	AddNFportsOut *parseCreateNFPortsResponse(AddNFportsIn anpi, Object message);
 	
-	string prepareDestroyNFPortsRequest(LSI lsi, string nf);
-	void parseDestroyNFPortsResponse(LSI &lsi, Object message);
+	string prepareDestroyNFPortsRequest(DestroyNFportsIn dnpi);
+	void parseDestroyNFPortsResponse(Object message);
 	
 	bool findCommand(Object message, string expected);
 	bool findStatus(Object message);
@@ -76,7 +76,7 @@ public:
 	*	@param: lsi		Description of the LSI
 	*					to be created
 	*/
-	void createLsi(LSI &lsi);
+	CreateLsiOut *createLsi(CreateLsiIn cli);
 
 	/**
 	*	@brief: Create NF ports of a specific NF on an LSI in xDPD
@@ -86,7 +86,7 @@ public:
 	*	@brief: nf		Name and port idendifiers of the NF whose ports must be created
 	*	@brief: type	Type of the NF associated with the ports to be created
 	*/
-	void addNFPorts(LSI &lsi,pair<string, list<unsigned int> > nf, nf_t type);
+	AddNFportsOut *addNFPorts(AddNFportsIn anpi);
 
 	/**
 	*	@brief: Destroy add a virtual link to an LSI in xDPDP
@@ -96,7 +96,7 @@ public:
 	*	@param: vlink	Structure representing the virtual link to
 	*					to be added to the LSI
 	*/
-	uint64_t addVirtualLink(LSI &lsi, VLink vlink);
+	AddVirtualLinkOut *addVirtualLink(AddVirtualLinkIn avli);
 
 	/**
 	*	@brief: Destroy an existing LSI in xDPD
@@ -104,7 +104,7 @@ public:
 	*	@param: lsi		Description of the LSI
 	*					to be destroyed
 	*/
-	void destroyLsi(LSI &lis);
+	void destroyLsi(uint64_t dpid);
 
 	/**
 	*	@brief: Destroy all the NF ports of a specific NF
@@ -113,7 +113,7 @@ public:
 	*					NF ports to be removed
 	*	@brief: nf		Name of the NF whose ports must be removed
 	*/
-	void destroyNFPorts(LSI &lsi,string nf);
+	void destroyNFPorts(DestroyNFportsIn dnpi);
 
 	/**
 	*	@brief: Destroy an virtual link from an LSI in xDPDP
@@ -122,12 +122,12 @@ public:
 	*					to be removed
 	*	@param: vlinkID	Identifier of the vlink to be removed
 	*/
-	void destroyVirtualLink(LSI &lsi, uint64_t vlinkID); 
+	void destroyVirtualLink(DestroyVirtualLinkIn dvli); 
 
 	/**
 	*	@brief: Connect to xDPD to discover the physical interfaces
 	*/
-	map<string,string> discoverPhyPorts();
+	map<string,string> discoverEthernetInterfaces();
 };
 
 class XDPDManagerException: public SwitchManagerException

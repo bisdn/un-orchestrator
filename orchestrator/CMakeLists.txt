@@ -125,6 +125,18 @@ ENDIF(DEBUG_OPENFLOW)
 SET(SOURCES
 	node_orchestrator.cc
 	
+	node_resource_manager/graph_manager/graph_manager.h
+	node_resource_manager/graph_manager/graph_manager.cc
+	node_resource_manager/graph_manager/graph_info.h
+	node_resource_manager/graph_manager/graph_info.cc
+	node_resource_manager/graph_manager/graph_translator.h
+	node_resource_manager/graph_manager/graph_translator.cc
+	node_resource_manager/graph_manager/rule_removed_info.h
+	node_resource_manager/graph_manager/lsi.h
+	node_resource_manager/graph_manager/lsi.cc
+	node_resource_manager/graph_manager/virtual_link.h
+	node_resource_manager/graph_manager/virtual_link.cc
+	
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
 	
@@ -153,22 +165,14 @@ SET(SOURCES
 	node_resource_manager/graph/high_level_graph/high_level_match.cc
 	
 	network_controller/switch_manager/switch_manager.h		
-	network_controller/switch_manager/lsi.h
-	network_controller/switch_manager/lsi.cc
-	network_controller/switch_manager/virtual_link.h
-	network_controller/switch_manager/virtual_link.cc
-
-	network_controller/switch_manager/xdpd/xdpd_manager.h
-	network_controller/switch_manager/xdpd/xdpd_manager.cc
-	network_controller/switch_manager/xdpd/xdpd_constants.h
-
-	node_resource_manager/graph_manager/graph_manager.h
-	node_resource_manager/graph_manager/graph_manager.cc
-	node_resource_manager/graph_manager/graph_info.h
-	node_resource_manager/graph_manager/graph_info.cc
-	node_resource_manager/graph_manager/graph_translator.h
-	node_resource_manager/graph_manager/graph_translator.cc
-	node_resource_manager/graph_manager/rule_removed_info.h
+	network_controller/switch_manager/addNFports_in.h
+	network_controller/switch_manager/addNFports_out.h
+	network_controller/switch_manager/addVirtualLink_in.h
+	network_controller/switch_manager/addVirtualLink_out.h
+	network_controller/switch_manager/createLSIin.h
+	network_controller/switch_manager/createLSIout.h
+	network_controller/switch_manager/destroyNFports_in.h
+	network_controller/switch_manager/destroyVirtualLink_in.h 
 	
 	network_controller/openflow_controller/controller.h
 	network_controller/openflow_controller/controller.cc
@@ -191,6 +195,12 @@ SET(SOURCES
 	utils/constants.h
 	utils/sockutils.h
 	utils/sockutils.c
+	
+	# Files specific for xDPd as virtual switch
+	#TODO: put in a specific flag
+	network_controller/switch_manager/xdpd/xdpd_manager.h
+	network_controller/switch_manager/xdpd/xdpd_manager.cc
+	network_controller/switch_manager/xdpd/xdpd_constants.h
 )
 
 INCLUDE_DIRECTORIES (
