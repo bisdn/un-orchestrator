@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<xdpd-ports xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-                 xsi:noNamespaceSchemaLocation="xdpd-ports.xsd">
-                 
-	<port name="10ge0" type="ethernet" side="core"/>
-	<port name="wlan4" type="wifi" side="edge"/>
-
-</xdpd-ports>

@@ -15,10 +15,6 @@
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
 
-#include <libxml/parser.h>
-#include <libxml/tree.h>
-#include <libxml/xmlschemas.h>
-
 #include <string>
 #include <list>
 #include <sstream>
@@ -109,24 +105,12 @@ private:
 	*	@brief: check the command line provided to the xDPd module
 	*/
 	bool parseInputParams(int argc, char *argv[], char **file_name);
-	
-	/**
-	*	 @brief: read the configuration file
-	*/
-	bool parseInputFile(char *fileName);
-	
-	/**
-	*	@brief: release resources needed to parse the configuration file
-	*/
-	void freeXMLResources(xmlSchemaParserCtxtPtr parser_ctxt, xmlSchemaValidCtxtPtr valid_ctxt, xmlDocPtr schema_doc, xmlSchemaPtr schema, xmlDocPtr doc);
 
 public:
 	XDPDManager();
 
 	~XDPDManager();
 	
-	void setInputParameters(int argc, char *argv[]);
-
 	CreateLsiOut *createLsi(CreateLsiIn cli);
 
 	AddNFportsOut *addNFPorts(AddNFportsIn anpi);
@@ -139,7 +123,7 @@ public:
 
 	void destroyVirtualLink(DestroyVirtualLinkIn dvli); 
 
-	map<string,string> discoverPhysicalInterfaces();
+	void checkPhysicalInterfaces(set<CheckPhysicalPortsIn> cppi);
 };
 
 class XDPDManagerException: public SwitchManagerException

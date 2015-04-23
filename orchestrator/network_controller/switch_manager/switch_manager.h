@@ -11,6 +11,7 @@
 #include "addVirtualLink_in.h"
 #include "addVirtualLink_out.h"
 #include "destroyVirtualLink_in.h"
+#include "checkPhysicalPorts_in.h"
 
 #include <stdio.h>
 
@@ -72,19 +73,12 @@ public:
 	virtual void destroyVirtualLink(DestroyVirtualLinkIn dvli) = 0; 
 
 	/**
-	*	@brief: Discover the available physical interfaces
+	*	@brief: Check if the physical interfaces required are supported by the virtual switch
 	*
-	*	@return:		Map of physical interfaces and the related description
+	*	@param:	dppi	Description of the physical interfaces to be handled
+	*					by the node orchestrator through the virtual switch
 	*/
-	virtual map<string,string> discoverPhysicalInterfaces() = 0;
-	
-	/**
-	*	@brief: Provide input parameters specific for the switch manager
-	*
-	*	@param: arcg	Number of input parameters
-	*	@param: argv	List of input parameters
-	*/
-	virtual void setInputParameters(int argc, char *argv[]) = 0;
+	virtual void checkPhysicalInterfaces(set<CheckPhysicalPortsIn> cppi) = 0;
 	
 };
 

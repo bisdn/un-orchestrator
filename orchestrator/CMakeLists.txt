@@ -151,6 +151,8 @@ SET(SOURCES
 	node_resource_manager/graph_manager/lsi.cc
 	node_resource_manager/graph_manager/virtual_link.h
 	node_resource_manager/graph_manager/virtual_link.cc
+	node_resource_manager/graph_manager/fileParser.h
+	node_resource_manager/graph_manager/fileParser.cc
 	
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
@@ -188,6 +190,7 @@ SET(SOURCES
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
 	network_controller/switch_manager/destroyVirtualLink_in.h 
+	network_controller/switch_manager/checkPhysicalPorts_in.h 
 	
 	network_controller/openflow_controller/controller.h
 	network_controller/openflow_controller/controller.cc
@@ -210,13 +213,16 @@ SET(SOURCES
 	utils/constants.h
 	utils/sockutils.h
 	utils/sockutils.c
-	
-	# Files specific for xDPd as virtual switch
-	#TODO: put in a specific flag
-	network_controller/switch_manager/xdpd/xdpd_manager.h
+)
+
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
+    SET(SOURCES2
+    ${SOURCES}
+    network_controller/switch_manager/xdpd/xdpd_manager.h
 	network_controller/switch_manager/xdpd/xdpd_manager.cc
 	network_controller/switch_manager/xdpd/xdpd_constants.h
-)
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX)
 
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
@@ -227,7 +233,7 @@ INCLUDE_DIRECTORIES (
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES}
+	${SOURCES2}
 )
 
 

@@ -3,14 +3,14 @@
 GraphManager *RestServer::gm = NULL;
 
 #ifdef READ_JSON_FROM_FILE
-	bool RestServer::init(char *filename, int core_mask)
+	bool RestServer::init(char *filename, int core_mask, char *ports_file_name)
 #else
-	bool RestServer::init(int core_mask)
+	bool RestServer::init(int core_mask, char *ports_file_name)
 #endif
 {	
 	try
 	{
-		gm = new GraphManager(core_mask);
+		gm = new GraphManager(core_mask,string(ports_file_name));
 		
 	}catch (...)
 	{

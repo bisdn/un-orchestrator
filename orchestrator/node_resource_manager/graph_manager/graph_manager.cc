@@ -8,22 +8,24 @@ void GraphManager::mutexInit()
 	pthread_mutex_init(&graph_manager_mutex, NULL);
 }
 
-GraphManager::GraphManager(int core_mask) :
+GraphManager::GraphManager(int core_mask,string portsFileName) :
 	switchManager()
-{
-	//TODO not embed this path!
-	
-	char** parameters; 
-	parameters = (char**)malloc(sizeof(char*)*3);
-	parameters[0] = (char*)malloc(sizeof(char)*sizeof("prova"));
-  	strcpy(parameters[0],"prova");
-  	parameters[1] = (char*)malloc(sizeof(char)*sizeof("--f"));
-  	strcpy(parameters[1],"--f");
-  	parameters[2] = (char*)malloc(sizeof(char)*sizeof("network_controller/switch_manager/xdpd/config/example.xml"));
-  	strcpy(parameters[2],"network_controller/switch_manager/xdpd/config/example.xml");
-  	parameters[3]="\0";
-	
-	switchManager.setInputParameters(3, parameters);
+{	
+	//Parse the file containing the description of the physical ports to be managed by the node orchestrator
+	set<CheckPhysicalPortsIn> phyPortsRequired;
+	try
+	{
+		phyPortsRequired = FileParser::parsePortsFile(portsFileName);
+	}
+	catch(...)
+	{
+		throw GraphManagerException();
+	}
+	map<string,string> phyPorts;
+	for(set<CheckPhysicalPortsIn>::iterator pp = phyPortsRequired.begin(); pp != phyPortsRequired.end(); pp++)
+	{
+		phyPorts[pp->getPortName()] = pp->getPortSideToString();
+	}
 
 	//Create the openflow controller for the LSI-0
 
@@ -35,14 +37,12 @@ GraphManager::GraphManager(int core_mask) :
 	ostringstream strControllerPort;
 	strControllerPort << controllerPort;
 
-	//Create the LSI-0 with all the physical ports available on the node
-	map<string,string> phyPorts;
-	
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Discovering the available physical interfaces...");
+	//Create the LSI-0 with all the physical ports required
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Checking the available physical interfaces...");
 	try
 	{
-		//Discover the available physical ports
-		phyPorts = switchManager.discoverPhysicalInterfaces();
+		//Check the available physical ports
+		switchManager.checkPhysicalInterfaces(phyPortsRequired);
 	} catch (...)
 	{
 		throw GraphManagerException();

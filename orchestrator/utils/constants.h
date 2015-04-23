@@ -109,6 +109,16 @@
 */
 #define CORE_MASK				0x2
 
+/**
+*	@brief: Constants related to the configuration file containing the description of the physical ports
+*/
+#define PHY_PORTS_XSD				"config/physical-ports.xsd"
+
+#define PORT_ELEMENT				"port"
+#define NAME_ATTRIBUTE				"name"
+#define TYPE_ATTRIBUTE				"type"
+#define SIDE_ATTRIBUTE				"side"
+
 /*
  * Supported virtual switch implementations.
  */ 

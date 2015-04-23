@@ -91,9 +91,9 @@ private:
 
 public:
 #ifdef READ_JSON_FROM_FILE
-	static bool init(char *filename,int core_mask);
+	static bool init(char *filename,int core_mask, char *ports_file_name);
 #else
-	static bool init(int core_mask);
+	static bool init(int core_mask, char *ports_file_name);
 #endif
 	
 	static void terminate();

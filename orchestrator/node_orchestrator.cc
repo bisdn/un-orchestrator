@@ -17,9 +17,9 @@
 *	Private prototypes
 */
 #ifndef READ_JSON_FROM_FILE
-bool parse_command_line(int argc, char *argv[],int *rest_port,int *core_mask);
+bool parse_command_line(int argc, char *argv[],int *rest_port,int *core_mask, char **ports_file_name);
 #else
-bool parse_command_line(int argc, char *argv[], char **file_name,int *core_mask);
+bool parse_command_line(int argc, char *argv[], char **file_name,int *core_mask, char **ports_file_name);
 #endif
 bool usage(void);
 
@@ -66,12 +66,13 @@ int main(int argc, char *argv[])
 #endif
 	
 	int core_mask;
+	char *ports_file_name = NULL;
 #ifdef READ_JSON_FROM_FILE
 	char *file_name = NULL;
-	if(!parse_command_line(argc,argv,&file_name,&core_mask))
+	if(!parse_command_line(argc,argv,&file_name,&core_mask,&ports_file_name))
 #else
 	int rest_port;
-	if(!parse_command_line(argc,argv,&rest_port,&core_mask))
+	if(!parse_command_line(argc,argv,&rest_port,&core_mask,&ports_file_name))
 #endif
 		exit(EXIT_FAILURE);	
 
@@ -81,9 +82,9 @@ int main(int argc, char *argv[])
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
 #ifdef READ_JSON_FROM_FILE
-	if(!RestServer::init(file_name,core_mask))
+	if(!RestServer::init(file_name,core_mask,ports_file_name))
 #else
-	if(!RestServer::init(core_mask))
+	if(!RestServer::init(core_mask,ports_file_name))
 #endif
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
@@ -110,9 +111,9 @@ int main(int argc, char *argv[])
 }
 
 #ifndef READ_JSON_FROM_FILE
-bool parse_command_line(int argc, char *argv[], int *rest_port, int *core_mask)
+bool parse_command_line(int argc, char *argv[], int *rest_port, int *core_mask, char **ports_file_name)
 #else
-bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask)
+bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask, char **ports_file_name)
 #endif
 {
 	int opt;
@@ -124,6 +125,7 @@ bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask
 		{"c", 1, 0, 0},
 		{"w", 1, 0, 0},
 		{"f", 1, 0, 0},
+		{"p", 1, 0, 0},
 		{"h", 0, 0, 0},
 		{NULL, 0, 0, 0}
 	};
@@ -131,6 +133,7 @@ bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask
 static struct option lgopts[] = {
 		{"p", 1, 0, 0},
 		{"c", 1, 0, 0},
+		{"f", 1, 0, 0},
 		{"w", 1, 0, 0},
 		{"h", 0, 0, 0},
 		{NULL, 0, 0, 0}
@@ -138,14 +141,10 @@ static struct option lgopts[] = {
 #endif
 
 	argvopt = argv;
-	uint32_t arg_c = 0;
-#ifdef READ_JSON_FROM_FILE
-	uint32_t arg_f = 0;
-#else
-	uint32_t arg_p = 0;
-#endif
+	uint32_t arg_c = 0, arg_f = 0, arg_p = 0;
 
 	*core_mask = CORE_MASK;
+	ports_file_name[0] = '\0';
 #ifdef READ_JSON_FROM_FILE
 	file_name[0] = '\0';
 #else
@@ -172,29 +171,41 @@ static struct option lgopts[] = {
 	   				
 	   				arg_c++;
 	   			}
-#ifdef READ_JSON_FROM_FILE
-				else if (!strcmp(lgopts[option_index].name, "f"))/* file */
+				else if (!strcmp(lgopts[option_index].name, "f"))
 	   			{
-	   				*file_name = optarg;
-	   				
+	   				if(arg_f > 0)		/* REST port */
+	   				{
+		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--f\" can appear only once in the command line");
+	   					return usage();
+	   				}
+#ifdef READ_JSON_FROM_FILE
+	   				*file_name = optarg;			/* command file */
+#else	   				
+	   				*ports_file_name = optarg;		/* ports file */
+#endif	   				
 	   				arg_f++;
 	   			}
-#else
-				else if (!strcmp(lgopts[option_index].name, "p"))/* rest port */
-				{
-					if(arg_p > 0)
+	   			else if (!strcmp(lgopts[option_index].name, "p"))
+	   			{
+		   			if(arg_p > 0)		/* REST port */
 	   				{
 		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--p\" can appear only once in the command line");
 	   					return usage();
 	   				}
+	   			
+#ifdef READ_JSON_FROM_FILE
+	   				*file_name = optarg;	/* ports file */
+	   				arg_p++;
+#else
+					/* REST port */
 	   				char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
 	   				strcpy(port,optarg);
 	   				
 	   				sscanf(port,"%d",rest_port);
 	   				
 	   				arg_p++;
-	   			}
 #endif
+				}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
 	   			{
 	   				return usage();
@@ -211,13 +222,16 @@ static struct option lgopts[] = {
 	}
 
 	/* Check that all mandatory arguments are provided */
-#ifdef READ_JSON_FROM_FILE
-	if (arg_f == 0)
+
+	if ( (arg_f == 0) 
+#ifdef READ_JSON_FROM_FILE	
+	|| (arg_p == 0) 
+#endif	
+	)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Not all mandatory arguments are present in the command line");
 		return usage();
 	}
-#endif
 
 	return true;
 }
@@ -231,6 +245,9 @@ bool usage(void)
 	"  sudo ./name-orchestrator                                                               \n" \
 	"                                                                                         \n" \
 	"Parameters:                                                                              \n" \
+	"  --f file_name                                                                          \n" \
+	"        Name of the file containing the physical ports to be handled by the node         \n" \
+	"        orchestrator                                                                     \n" \
 	"                                                                                         \n" \
 	"Options:                                                                                 \n" \
 	"  --p tcp_port                                                                           \n" \
@@ -243,14 +260,17 @@ bool usage(void)
 	"        Print this help.                                                                 \n" \
 	"                                                                                         \n" \
 	"Example:                                                                                 \n" \
-	"  sudo ./node-orchestrator --w wlan0                                                     \n\n";
+	"  sudo ./node-orchestrator --f config/example.xml                                        \n\n";
 #else
 	"Usage:                                                                                   \n" \
 	"  sudo ./name-orchestrator --f file_name                                                 \n" \
 	"                                                                                         \n" \
 	"Parameters:                                                                              \n" \
+	"  --p file_name                                                                          \n" \
+	"        Name of the file containing the physical ports to be handled by the node         \n" \
+	"        orchestrator                                                                     \n" \
 	"  --f file_name                                                                          \n" \
-	"        Name of the file describing the NF-FG to be deployed on the node.                \n" \
+	"        Name of the file describing the NF-FG to be deployed on the node                 \n" \
 	"                                                                                         \n" \
 	"Options:                                                                                 \n" \
 	"  --c core_mask                                                                          \n" \
@@ -261,7 +281,7 @@ bool usage(void)
 	"        Print this help.                                                                 \n" \
 	"                                                                                         \n" \
 	"Example:                                                                                 \n" \
-	"  sudo ./node-orchestrator --f example.json --w wlan0                                    \n\n";
+	"  sudo ./node-orchestrator --p example/config.xml --f example.json                       \n\n";
 
 #endif
 
