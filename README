@@ -1,4 +1,13 @@
-Node-orchestrator
-=================
+This repository contains the Universal Node orchestrator (un-orchestrator), an 
+orchestration module that, given a Network Function - Forwarding Graph (NF-FG) 
+deploys it. To this purpose, it interacts with a virtual switch in order to
+configure the paths among the NFs, and with an hypervisor in order to properly
+start the required NFs.
 
-Please check the individual README's in each sub-package
+The repository also includes the Name Resolver, a module that provides a set
+of implementations for a given NF. It is exploited by the un-orcehestrator each
+time that a NF must be started.
+
+===============================================================================
+
+Please check individual README's in each sub-package
