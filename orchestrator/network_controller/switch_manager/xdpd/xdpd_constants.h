@@ -26,21 +26,4 @@
 #define ATTACH_WIRELESS_INTERFACE	"./network_controller/switch_manager/xdpd/scripts/attachWirelessInterface.sh"
 #define DETACH_WIRELESS_INTERFACE	"./network_controller/switch_manager/xdpd/scripts/detachWirelessInterface.sh"
 
-/**
-*	@brief: Constants related to the configuration file
-*/
-#define XDPD_PORTS_XSD				"network_controller/switch_manager/xdpd/config/xdpd-ports.xsd"
-
-#define PORT_ELEMENT				"port"
-#define NAME_ATTRIBUTE				"name"
-#define TYPE_ATTRIBUTE				"type"
-#define SIDE_ATTRIBUTE				"side"
-
-/**
-*	@brief:	Constants related to the wireless interface
-*	//FIXME this information should be set from the extern
-*/
-#define WIRELESS_INTERFACE			"wlan4"
-#define WIRELESS_DESCRIPTION		"edge"
-
 #endif //XDPD_CONSTANTS_H
