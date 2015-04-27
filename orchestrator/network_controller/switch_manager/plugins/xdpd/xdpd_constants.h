@@ -23,7 +23,7 @@
 /**
 *	@brief: Scripts to manage the wireless interfaces
 */
-#define ATTACH_WIRELESS_INTERFACE	"./network_controller/switch_manager/xdpd/scripts/attachWirelessInterface.sh"
-#define DETACH_WIRELESS_INTERFACE	"./network_controller/switch_manager/xdpd/scripts/detachWirelessInterface.sh"
+#define ATTACH_WIRELESS_INTERFACE	"./network_controller/switch_manager/plugins/xdpd/scripts/attachWirelessInterface.sh"
+#define DETACH_WIRELESS_INTERFACE	"./network_controller/switch_manager/plugins/xdpd/scripts/detachWirelessInterface.sh"
 
 #endif //XDPD_CONSTANTS_H

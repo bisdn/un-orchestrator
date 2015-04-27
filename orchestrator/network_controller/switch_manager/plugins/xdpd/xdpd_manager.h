@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "../switch_manager.h"
+#include "../../switch_manager.h"
 
-#include "../../../utils/constants.h"
-#include "../../../utils/sockutils.h"
-#include "../../../utils/logger.h"
+#include "../../../../utils/constants.h"
+#include "../../../../utils/sockutils.h"
+#include "../../../../utils/logger.h"
 
 #include "xdpd_constants.h"
 

@@ -1,33 +1,35 @@
-This is a firewall based on iptables.
+This network function is a firewall based on iptables.
 
 To change the configuration of the firewall, edit the file start.sh
 
-###############################################################################
+===============================================================================
 
-Reqiured libraries:
+Docker environment for network functions
 
-* Docker and LXC
-     http://docs.docker.com/installation/
-     apt-get install lxc -y
-     echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
-     service docker restart
-     
-* Ubuntu docker image
-     sudo docker pull ubuntu:latest
+ On Ubuntu: 
+      follow the instruction provided here:
+           http://docs.docker.com/installation/
+      apt-get install lxc -y
+      echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
+      service docker restart
 
-* Private registry (in the following, the document assumes that the registry is
-     running at localhost:5000)
+ On Debian:
+      follow the instruction provided here:
+          https://scottlinux.com/2014/05/04/how-to-install-and-run-docker-on-debian-wheezy/
+          apt-get install docker -y
+          echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
+          service docker.io restart
 
-###############################################################################
+===============================================================================
 
-Create the Docker image which contains this NF, and push it to the repository
+Create the Docker image which contains this network function:
 
-* docker build --tag="localhost:5000/iptables" .
-* docker push localhost:5000/iptables
+docker build --tag="localhost:5000/iptables" .
 
-###############################################################################
+===============================================================================
 
-Run the container:
+* If you are going to use this network function together with the un-orchestrator, 
+you can skip this part *
 
 * in interactive mode
 

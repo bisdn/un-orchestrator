@@ -8,7 +8,6 @@
 #include "graph_translator.h"
 #include "fileParser.h"
 #include "../../network_controller/openflow_controller/controller.h"
-#include "../../network_controller/switch_manager/xdpd/xdpd_manager.h"
 #include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
@@ -16,6 +15,12 @@
 #include "../graph/high_level_graph/high_level_action_port.h"
 #include "../graph/high_level_graph/high_level_action_endpoint.h"
 #include "../rest_server/match_parser.h"
+
+#if (VSWITCH_IMPLEMENTATION == XDPD)
+	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
+	
+//[+] Add here other implementations for the virtual switch
+#endif
 
 #include <list>
 #include <vector>

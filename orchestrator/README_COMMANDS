@@ -1,6 +1,7 @@
-This file shows the commands to be sent to the node-orchestrator.
+This file describes, thorugh many examples, the commands to be used to interact
+with the un-orchestrator.
 
-###############################################################################
+===============================================================================
 
 Create a new graph, with name "myGraph"
 
@@ -29,10 +30,10 @@ Content-Type : application/json
 	}
 }
 
-* This example is more complex, and it includes a network function called "example".
+* This example is more complex, and it includes a network function called "bridge".
   Packets coming from the interface ge0 are sent to the first port of the network
-  function (example:1), while packes coming from the second port of the network
-  function (example:2) are sent on the network interface ge1
+  function (bridge:1), while packes coming from the second port of the network
+  function (bridge:2) are sent on the network interface ge1
   
 PUT /graph/myGraph HTTP/1.1 
 Content-Type : application/json 
@@ -42,8 +43,7 @@ Content-Type : application/json
 	{
 		"VNFs": [
 			{
-				"id": "example",
-				"template": "http://nf_repo.example.com/v1/vnf_specs/bd7b901-c5249031e1a3"
+				"id": "bridge"
 			}
 		],
 		"flow-rules": [
@@ -55,14 +55,14 @@ Content-Type : application/json
 				},
 				"action":
 				{
-					"VNF_id": "example:1"
+					"VNF_id": "bridge:1"
 				}
 			},
 			{
 				"id": "00000002",
 				"match":
 				{
-					"VNF_id" : "example:2"
+					"VNF_id" : "bridge:2"
 				},
 				"action":
 				{
@@ -86,16 +86,13 @@ Content-Type : application/json
 	{
 		"VNFs": [
 			{
-				"id": "firewall",
-				"template": "http://nf_repo.example.com/v1/vnf_specs/bd7b901-c5249031e1a3"
+				"id": "firewall"
 			},
 			{
-				"id": "NAT",
-				"template": "http://nf_repo.example.com/v1/vnf_specs/fe17fa6e-9972-ccc207d670a6"
+				"id": "NAT"
 			},
 			{
-				"id": "web-cache",
-				"template": "http://nf_repo.example.com/v1/vnf_specs/026411-52fa238346e8"
+				"id": "web-cache"
 			}
 		],
 		"flow-rules": [
@@ -176,12 +173,11 @@ Content-Type : application/json
 PUT /graph/myGraph HTTP/1.1 
 Content-Type : application/json 
                
-{  
-   "flow-graph":{  
-      "VNFs":[  
+{ 
+   "flow-graph":{ 
+      "VNFs":[ 
          {  
             "id":"bridge",
-            "template": "http://nf_repo.example.com/v1/vnf_specs/bd7b901-c5249031e1a3",
             "ports_with_requirements":[  
                {  
                   "name":"bridge:3",
@@ -193,7 +189,7 @@ Content-Type : application/json
             ]
          }
       ],
-      "flow-rules":[  
+      "flow-rules":[ 
          {  
             "id":"00000001",
             "match":{  
@@ -283,28 +279,27 @@ Content-Type : application/json
 PUT /graph/myGraph HTTP/1.1 
 Content-Type : application/json 
                
-{  
-   "flow-graph":{  
-      "VNFs":[  
+{ 
+   "flow-graph":{ 
+      "VNFs":[ 
          {  
-            "id":"ovs",
-            "template": "http://nf_repo.example.com/v1/vnf_specs/bd7b901-c5249031e1a3",
+            "id":"bridge"
          }
       ],
-      "flow-rules":[  
+      "flow-rules":[ 
          {  
             "id":"00000001",
             "match":{  
                "endpoint_id":"myGraph:1"
             },
             "action":{  
-               "VNF_id":"sw:1"
+               "VNF_id":"bridge:1"
             }
          },
          {  
             "id":"00000002",
             "match":{  
-               "VNF_id":"sw:2"
+               "VNF_id":"bridge:2"
             },
             "action":{  
                "port":"ge1"
@@ -317,15 +312,14 @@ Content-Type : application/json
 PUT /graph/othweGraph HTTP/1.1 
 Content-Type : application/json 
                
-{  
-   "flow-graph":{  
-      "VNFs":[  
+{ 
+   "flow-graph":{ 
+      "VNFs":[ 
          {  
-            "id":"ovs",
-            "template": "http://nf_repo.example.com/v1/vnf_specs/bd7b901-c5249031e1a3",
+            "id":"bridge"
          }
       ],
-      "flow-rules":[  
+      "flow-rules":[ 
          {  
             "id":"00000001",
             "priority":"25",
@@ -355,8 +349,10 @@ Content-Type : application/json
   On the other hand, if an endpoint is defined in an action, other graphs can
   use it in a match.
 
-* Within the "match" element, the following fields are allowed (all the values
-  must be spicifed as strings):
+===============================================================================
+
+Within the "match" element, the following fields are allowed (all the values
+must be spicified as strings):
 
 	"port"         //only if "VNF_id" and "endpoint_id" are not specified
 	"VNF_id"       //only if "port" and "endpoint_id" are not specified
@@ -366,7 +362,7 @@ Content-Type : application/json
 	"eth_dst"
 	"eth_dst_mask"
 	"ethertype"
-	"vlan_id"   //can be a number, "ANY", or "NO_VLAN"
+	"vlan_id"       //can be a number, "ANY", or "NO_VLAN"
 	"vlan_pcp"
 	"ip_dscp"
 	"ip_ecn"
@@ -403,51 +399,51 @@ Content-Type : application/json
 	"mpls_label"
 	"mpls_tc"
 
-* Within the "action" element, the following fields are allowed:
+===============================================================================
+
+Within the "action" element, the following fields are allowed:
 
 	"port"         //only if "VNF_id" and "endpoint_id" are not specified
 	"VNF_id"       //only if "port" and "endpoint_id" are not specified
 	"endpoint_id"  //only if "port" and "VNF_id" are not specified
 
-* WARNING: the "template" element is currently ignored.
+===============================================================================
 
-* The same message used to create a new graph can be used to add "parts" (i.e.,
-  network functions and flows) to an existing graph.
+The same message used to create a new graph can be used to add "parts" (i.e.,
+network functions and flows) to an existing graph.
   
-###############################################################################
+===============================================================================
 
 Retrieve the description of the graph with name "myGraph".
 
 GET /graph/myGraph HTTP/1.1
 
-###############################################################################
+===============================================================================
 
 Delete the graph with name "myGraph".
 
 DELETE /graph/myGraph HTTP/1.1
 
-###############################################################################
+===============================================================================
 
 Delete the flow with ID "flow_id" from the graph with name "myGraph".
 
 DELETE /graph/myGraph/flow_id HTTP/1.1
 
-###############################################################################
+===============================================================================
 
 Retrieve information on the available physical interfaces.
 
 GET /graph/interfaces HTTP/1.1
 
-###############################################################################
+===============================================================================
 
-If the node-orchestrator is compiled with the flag READ_JSON_FROM_FILE enabled,
-the node-orchestrator does not stat the rest server; hence, it is not possible
-to sent commands at runtime.
-However, at the startup you have to provide to the node-orchestrator a file 
+If the un-orchestrator is compiled with the flag READ_JSON_FROM_FILE enabled,
+it not start the rest server; hence, it is not possible to sent commands at 
+runtime. However, at the startup you have to provide to the un-orchestrator a file 
 containing the JSON representing a command to create a graph; this graph is the
-only one created by the node-orchestrator, and will be destroyed only when the
-node-orchestrator itself terminates.
-Note that this graph cannot have endpoints; in fact, they are meaningless, since
-it is the only graph deployed on the node.
-The file "example.json" provides an example of file to be provided to the
-node-orchestrator in case the flag READ_JSON_FROM_FILE is enabled.
+only one created by the un-orchestrator, and will be destroyed only when the
+un-orchestrator itself terminates.
+
+Please check "example.json", which contains an example of file to be provided to
+the un-orchestrator in case the flag READ_JSON_FROM_FILE is enabled.

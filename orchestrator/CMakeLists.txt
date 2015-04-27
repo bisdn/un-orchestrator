@@ -218,11 +218,11 @@ SET(SOURCES
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
     SET(SOURCES2
     ${SOURCES}
-    network_controller/switch_manager/xdpd/xdpd_manager.h
-	network_controller/switch_manager/xdpd/xdpd_manager.cc
-	network_controller/switch_manager/xdpd/xdpd_constants.h
+    network_controller/switch_manager/plugins/xdpd/xdpd_manager.h
+	network_controller/switch_manager/plugins/xdpd/xdpd_manager.cc
+	network_controller/switch_manager/plugins/xdpd/xdpd_constants.h
     )
-ENDIF(VSWITCH_IMPLEMENTATION_INDEX)
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
 
 INCLUDE_DIRECTORIES (
 	/usr/include/boost

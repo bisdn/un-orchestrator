@@ -242,7 +242,7 @@ bool usage(void)
 
 #ifndef READ_JSON_FROM_FILE
 	"Usage:                                                                                   \n" \
-	"  sudo ./name-orchestrator                                                               \n" \
+	"  sudo ./name-orchestrator --f file_name                                                 \n" \
 	"                                                                                         \n" \
 	"Parameters:                                                                              \n" \
 	"  --f file_name                                                                          \n" \
@@ -263,7 +263,7 @@ bool usage(void)
 	"  sudo ./node-orchestrator --f config/example.xml                                        \n\n";
 #else
 	"Usage:                                                                                   \n" \
-	"  sudo ./name-orchestrator --f file_name                                                 \n" \
+	"  sudo ./name-orchestrator --p file_name --f file_name                                   \n" \
 	"                                                                                         \n" \
 	"Parameters:                                                                              \n" \
 	"  --p file_name                                                                          \n" \
