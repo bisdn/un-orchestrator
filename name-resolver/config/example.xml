@@ -31,7 +31,7 @@
 	<network-function name="example">
 		<!-- Several implementations are available for this network function -->
 		<implementation type="docker" uri="localhost:5000/example"/>
-		<implementation type="dpdk" uri="https://nf_repository.con/example" cores="1" location="remote"/>
+		<implementation type="dpdk" uri="https://nf_repository.com/example" cores="1" location="remote"/>
 		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="local"/>
 		<implementation type="kvm" uri="/home/nf_repository/kvm/example.qcow2"/>
 	</network-function>

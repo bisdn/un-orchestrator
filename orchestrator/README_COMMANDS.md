@@ -434,7 +434,7 @@ DELETE /graph/myGraph/flow_id HTTP/1.1
 
 Retrieve information on the available physical interfaces.
 
-GET /graph/interfaces HTTP/1.1
+GET /interfaces HTTP/1.1
 
 ===============================================================================
 
