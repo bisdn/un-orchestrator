@@ -946,10 +946,7 @@ void XDPDManager::destroyLsi(uint64_t dpid)
 		parseDestroyLSIresponse(obj);
 		list<string> wirelessInterface = dpdiWirelessInterfaces[dpid];
 		for(list<string>::iterator w = wirelessInterface.begin(); w != wirelessInterface.end(); w++)
-		{
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "-------------> \"%s\"",(*w).c_str());
 			detachWirelessPort(dpid,*w);
-		}
 	} catch(...) {
 		throw;
 	}
