@@ -7,18 +7,18 @@ changed, and the packet is sent back on the interface eth1
 
 Docker environment for network functions
 
- On Ubuntu: 
-      follow the instruction provided here:
-           http://docs.docker.com/installation/
-      apt-get install lxc -y
-      echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
+ On Ubuntu:   
+      follow the instruction provided here:  
+           http://docs.docker.com/installation/  
+      apt-get install lxc -y  
+      echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker  
       service docker restart
 
- On Debian:
-      follow the instruction provided here:
-          https://scottlinux.com/2014/05/04/how-to-install-and-run-docker-on-debian-wheezy/
-          apt-get install docker -y
-          echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker
+ On Debian:  
+      follow the instruction provided here:  
+          https://scottlinux.com/2014/05/04/how-to-install-and-run-docker-on-debian-wheezy/  
+          apt-get install docker -y  
+          echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker  
           service docker.io restart
 
 ===============================================================================
