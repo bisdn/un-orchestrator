@@ -73,8 +73,6 @@ string XDPDManager::sendMessage(string message)
 	
 void XDPDManager::checkPhysicalInterfaces(set<CheckPhysicalPortsIn> cppi)
 {
-	//TODO change the message from xDPd; the description of the port is useless.
-
 	//Prepare the request
 	Object json;	
 	json["command"] = DISCOVER_PHY_PORTS;
@@ -564,6 +562,7 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 		throw XDPDManagerException();
 	}
 	
+	list<string> wirelessList;
 	if(hasWireless)
 	{
 		//The virtual wireless interface created on xDPd must be connected to a physical wireless interface through a Linux bridge
@@ -572,10 +571,9 @@ CreateLsiOut *XDPDManager::parseCreateLSIresponse(CreateLsiIn cli, Object messag
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while attaching the wireless interface \"%s\" to a Linux bridge",wirelessName.c_str());
 			throw XDPDManagerException();
 		}
+		wirelessList.push_back(wirelessName);
 	}
 	
-	list<string> wirelessList;
-	wirelessList.push_back(wirelessName);
 	dpdiWirelessInterfaces[dpid] = wirelessList;
 	
 	CreateLsiOut *clo = new CreateLsiOut(dpid,physical_ports,network_functions_ports, virtual_links);
@@ -948,7 +946,10 @@ void XDPDManager::destroyLsi(uint64_t dpid)
 		parseDestroyLSIresponse(obj);
 		list<string> wirelessInterface = dpdiWirelessInterfaces[dpid];
 		for(list<string>::iterator w = wirelessInterface.begin(); w != wirelessInterface.end(); w++)
+		{
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "-------------> \"%s\"",(*w).c_str());
 			detachWirelessPort(dpid,*w);
+		}
 	} catch(...) {
 		throw;
 	}
