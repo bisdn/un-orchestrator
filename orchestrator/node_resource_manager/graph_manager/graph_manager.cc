@@ -1149,7 +1149,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	for(; nf != vlNFs.end() || p != vlPhyPorts.end() ;)
 	{
 		//FIXME: here I am referring to a vlink through its position. It would be really better to use its ID
-		AddVirtualLinkOut *avlo;
+		AddVirtualLinkOut *avlo = NULL;
 		try
 		{
 			VLink newLink(dpid0);
@@ -1193,7 +1193,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	for(set<string>::iterator ep = vlEndPoints.begin(); ep != vlEndPoints.end(); ep++)
 	{
 		//FIXME: here I am referring to a vlink through its position. It would be really better to use its ID
-		AddVirtualLinkOut *avlo;
+		AddVirtualLinkOut *avlo = NULL;
 		try
 		{
 			VLink newLink(dpid0);
