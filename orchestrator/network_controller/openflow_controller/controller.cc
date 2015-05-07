@@ -179,7 +179,7 @@ void *Controller::loop(void *param)
 	controller->add_dpt_listening(0,rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
 
 #ifdef DEBUG_OPENFLOW
-		rofl::logging::set_debug_level(7);
+	rofl::logging::set_debug_level(7);
 #endif
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start...");
