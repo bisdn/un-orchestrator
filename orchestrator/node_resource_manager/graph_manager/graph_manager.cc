@@ -1522,13 +1522,19 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 
 void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo rri, NFsManager *nfsManager,highlevel::Graph *graph, LSI * lsi)
 {
+	/*
+	*	Check if ports, NFs, end point and virtual links used by the rule removed are still useful.
+	*	Note that the rule has already been removed from the high level graph
+	*/
+
+
 	map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
 	map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
 	map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
 	
-	
 	list<highlevel::Rule> rules = graph->getRules();
 	
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Checking if ports, network functions, endpoints and virtual links can be removed...");
 	if(rri.isNFport)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Check if the vlink associated with the NF port '%s' must be removed (if this vlink exists)",rri.nf_port.c_str());
 	
@@ -1539,17 +1545,24 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 		/**
 		*	In case NF:port does not appear in other actions, the vlink must be removed
 		*/
+		
+		//FIXME: really can it be removed? We must also consider the other direction.
+		
 		bool equal = false;
 		for(list<highlevel::Rule>::iterator again = rules.begin(); again != rules.end(); again++)
-		{
-		
-			highlevel::Action *a = again->getAction();
+		{			highlevel::Action *a = again->getAction();
 			if(a->getType() == highlevel::ACTION_ON_NETWORK_FUNCTION)
 			{
-				if(((highlevel::ActionNetworkFunction*)a)->getInfo() == rri.nf_port)
+			
+				stringstream nf_port;
+				nf_port << ((highlevel::ActionNetworkFunction*)a)->getInfo() << "_" << ((highlevel::ActionNetworkFunction*)a)->getPort();
+				string nf_port_string = nf_port.str();
+			
+				if(nf_port_string == rri.nf_port)
 				{
 					//The action is on the same NF:port of the removed one, hence
-					//the vlink must not be removed
+					//the vlink must not be removed					
+					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The vlink cannot be removed, since there are other actions expressed on the NF port '%s'",rri.nf_port.c_str());
 					equal = true;
 					break;
 				}
@@ -1563,7 +1576,7 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Virtual link no longer required for NF port: %s",rri.nf_port.c_str());
 			uint64_t tobeRemovedID = nfs_vlinks.find(rri.nf_port)->second;
 			
-			lsi->removeNFvlink(rri.nf_port);
+			lsi->removeNFvlink(rri.nf_port); //FIXME: move this line after the for loop? BUG?
 			
 			for(map<string, uint64_t>::iterator pvl = ports_vlinks.begin(); pvl != ports_vlinks.end(); pvl++)
 			{
