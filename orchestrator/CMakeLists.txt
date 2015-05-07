@@ -128,7 +128,7 @@ ENDIF(LOG_1024X768)
 
 OPTION(
 	DEBUG_OPENFLOW
-	"Turn on to enable the debug of Openflow flowmod messages"
+	"Turn on to enable the debug of Openflow messages"
 	OFF
 )
 IF(DEBUG_OPENFLOW)
