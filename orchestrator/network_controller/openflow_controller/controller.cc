@@ -37,7 +37,7 @@ void Controller::handle_dpt_close(crofdpt& dpt)
 {
 	isOpen = false;
 	this->dpt = NULL;
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed");
+	logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is closed");
 }
 
 /*void Controller::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid,rofl::openflow::cofmsg_packet_in& msg)
@@ -178,8 +178,9 @@ void *Controller::loop(void *param)
 
 	controller->add_dpt_listening(0,rofl::csocket::SOCKET_TYPE_PLAIN, socket_params);
 
-	if(LOGGING_LEVEL <= ORCH_DEBUG)
+#ifdef DEBUG_OPENFLOW
 		rofl::logging::set_debug_level(7);
+#endif
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Openflow controller is going to start...");
 	
