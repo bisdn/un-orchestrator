@@ -16,9 +16,9 @@
 #include "../graph/high_level_graph/high_level_action_endpoint.h"
 #include "../rest_server/match_parser.h"
 
-#if (VSWITCH_IMPLEMENTATION == XDPD)
+#ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
-	
+
 //[+] Add here other implementations for the virtual switch
 #endif
 
@@ -106,7 +106,7 @@ private:
 	/**
 	*	The module that interacts with the virtual switch
 	*/
-#if (VSWITCH_IMPLEMENTATION == XDPD)
+#ifdef VSWITCH_IMPLEMENTATION_XDPD
 	XDPDManager switchManager;
 	
 	//[+] Add here other implementations for the virtual switch

@@ -126,12 +126,15 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 	switch(OFP_VERSION)
 	{
 		case OFP_10:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUsing Openflow 1.0");
 			versionbitmap.add_ofp_version(rofl::openflow10::OFP_VERSION);
 			break;
 		case OFP_12:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUsing Openflow 1.2");
 			versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 			break;
 		case OFP_13:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUsing Openflow 1.3");
 			versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 			break;
 	}
@@ -604,12 +607,15 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	switch(OFP_VERSION)
 	{
 		case OFP_10:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUsing Openflow 1.0");
 			versionbitmap.add_ofp_version(rofl::openflow10::OFP_VERSION);
 			break;
 		case OFP_12:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUsing Openflow 1.2");
 			versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 			break;
 		case OFP_13:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tUsing Openflow 1.3");
 			versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 			break;
 	}
