@@ -11,7 +11,7 @@
 #include <ostream>
 
 //FIXME: is it correct to include this?
-#include <rofl/datapath/pipeline/openflow/openflow1x/pipeline/of1x_group_table.h>
+//#include <rofl/datapath/pipeline/openflow/openflow1x/pipeline/of1x_group_table.h>
 
 using namespace std;
 

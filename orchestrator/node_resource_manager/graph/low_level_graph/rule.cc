@@ -62,12 +62,12 @@ void Rule::fillFlowmodMessage(rofl::openflow::cofflowmod &message, uint8_t of_ve
 	if(command == ADD_RULE)
 		//The action is only useful when a new entry is added
 		action.fillFlowmodMessage(message);
-	else
-	{
+//	else
+//	{
 		//Set the out_port and the out_group to any
-		message.set_out_group(OF1X_GROUP_ANY);
-		message.set_out_port(OF1X_PORT_ANY);
-	}
+//		message.set_out_group(OF1X_GROUP_ANY);
+//		message.set_out_port(OF1X_PORT_ANY);
+//	}
 }
 
 string Rule::getID()

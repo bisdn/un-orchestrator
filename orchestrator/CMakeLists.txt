@@ -58,8 +58,8 @@ ENDIF()
 
 
 # Rather complicated CMake code for selecting the virtual switch implementation
-SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD")
-SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD") #Add here other implementations
+SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD, OVS")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS") #Add here other implementations
 SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
 LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
 
@@ -67,8 +67,12 @@ IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL -1)
 	message(FATAL_ERROR "Option ${VSWITCH_IMPLEMENTATION} not supported, valid entries are ${VSWITCH_IMPLEMENTATION_VALUES}")
 ENDIF()
 IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0)
-	ADD_DEFINITIONS(-DOFP_VSWITCH_IMPLEMENTATION=XDPD)
+	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION=XDPD)
 ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1)
+	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION=OVS)
+ENDIF()
+
 # End of the rather complicated CMake code for setting the Openflow version
 
 OPTION(
@@ -218,11 +222,22 @@ SET(SOURCES
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
     SET(SOURCES2
     ${SOURCES}
-    network_controller/switch_manager/plugins/xdpd/xdpd_manager.h
+
+	network_controller/switch_manager/plugins/xdpd/xdpd_manager.h
 	network_controller/switch_manager/plugins/xdpd/xdpd_manager.cc
 	network_controller/switch_manager/plugins/xdpd/xdpd_constants.h
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
+
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/ovs/commands.h
+	network_controller/switch_manager/plugins/ovs/commands.cc
+	network_controller/switch_manager/plugins/ovs/ovs_manager.h
+	network_controller/switch_manager/plugins/ovs/ovs_manager.cc
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
 
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
@@ -248,11 +263,12 @@ LINK_DIRECTORIES(
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
-	librofl.so
+	librofl_common.so
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so
 	libxml2.so
+	libnetconf.so
 	-lrt
 )
 
