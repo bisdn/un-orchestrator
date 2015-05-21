@@ -32,7 +32,6 @@ Virtual Switch.
 
 	git clone https://github.com/bisdn/xdpd  
 	cd xdpd/  
-	git checkout integration-0.7  
 	Install all the libraries required by the README provided in this folder  
 	bash autogen  
 	cd build  

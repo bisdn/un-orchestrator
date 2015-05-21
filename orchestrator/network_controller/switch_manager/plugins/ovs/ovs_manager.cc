@@ -1,6 +1,6 @@
 #include "ovs_manager.h"
 
-char *host = NULL, *user = NULL;
+char *host = NULL, *user = NULL;	
 
 //this is a message printing function
 void clb_print(NC_VERB_LEVEL level, const char* msg) {
@@ -23,6 +23,9 @@ void clb_print(NC_VERB_LEVEL level, const char* msg) {
 //Constructor
 OVSManager::OVSManager()
 {
+
+	char user[64] = "";
+
 	/* initiate libnetconf - all subsystems */
 	nc_init(NC_INIT_ALL);
 		
@@ -31,12 +34,16 @@ OVSManager::OVSManager()
 	nc_callback_print(clb_print);//set a specific message printing function via callback
 
 	/* set authentication method preferred*/
-	//nc_ssh_pref(NC_SSH_AUTH_PASSWORD, 3);
-	//nc_ssh_pref(NC_SSH_AUTH_PUBLIC_KEYS, -1);
-	//nc_ssh_pref(NC_SSH_AUTH_INTERACTIVE, -2);
+	/*nc_ssh_pref(NC_SSH_AUTH_PASSWORD, 3);
+	nc_ssh_pref(NC_SSH_AUTH_PUBLIC_KEYS, 1);
+	nc_ssh_pref(NC_SSH_AUTH_INTERACTIVE, 2);*/
+
+	printf("Insert current user: ");
+
+	scanf("%s", user);
 
 	/*connect to a of-config server*/
-	cmd_connect();
+	cmd_connect(user);
 
 }
 

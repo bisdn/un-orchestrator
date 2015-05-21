@@ -16,14 +16,14 @@
 #include "../graph/high_level_graph/high_level_action_endpoint.h"
 #include "../rest_server/match_parser.h"
 
-//#if (VSWITCH_IMPLEMENTATION==XDPD)
-//	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
-
-//#elif (VSWITCH_IMPLEMENTATION == OVS)
+#ifdef VSWITCH_IMPLEMENTATION_XDPD
+	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
+#endif
+#ifdef VSWITCH_IMPLEMENTATION_OVS
 	#include "../../network_controller/switch_manager/plugins/ovs/ovs_manager.h"
-	
+#endif
+
 //[+] Add here other implementations for the virtual switch
-//#endif
 
 #include <list>
 #include <vector>
@@ -109,14 +109,13 @@ private:
 	/**
 	*	The module that interacts with the virtual switch
 	*/
-//#if (VSWITCH_IMPLEMENTATION == XDPD)
-//	XDPDManager switchManager;
-
-//#elif (VSWITCH_IMPLEMENTATION == OVS)
+#ifdef VSWITCH_IMPLEMENTATION_XDPD
+	XDPDManager switchManager;
+#endif
+#ifdef VSWITCH_IMPLEMENTATION_OVS
 	OVSManager switchManager;
-	
+#endif
 	//[+] Add here other implementations for the virtual switch
-//#endif
 	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action

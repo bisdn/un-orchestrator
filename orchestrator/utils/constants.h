@@ -120,16 +120,6 @@
 #define SIDE_ATTRIBUTE				"side"
 
 /*
- * Supported virtual switch implementations.
- */ 
-enum
-{
-	XDPD = 0,
-	OVS
-	//[+] Add here new implementations
-};
-
-/*
  * Supported Openflow versions.
  */ 
 enum

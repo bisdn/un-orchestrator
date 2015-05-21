@@ -11,12 +11,12 @@
 	<!--
 		Specify an ethernet interface
 	-->
-	<port name="10ge0" type="ethernet" side="core"/>
+	<port name="eth1" type="ethernet" side="none"/>
 	
 	<!--
 		Specify a wifi interface
 	-->
-	<port name="wlan4" type="wifi" side="edge"/>
+	<port name="eth2" type="ethernet" side="none"/>
 
 	<!--
 		Valid values for side are

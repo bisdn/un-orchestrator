@@ -10,8 +10,9 @@
 
 #include <ostream>
 
-//FIXME: is it correct to include this?
-//#include <rofl/datapath/pipeline/openflow/openflow1x/pipeline/of1x_group_table.h>
+//XXX: the following two constants are not exported by rofl common. Hence they are redefined in this file.
+#define OF1X_GROUP_ANY	0xffffffff
+#define OF1X_PORT_ANY	0xffffffff
 
 using namespace std;
 

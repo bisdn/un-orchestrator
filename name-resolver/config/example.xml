@@ -46,4 +46,19 @@
 		<implementation type="dpdk" uri="../NFs/dpdk/dpi/build/dpi" cores="1" location="local"/>
 	</network-function>
 
+	<!-- my network-function examples -->
+	<network-function name="VNFExample">
+		<!-- Only a VNF implementation is available for this network function -->
+		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="remote"/>
+	</network-function>
+	<network-function name="VNFExample1">
+		<!-- Only a VNF implementation is available for this network function -->
+		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="local"/>
+	</network-function>
+
+	<network-function name="bridge">
+		<!-- Only a docker implementation is available for this network function -->
+		<implementation type="docker" uri="simple_bridge"/>
+	</network-function>
+
 </network-functions>
