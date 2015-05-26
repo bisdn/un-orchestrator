@@ -1,5 +1,8 @@
 #include "main.h"
 #include "init.h"
+#include <inttypes.h>
+
+extern uint64_t counter;
 
 int MAIN(int argc, char *argv[])
 {
@@ -40,6 +43,7 @@ int MAIN(int argc, char *argv[])
 			return -1;
 		}
 	}
+
 
 	return 0;
 }

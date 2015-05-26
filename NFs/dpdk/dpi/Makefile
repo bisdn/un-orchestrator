@@ -22,9 +22,9 @@ CFLAGS += $(WERROR_FLAGS)
 #CFLAGS += -DENABLE_SEMAPHORE
 
 #Uncomment the next line to enable the log in the NF
-CFLAGS += -DENABLE_LOG
+#CFLAGS += -DENABLE_LOG
 
-LDFLAGS += -lpcre
+#LDFLAGS += -lpcre
 
 include $(RTE_SDK)/mk/rte.extapp.mk
 

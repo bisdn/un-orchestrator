@@ -225,6 +225,8 @@ void init_shared_resources(void)
 #endif
 }
 
+extern uint64_t counter;
+
 void sig_handler(int received_signal)
 {
 	fprintf(logFile,"[%s] Received SIGINT. I'm going to terminate...\n",NAME);
@@ -234,6 +236,7 @@ void sig_handler(int received_signal)
 #ifdef ENABLE_SEMAPHORE   
     	sem_unlink(nf_params.sem_name);
 #endif
+        fprintf(stderr, "Packets processed: %" PRIu64 "\n", counter);
         exit(0);
     }
 }
