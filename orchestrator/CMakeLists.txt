@@ -37,7 +37,7 @@ ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
 # Rather complicated CMake code for selecting the Openflow version
-SET(OFP_VERSION "OFP_12" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
+SET(OFP_VERSION "OFP_10" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
 SET(OFP_VERSION_VALUES "OFP_10" "OFP_12" "OFP_13")
 SET_PROPERTY(CACHE OFP_VERSION PROPERTY STRINGS ${OFP_VERSION_VALUES})
 LIST(FIND OFP_VERSION_VALUES ${OFP_VERSION} OFP_VERSION_INDEX)
@@ -212,6 +212,9 @@ SET(SOURCES
 	node_resource_manager/rest_server/match_parser.h
 	node_resource_manager/rest_server/match_parser.cc
 
+	compute_controller/libvirt/libvirt.cc
+	compute_controller/libvirt/libvirt.h
+
 	utils/logger.h
 	utils/logger.c
 	utils/constants.h
@@ -269,6 +272,7 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	libboost_system.so
 	libxml2.so
 	libnetconf.so
+	libvirt.so
 	-lrt
 )
 

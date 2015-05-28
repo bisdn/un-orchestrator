@@ -23,7 +23,19 @@ void Controller::handle_dpt_open(crofdpt& dpt)
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Connection with the datapath is open!");
 	
 	dpt.flow_mod_reset();
-	dpt.group_mod_reset();
+	switch(OFP_VERSION)
+	{
+		case OFP_10:
+			//Groups does not exist in Openflow 1.0
+			break;
+		case OFP_12:
+		case OFP_13:
+			dpt.group_mod_reset();
+			break;
+	}
+
+	
+	
 
 	this->dpt = &dpt;
 	isOpen = true;

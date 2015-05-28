@@ -24,7 +24,16 @@ openflow::ofp_action_type Action::getActionType()
 
 void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 {
-	message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(0)).set_port_no(port_id); 
+	switch(OFP_VERSION)
+	{
+		case OFP_10:
+			message.set_actions().add_action_output(cindex(0)).set_port_no(port_id);
+			break;
+		case OFP_12:
+		case OFP_13:
+			message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(0)).set_port_no(port_id);
+			break;
+	}
 }
 
 void Action::print()

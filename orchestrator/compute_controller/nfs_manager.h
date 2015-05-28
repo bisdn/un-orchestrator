@@ -21,6 +21,8 @@
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
 
+#include "libvirt/libvirt.h"
+
 using namespace std;
 using namespace json_spirit;
 

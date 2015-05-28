@@ -5,6 +5,8 @@ pthread_mutex_t NFsManager::nfs_manager_mutex = PTHREAD_MUTEX_INITIALIZER;
 map<int,uint64_t> NFsManager::cores;
 int NFsManager::nextCore = 0;
 
+Libvirt *libvirt;
+
 void NFsManager::setCoreMask(uint64_t core_mask)
 {
 	uint64_t mask = 1;
@@ -304,10 +306,15 @@ bool NFsManager::selectImplementation()
 
 #ifdef ENABLE_KVM
 	//Check if KVM is running
-	retVal = system(CHECK_KVM);
-	retVal = retVal >> 8;
+	//retVal = system(CHECK_KVM);
+	//retVal = retVal >> 8;
 
-	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Script returned: %d\n",retVal);
+	libvirt = new Libvirt();
+
+	retVal = libvirt->cmd_connect();
+
+	//logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Script returned: %d\n",retVal);
+	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Connect returned: %d\n",retVal);
 
 	if(retVal > 0)
 	{
@@ -317,6 +324,9 @@ bool NFsManager::selectImplementation()
 	}
 	else
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM  is not running.");
+	
+	/*close the connection*/	
+	libvirt->cmd_close();
 #endif
 
 	return false;
@@ -464,17 +474,23 @@ bool NFsManager::startNF(string nf_name, unsigned int number_of_ports, map<unsig
 		//FIXME: is it possible to configure some interface? Ask this to Zsolt
 		//The NF is a KVM virtual machine
 		
-		stringstream command;
-		command << PULL_AND_RUN_KVM_NF << " " << lsiID << " " << nf_name << " " << impl->getURI() << " " << number_of_ports;
+		list<char *> l;
+		
+		//stringstream command;
+		//command << PULL_AND_RUN_KVM_NF << " " << lsiID << " " << nf_name << " " << impl->getURI() << " " << number_of_ports;
 		
 		//create the names of the ports
-		for(unsigned int i = 1; i <= number_of_ports; i++)
-			command << " " << lsiID << "_" << nf_name << "_" << i;
-			
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+		for(unsigned int i = 1; i <= number_of_ports; i++){
+			//command << " " << lsiID << "_" << nf_name << "_" << i;
+		}
+		
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing startNF.!");
+		//logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 
-		retVal = system(command.str().c_str());
-		retVal = retVal >> 8;
+		retVal = libvirt->cmd_startNF(lsiID, nf_name, impl->getURI(), number_of_ports);
+
+		//retVal = system(command.str().c_str());
+		//retVal = retVal >> 8;
 	}
 
 	if(retVal == 0)
@@ -520,9 +536,12 @@ bool NFsManager::stopNF(string nf_name)
 	else if(impl->getType() == DPDK)
 		//The NF is a DPDK process
 		command << STOP_DPDK_NF << " " << lsiID << " " << nf_name;
-	else
+	else{
 		//The NF is a KVM virtual machine
-		command << STOP_KVM_NF << " " << lsiID << " " << nf_name;
+		libvirt->cmd_shutdown(lsiID, (char *)nf_name.c_str());
+		
+		//command << STOP_KVM_NF << " " << lsiID << " " << nf_name;
+	}
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 	retVal = system(command.str().c_str());

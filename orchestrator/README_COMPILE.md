@@ -50,6 +50,11 @@ Virtual Switch.
 	* Bind Ethernet device to IGB UIO module (bind all the ethernet interfaces 
     that you want to use)
 
+* OF-CONFIG
+
+	git clone https://https://github.com/openvswitch/of-config  
+	For install follow the INSTALL.md readme provided in the root folder  
+
 ===============================================================================
 
 Docker environment for network functions
