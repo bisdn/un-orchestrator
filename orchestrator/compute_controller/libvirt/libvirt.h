@@ -10,6 +10,7 @@
 #include <map>
 #include <string.h>
 #include <libvirt/libvirt.h>
+#include <libvirt/virterror.h>
 #include "../../utils/logger.h"
 #include "../../utils/constants.h"
 
@@ -31,7 +32,7 @@ public:
 	
 	int cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsigned int n_ports);
 	
-	int cmd_shutdown(uint64_t lsiID, string nf_name);
+	int cmd_destroy(uint64_t lsiID, string nf_name);
 };
 
 #endif

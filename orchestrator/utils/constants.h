@@ -129,4 +129,10 @@ enum
 	OFP_13
 };
 
+/*
+ * Constants to Libvirt.
+ */
+ #define MEMORY_SIZE 				"4194304"
+ #define NUMBER_OF_CORES			   "4"
+
 #endif //CONSTANTS_H_

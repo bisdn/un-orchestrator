@@ -306,14 +306,9 @@ bool NFsManager::selectImplementation()
 
 #ifdef ENABLE_KVM
 	//Check if KVM is running
-	//retVal = system(CHECK_KVM);
-	//retVal = retVal >> 8;
-
-	libvirt = new Libvirt();
 
 	retVal = libvirt->cmd_connect();
 
-	//logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Script returned: %d\n",retVal);
 	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Connect returned: %d\n",retVal);
 
 	if(retVal > 0)
@@ -476,21 +471,15 @@ bool NFsManager::startNF(string nf_name, unsigned int number_of_ports, map<unsig
 		
 		list<char *> l;
 		
-		//stringstream command;
-		//command << PULL_AND_RUN_KVM_NF << " " << lsiID << " " << nf_name << " " << impl->getURI() << " " << number_of_ports;
-		
 		//create the names of the ports
 		for(unsigned int i = 1; i <= number_of_ports; i++){
 			//command << " " << lsiID << "_" << nf_name << "_" << i;
 		}
 		
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing startNF.!");
-		//logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"cmd_startNF\"");
 
 		retVal = libvirt->cmd_startNF(lsiID, nf_name, impl->getURI(), number_of_ports);
-
-		//retVal = system(command.str().c_str());
-		//retVal = retVal >> 8;
 	}
 
 	if(retVal == 0)
@@ -515,7 +504,7 @@ bool NFsManager::stopNF(string nf_name)
 	//FIXME: remove the NF from the map?
 	//FIXME: if not, remove at least the selected implementation?
 
-	int retVal;
+	int retVal = 0, retVal1 = 0;
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Stopping the NF \"%s\"",nf_name.c_str());
 
@@ -538,16 +527,14 @@ bool NFsManager::stopNF(string nf_name)
 		command << STOP_DPDK_NF << " " << lsiID << " " << nf_name;
 	else{
 		//The NF is a KVM virtual machine
-		libvirt->cmd_shutdown(lsiID, (char *)nf_name.c_str());
-		
-		//command << STOP_KVM_NF << " " << lsiID << " " << nf_name;
+		retVal1 = libvirt->cmd_destroy(lsiID, (char *)nf_name.c_str());
 	}
 
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"cmd_destroy\"");
 	retVal = system(command.str().c_str());
 	retVal = retVal >> 8;
 
-	if(retVal == 0)
+	if(retVal == 0 && retVal1 == 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while stopping the NF \"%s\"",nf_name.c_str());
 		return false;

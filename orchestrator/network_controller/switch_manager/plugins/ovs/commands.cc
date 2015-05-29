@@ -2,6 +2,7 @@
 #define COMMANDS
 
 #include "ovs_manager.h"
+#include "ovs_constants.h"
 
 #endif
 
@@ -124,8 +125,6 @@ static int send_recv_process(const char* operation, nc_rpc* rpc, const char* out
 
 /*connect to a of-config server with default username, host and port*/
 int cmd_connect(char *user) {
-	/*@FIXME*/
-
 	//this is a password callback
 	nc_callback_sshauth_password(password);
 
@@ -170,7 +169,7 @@ CreateLsiOut* cmd_editconfig_lsi (CreateLsiIn cli){
 	list<pair<unsigned int, unsigned int> > virtual_links;
 	map<string,unsigned int> n_ports;
 
-	int rnumber_old = 0, dnumber_new = 0, nfnumber_old = 0/*, pnumber_old = 0*/;
+	int rnumber_old = 0, dnumber_new = 0, nfnumber_old = 0;
 
 	NC_EDIT_TESTOPT_TYPE testopt = NC_EDIT_TESTOPT_SET;
 	NC_DATASTORE target = NC_DATASTORE_RUNNING /*by default is running*/;
@@ -827,19 +826,19 @@ CreateLsiOut* cmd_editconfig_lsi (CreateLsiIn cli){
 			peer_name = switch_id[(*nf)].c_str();
 
 			/*bridge_name virtual link*/
-			sprintf(cmdLine, "./network_controller/switch_manager/plugins/ovs/scripts/VirtualLink.sh %s %s %s %s", bridge_name, peer_name, vrt, trv);
+			sprintf(cmdLine, PATH_SCRIPT_VIRTUAL_LINK, bridge_name, peer_name, vrt, trv);
 
 			/*execute VirtualLink.sh*/
 			system(cmdLine);
 
-			sprintf(cmdLine, "./network_controller/switch_manager/plugins/ovs/scripts/IdPort.sh %s %s", bridge_name, vrt);
+			sprintf(cmdLine, PATH_SCRIPT_ID_PORT, bridge_name, vrt);
 
 			/*execute IdPort.sh*/
 			port_id_1 = system(cmdLine);
 
 			port_id_1 = port_id_1/256;
 
-			sprintf(cmdLine, "./network_controller/switch_manager/plugins/ovs/scripts/IdPort.sh %s %s", peer_name, trv);
+			sprintf(cmdLine, PATH_SCRIPT_ID_PORT, peer_name, trv);
 
 			/*execute IdPort.sh*/
 			port_id_2 = system(cmdLine);
@@ -847,36 +846,30 @@ CreateLsiOut* cmd_editconfig_lsi (CreateLsiIn cli){
 			port_id_2 = port_id_2/256;
 
 			/*store the information [bridge name, list of peer port]*/
-			virtual_link_id[/*port_id_1*/bridge_name].push_back(/*pnumber*/port_id_2);
+			virtual_link_id[bridge_name].push_back(port_id_2);
 
 			/*store the information [port_id, port_name]*/
-			port_id[port_id_1/*pnumber_old*/] = vrt;
+			port_id[port_id_1] = vrt;
 
 			/*store the information [switch_id, port_id]*/
-			vl_id[/*pnumber_old*/port_id_1] = dnumber_new;
-			vl_id[/*pnumber*/port_id_2] = (*nf);
-
-			/*peer_name virtual link*/
-			//sprintf(cmdLine, "./VirtualLink.sh %s %s %s", peer_name, trv, vrt);
-
-			/*execute VirtualLink.sh*/
-			//system(cmdLine);
+			vl_id[port_id_1] = dnumber_new;
+			vl_id[port_id_2] = (*nf);
 
 			/*store the information [port_id, port_name]*/
-			port_id[port_id_2/*pnumber*/] = trv;
+			port_id[port_id_2] = trv;
 
 			/*store the information [bridge name, list of peer port]*/
-			virtual_link_id[/*port_id_2*/peer_name].push_back(/*pnumber_old*/port_id_1);
+			virtual_link_id[peer_name].push_back(port_id_1);
 
 			/*store the information of virtual link*/
-			virtual_links.push_back(make_pair(port_id_1, port_id_2/*pnumber_old, pnumber*/));
+			virtual_links.push_back(make_pair(port_id_1, port_id_2));
 
 			pnumber++;
 		}
 	}	
 
 	/*set string bash*/
-	sprintf(cmdLine, "./OFVersion.sh %s %s", switch_name, of_version);
+	sprintf(cmdLine, PATH_SCRIPT_OF_VERSION, switch_name, of_version);
 
 	/*execute OFVersion.sh*/
 	system(cmdLine);
@@ -1892,17 +1885,12 @@ AddVirtualLinkOut *cmd_addVirtualLink(AddVirtualLinkIn avli){
 	sprintf(temp, "%d", pnumber);
 	strcat(trv, temp);
 
-        sprintf(cmdLine, "./network_controller/switch_manager/plugins/ovs/scripts/VirtualLink.sh %s %s %s %s", bridge_name, peer_name, vrt, trv);
+        sprintf(cmdLine, PATH_SCRIPT_VIRTUAL_LINK, bridge_name, peer_name, vrt, trv);
 
 	/*execute VirtualLink.sh*/
 	system(cmdLine);
-
-	//sprintf(cmdLine, "./VirtualLink.sh %s %s %s", bridge_name, trv, vrt);
-
-	/*execute VirtualLink.sh*/
-	//system(cmdLine);
 	
-	sprintf(cmdLine, "./network_controller/switch_manager/plugins/ovs/scripts/IdPort.sh %s %s", bridge_name, vrt);
+	sprintf(cmdLine, PATH_SCRIPT_ID_PORT, bridge_name, vrt);
 
 	/*execute IdPort.sh*/
 	port_id_1 = system(cmdLine);
@@ -1910,12 +1898,12 @@ AddVirtualLinkOut *cmd_addVirtualLink(AddVirtualLinkIn avli){
 	port_id_1 = port_id_1/256;
 
 	/*store the information [port_id, bridge_name]*/
-	virtual_link_id[/*port_id_1*/bridge_name].push_back(/*pnumber*/port_id_2);
+	virtual_link_id[bridge_name].push_back(port_id_2);
 
 	/*store the information [port_id, port_name]*/
-	port_id[port_id_1/*pnumber_old*/] = vrt;
+	port_id[port_id_1] = vrt;
 
-	sprintf(cmdLine, "./network_controller/switch_manager/plugins/ovs/scripts/IdPort.sh %s %s", peer_name, trv);
+	sprintf(cmdLine, PATH_SCRIPT_ID_PORT, peer_name, trv);
 
 	/*execute IdPort.sh*/
 	port_id_2 = system(cmdLine);
@@ -1923,14 +1911,14 @@ AddVirtualLinkOut *cmd_addVirtualLink(AddVirtualLinkIn avli){
 	port_id_2 = port_id_2/256;
 
 	/*store the information [port_id, bridge_name]*/
-	virtual_link_id[/*port_id_2*/peer_name].push_back(/*pnumber_old*/port_id_1);
+	virtual_link_id[peer_name].push_back(port_id_1);
 
 	/*store the information [port_id, port_name]*/
-	port_id[port_id_2/*pnumber*/] = trv;
+	port_id[port_id_2] = trv;
 
 	pnumber++;
 
-	avlo = new AddVirtualLinkOut(port_id_1, port_id_2/*pnumber_old, pnumber*/);
+	avlo = new AddVirtualLinkOut(port_id_1, port_id_2);
 
 	return avlo;
 

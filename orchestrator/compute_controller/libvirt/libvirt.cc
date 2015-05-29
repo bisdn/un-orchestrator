@@ -5,13 +5,28 @@
 
 #endif
 
-/*map [image_name, domain] */
-map<char *, virDomainPtr> img_name;
-
 virConnectPtr conn;
+
+/*error handler libvirt*/
+static void customErrorFunc(void *userdata, virErrorPtr err)
+{
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Failure of libvirt library call:\n");
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Code: %d\n", err->code);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Domain: %d\n", err->domain);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Message: %s\n", err->message);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Level: %d\n", err->level);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " str1: %s\n", err->str1);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " str2: %s\n", err->str2);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " str3: %s\n", err->str3);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " int1: %d\n", err->int1);
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " int2: %d\n", err->int2);
+}
 
 /*connect to qemu with root privileges*/
 int Libvirt::cmd_connect(){
+
+	virSetErrorFunc(NULL, customErrorFunc);
+
 	conn = virConnectOpen("qemu:///system");
 	if (conn == NULL) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Failed to open connection to qemu:///system\n");
@@ -30,7 +45,7 @@ void Libvirt::cmd_close(){
 
 /*retrieve and start NF*/
 int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsigned int n_ports){
-	virDomainPtr dom;
+	virDomainPtr dom = NULL;
 	char* bridge_name = new char[64], *temp = new char[64], *tmmp_file = new char[64], *sw = new char[64], *port_name = new char[64], *tmp = new char[64];
 	strcpy(sw, "Bridge");
 	const char *xmlconfig = "";
@@ -85,9 +100,37 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 	
 	/*add element "memory"*/
-	rc = xmlTextWriterWriteElement(writer, BAD_CAST "memory", BAD_CAST "1500000");
+	rc = xmlTextWriterWriteElement(writer, BAD_CAST "memory", BAD_CAST /*"4194304"*/MEMORY_SIZE);
 	if (rc < 0) {
        		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		return 0;
+	}
+	
+	/*add element "vcpu"*/
+	rc = xmlTextWriterStartElement(writer, BAD_CAST "vcpu");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		return 0;
+	}
+
+	/*add attribute "placement"*/
+	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "placement", BAD_CAST "static");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+		return 0;
+	}
+
+	/*add content "vcpu"*/
+	rc = xmlTextWriterWriteRaw(writer, BAD_CAST /*"4"*/NUMBER_OF_CORES);
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		return 0;
+	}
+
+	/*close element "vcpu"*/
+	rc = xmlTextWriterEndElement(writer);
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
 	}
 	
@@ -309,7 +352,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 	
 	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "raw");
+	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "qcow2");
 	if (rc < 0) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 		return 0;
@@ -393,7 +436,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 	
 	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "raw");
+	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "qcow2");
 	if (rc < 0) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 		return 0;
@@ -445,9 +488,9 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	sprintf(temp, "%" PRIu64, lsiID);
 	strcat(sw, temp);
 	strcpy(bridge_name, sw);
-		
+	
+	/*create NIC*/
 	for(unsigned int i=1;i<=n_ports;i++){
-		
 		/*add element "interface"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "interface");
 		if (rc < 0) {
@@ -456,7 +499,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		}
 	
 		/*add attribute "type"*/
-		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "bridge");
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "direct");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;
@@ -469,8 +512,26 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			return 0;
 		}
 	
-		/*add attribute "bridge"*/
-		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "bridge", "%s", bridge_name);
+		/*add ports*/	
+		/*lsi_example_i*/
+		strcpy(tmp, (char *)nf_name.c_str());
+		sprintf(temp, "%" PRIu64, lsiID);
+		strcpy(port_name, temp);
+		strcat(port_name, "_");
+		strcat(port_name, tmp);
+		strcat(port_name, "_");
+		sprintf(temp, "%u", i);
+		strcat(port_name, temp);	
+		
+		/*add attribute "dev"*/
+		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "dev", "%s", port_name);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+	
+		/*add attribute "mode"*/
+		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "mode", "passthrough");//I use this mode because all other modes drop the unicast traffic - https://seravo.fi/2012/virtualized-bridged-networking-with-macvtap
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;
@@ -526,45 +587,13 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	    	}
 
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%u\n", n_ports);
-	
-		/*add ports*/	
-		/*lsi_example_i*/
-		strcpy(tmp, (char *)nf_name.c_str());
-		sprintf(temp, "%" PRIu64, lsiID);
-		strcpy(port_name, temp);
-		strcat(port_name, "_");
-		strcat(port_name, tmp);
-		strcat(port_name, "_");
-		sprintf(temp, "%u", i);
-		strcat(port_name, temp);
-	
-		/*add element "target"*/
-		rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
-		if (rc < 0) {
-		       	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-			return 0;
-		}
-	
-		/*add attribute "dev"*/
-		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "dev", BAD_CAST port_name);
-		if (rc < 0) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-			return 0;
-		}
-		
-		/*close element "target"*/
-		rc = xmlTextWriterEndElement(writer);
-	    	if (rc < 0) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-			return 0;		
-		}
 		
 		/*close element "interface"*/
 		rc = xmlTextWriterEndElement(writer);
 	    	if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
-	    	}
+	    	}	
 	}
 	
 	/*add element "serial"*/
@@ -936,14 +965,8 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	xmlconfig = (const char *)buf->content;
 	dom = virDomainCreateXML(conn, xmlconfig, 0);
 	if (!dom) {
+		virDomainFree(dom);
     		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Domain definition failed");
-    		return 0;
-	}
-	
-	/*run the VM*/
-	if (virDomainCreate(dom) < 0) {
-    		virDomainFree(dom);
-   		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot boot guest");
     		return 0;
 	}
 	
@@ -951,29 +974,20 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	virDomainFree(dom);
 	
-	/*save value of domain*/
-	img_name[tmmp_file] = dom;
-	
 	return 1;
 }
 
 /*stop NF*/
-int Libvirt::cmd_shutdown(uint64_t lsiID, string nf_name){
-	char *tmmp_file = new char[64];	
+int Libvirt::cmd_destroy(uint64_t lsiID, string nf_name){
+	char *tmmp_file = new char[64];
 	
 	/*image_name*/
 	sprintf(tmmp_file, "%" PRIu64, lsiID);
 	strcat(tmmp_file, "_");
 	strcat(tmmp_file, (char *)nf_name.c_str());
 
-	virDomainPtr dom = img_name[tmmp_file];
-	
-	if(virDomainShutdown(dom) != 0){
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "failed to stop (shutdown) VM.\n");
-		return 0;
-	}
-	
-	if(virDomainDestroy(dom) != 0){
+	/*destroy the VM*/
+	if(virDomainDestroy(virDomainLookupByName(conn, tmmp_file)) != 0){
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "failed to stop (destroy) VM.\n");
 		return 0;
 	}
