@@ -77,7 +77,7 @@ Virtual Execution Environment for network functions.
 
 * Libvirt (and KVM)
 
-	git clone git://libvirt.org/libvirt.git
+	git clone git://libvirt.org/libvirt.git  
 	Follow the instructions in INSTALL.md provided in the root folder
         
 ===============================================================================

@@ -57,11 +57,22 @@ Example:
     
 ===============================================================================
 
-Please check config/example.xml to understand the configuration file descrfibing
+Please check config/example.xml to understand the configuration file describing
 the physical ports to be handeld by the  un-orchestrator.
 
 ===============================================================================
 
 Please check README_COMMANDS to know the commands to be used to interact with
 the un-orchestrator.
+
+===============================================================================
+
+If you are going to use OVS as virtual switch, please check README_RUN_XDPD to 
+know how to startup OVS with the OFConfig client.
+
+
+===============================================================================
+
+If you are going to use OVS as virtual switch, please check README_RUN_OVS to 
+know how to startup OVS with the OFConfig client.
 
