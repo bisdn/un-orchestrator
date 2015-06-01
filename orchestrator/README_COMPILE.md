@@ -50,30 +50,38 @@ Virtual Switch.
 	* Bind Ethernet device to IGB UIO module (bind all the ethernet interfaces 
     that you want to use)
 
-* OF-CONFIG
+* Open vSwitch
 
 	git clone https://https://github.com/openvswitch/of-config  
-	For install follow the INSTALL.md readme provided in the root folder  
+	Follow the instructions in INSTALL.md provided in the root folder  
 
 ===============================================================================
 
-Docker environment for network functions
+Virtual Execution Environment for network functions.
 
-* On Ubuntu:   
-	follow the instruction provided here:  
-		http://docs.docker.com/installation/  
-	apt-get install lxc -y  
-	echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker  
-	service docker restart
+* Docker
 
-* On Debian:  
-	follow the instruction provided here:  
-		https://scottlinux.com/2014/05/04/how-to-install-and-run-docker-on-debian-wheezy/ 
-	apt-get install docker -y  
-	echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker  
-	service docker.io restart
+	* On Ubuntu:   
+		follow the instruction provided here:  
+			http://docs.docker.com/installation/  
+		apt-get install lxc -y  
+		echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker  
+		service docker restart
+
+	* On Debian:  
+		follow the instruction provided here:  
+			https://scottlinux.com/2014/05/04/how-to-install-and-run-docker-on-debian-wheezy/ 
+		apt-get install docker -y  
+		echo 'DOCKER_OPTS="-e lxc"' >> /etc/default/docker  
+		service docker.io restart
+
+* Libvirt (and KVM)
+
+	git clone git://libvirt.org/libvirt.git
+	Follow the instructions in INSTALL.md provided in the root folder
         
 ===============================================================================
+
 Compile the un-orchestrator
 
 	cd orchestrator  
