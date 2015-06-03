@@ -50,10 +50,15 @@ Virtual Switch.
 	* Bind Ethernet device to IGB UIO module (bind all the ethernet interfaces 
     that you want to use)
 
-* Open vSwitch
+* Open vSwitch (OVS)
 
-	git clone https://https://github.com/openvswitch/of-config  
-	Follow the instructions in INSTALL.md provided in the root folder  
+	Compile and install libnetconf as described here:  
+		https://code.google.com/p/libnetconf/source/browse/INSTALL  
+	  
+	Compile and install OVS:  
+		git clone https://https://github.com/openvswitch/of-config    
+		Follow the instructions as described in the file INSTALL.md 
+		provided in the root folder  
 
 ===============================================================================
 
@@ -78,7 +83,8 @@ Virtual Execution Environment for network functions.
 * Libvirt (and KVM)
 
 	git clone git://libvirt.org/libvirt.git  
-	Follow the instructions in INSTALL.md provided in the root folder
+	To compile and install libvirt, follow the instructions in INSTALL.md
+	provided in the root folder
         
 ===============================================================================
 

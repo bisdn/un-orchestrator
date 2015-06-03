@@ -5,9 +5,7 @@ pthread_mutex_t NFsManager::nfs_manager_mutex = PTHREAD_MUTEX_INITIALIZER;
 map<int,uint64_t> NFsManager::cores;
 int NFsManager::nextCore = 0;
 
-#ifdef ENABLE_KVM
-	Libvirt *libvirt;
-#endif
+Libvirt *libvirt;
 
 void NFsManager::setCoreMask(uint64_t core_mask)
 {
@@ -308,9 +306,14 @@ bool NFsManager::selectImplementation()
 
 #ifdef ENABLE_KVM
 	//Check if KVM is running
+	//retVal = system(CHECK_KVM);
+	//retVal = retVal >> 8;
+
+	libvirt = new Libvirt();
 
 	retVal = libvirt->cmd_connect();
 
+	//logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Script returned: %d\n",retVal);
 	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Connect returned: %d\n",retVal);
 
 	if(retVal > 0)
@@ -466,7 +469,6 @@ bool NFsManager::startNF(string nf_name, unsigned int number_of_ports, map<unsig
 		retVal = system(command.str().c_str());
 		retVal = retVal >> 8;
 	}
-#ifdef ENABLE_KVM	
 	else
 	{
 		//FIXME: is it possible to configure some interface? Ask this to Zsolt
@@ -474,17 +476,22 @@ bool NFsManager::startNF(string nf_name, unsigned int number_of_ports, map<unsig
 		
 		list<char *> l;
 		
-		//create the names of the ports
-		//for(unsigned int i = 1; i <= number_of_ports; i++){
-		//	command << " " << lsiID << "_" << nf_name << "_" << i;
-		//}
+		//stringstream command;
+		//command << PULL_AND_RUN_KVM_NF << " " << lsiID << " " << nf_name << " " << impl->getURI() << " " << number_of_ports;
 		
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing startNF!");
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"cmd_startNF\"");
+		//create the names of the ports
+		for(unsigned int i = 1; i <= number_of_ports; i++){
+			//command << " " << lsiID << "_" << nf_name << "_" << i;
+		}
+		
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing startNF.!");
+		//logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 
-		retVal = libvirt->cmd_startNF(lsiID, nf_name, impl->getURI(), number_of_ports);
+		retVal = libvirt->cmd_startNF(lsiID, nf_name, impl->getURI()), number_of_ports;
+
+		//retVal = system(command.str().c_str());
+		//retVal = retVal >> 8;
 	}
-#endif
 
 	if(retVal == 0)
 	{
@@ -508,7 +515,7 @@ bool NFsManager::stopNF(string nf_name)
 	//FIXME: remove the NF from the map?
 	//FIXME: if not, remove at least the selected implementation?
 
-	int retVal = 0, retVal1 = 0;
+	int retVal;
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Stopping the NF \"%s\"",nf_name.c_str());
 
@@ -529,18 +536,18 @@ bool NFsManager::stopNF(string nf_name)
 	else if(impl->getType() == DPDK)
 		//The NF is a DPDK process
 		command << STOP_DPDK_NF << " " << lsiID << " " << nf_name;
-#ifdef ENABLE_KVM
 	else{
 		//The NF is a KVM virtual machine
-		retVal1 = libvirt->cmd_destroy(lsiID, (char *)nf_name.c_str());
+		libvirt->cmd_shutdown(lsiID, (char *)nf_name.c_str());
+		
+		//command << STOP_KVM_NF << " " << lsiID << " " << nf_name;
 	}
-#endif
 
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"cmd_destroy\"");
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"",command.str().c_str());
 	retVal = system(command.str().c_str());
 	retVal = retVal >> 8;
 
-	if(retVal == 0 && retVal1 == 0)
+	if(retVal == 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while stopping the NF \"%s\"",nf_name.c_str());
 		return false;

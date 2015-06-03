@@ -21,9 +21,7 @@
 #include <json_spirit/value.h>
 #include <json_spirit/writer.h>
 
-#ifdef ENABLE_KVM
-	#include "libvirt/libvirt.h"
-#endif
+#include "libvirt/libvirt.h"
 
 using namespace std;
 using namespace json_spirit;

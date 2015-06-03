@@ -212,9 +212,6 @@ SET(SOURCES
 	node_resource_manager/rest_server/match_parser.h
 	node_resource_manager/rest_server/match_parser.cc
 
-	compute_controller/libvirt/libvirt.cc
-	compute_controller/libvirt/libvirt.h
-
 	utils/logger.h
 	utils/logger.c
 	utils/constants.h
@@ -225,7 +222,6 @@ SET(SOURCES
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
     SET(SOURCES2
     ${SOURCES}
-
 	network_controller/switch_manager/plugins/xdpd/xdpd_manager.h
 	network_controller/switch_manager/plugins/xdpd/xdpd_manager.cc
 	network_controller/switch_manager/plugins/xdpd/xdpd_constants.h
@@ -242,6 +238,19 @@ IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
 
+
+IF(ENABLE_KVM)
+    SET(SOURCES3
+    ${SOURCES2}
+	compute_controller/libvirt/libvirt.cc
+	compute_controller/libvirt/libvirt.h
+	)
+ELSE()
+     SET(SOURCES3
+         ${SOURCES2}
+    	)
+ENDIF(ENABLE_KVM)
+
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
 	/usr/include/libxml2
@@ -251,7 +260,7 @@ INCLUDE_DIRECTORIES (
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES2}
+	${SOURCES3}
 )
 
 
@@ -271,8 +280,20 @@ TARGET_LINK_LIBRARIES( node-orchestrator
 	libmicrohttpd.so
 	libboost_system.so
 	libxml2.so
-	libnetconf.so
-	libvirt.so
 	-lrt
 )
+
+#Links specific for ovs
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+	TARGET_LINK_LIBRARIES( node-orchestrator
+		libnetconf.so
+	)
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+
+#Links specific for libvirt (KVM)
+IF(ENABLE_KVM)
+	TARGET_LINK_LIBRARIES( node-orchestrator
+		libvirt.so
+	)
+ENDIF(ENABLE_KVM)
 

@@ -67,8 +67,8 @@ the un-orchestrator.
 
 ===============================================================================
 
-If you are going to use OVS as virtual switch, please check README_RUN_XDPD to 
-know how to startup OVS with the OFConfig client.
+If you are going to use xDPd as virtual switch, please check README_RUN_XDPD to 
+know how to startup xDPd.
 
 
 ===============================================================================
