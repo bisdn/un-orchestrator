@@ -1,34 +1,51 @@
-This file describes, thorugh many examples, the commands to be used to interact
-with the un-orchestrator.
+# How to use the un-orchestrator
 
-===============================================================================
+This file describes, thorugh a set of examples, some of the commands that
+can be used to interact with the un-orchestrator.
 
-Create a new graph, with name "myGraph"
+### Main un-orchestrator REST commands
 
-* This example, is very simple: it does not have any network function, and just 
-  sends on the interface ge1 the traffic received through the interface ge0
 
-PUT /graph/myGraph HTTP/1.1  
-Content-Type : application/json
+### NF-FG examples
+This section provides some NF-FG graphs that can be used to configure
+the un-orchestrator.
 
-{  
-	"flow-graph":  
-	{  
-		"flow-rules": [  
-			{  
+### vSwitch pass-through example
+
+This example is very simple: it configures a graph that receives all the
+traffic from interface ge0 and sends it to interface ge1, without any
+network function in the middle.
+
+First, create a new file, named *myGraph.json*, that contains the following
+graph data:
+
+    {
+        "flow-graph":
+        {
+			"flow-rules": [
+			{
 				"id": "00000001",  
 				"match":  
-				{  
+				{
 					"port" : "ge0"  
-				},  
-				"action":  
-				{  
+				},
+                "action":  
+				{
 					"port": "ge1"  
 				}  
 			}  
-		]  
-	}  
-}  
+			]  
+		}
+	}
+
+
+Now, send this JSON graph to the un-orchestrator using your favorite
+REST tool (e.g., some nice plugins for Mozilla Firefox). Just in case,
+you can also use the cURL command line tool, such as in the following
+example:
+
+    curl -i -H "Content-Type: application/json" -d myGraph.json -X PUT  http://un-orchestrator-address:port
+
 
 * This example is more complex, and it includes a network function called "bridge".
   Packets coming from the interface ge0 are sent to the first port of the network
