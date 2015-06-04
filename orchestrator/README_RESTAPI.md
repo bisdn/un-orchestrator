@@ -3,7 +3,29 @@
 This file describes, thorugh a set of examples, some of the commands that
 can be used to interact with the un-orchestrator.
 
-### Main un-orchestrator REST commands
+The un-orchestrator can either accept a NF-FG from a file, or from its 
+REST interface (which features an embedded HTTP server).
+Some examples are available in the 'config' folder.
+
+
+### Main REST commands accepted by the un-orchestrator
+
+Retrieve the description of the graph with name "myGraph":
+
+	GET /graph/myGraph HTTP/1.1
+
+Delete the graph with name "myGraph"
+
+	DELETE /graph/myGraph HTTP/1.1
+
+Delete the flow with ID "flow_id" from the graph with name "myGraph":
+
+	DELETE /graph/myGraph/flow_id HTTP/1.1
+
+Retrieve information on the available physical interfaces:
+
+	GET /interfaces HTTP/1.1
+
 
 
 ### NF-FG examples
@@ -90,10 +112,10 @@ Content-Type : application/json
 	}  
 }  
 
-* This example implements the following graph:
+This example implements the following graph:
 
-   eth0 -> firewall -> if(tcp_dst == 80) -> web cache  -> nat  -> eth1  
-                       else  -------------------------- 
+    eth0 -> firewall -> if (tcp_dst == 80) -> web cache  -> nat  -> eth1  
+                        else \--------------------------/ 
 
 PUT /graph/myGraph HTTP/1.1   
 Content-Type : application/json   
@@ -429,38 +451,3 @@ Within the "action" element, the following fields are allowed:
 The same message used to create a new graph can be used to add "parts" (i.e.,
 network functions and flows) to an existing graph.
   
-===============================================================================
-
-Retrieve the description of the graph with name "myGraph".
-
-GET /graph/myGraph HTTP/1.1
-
-===============================================================================
-
-Delete the graph with name "myGraph".
-
-DELETE /graph/myGraph HTTP/1.1
-
-===============================================================================
-
-Delete the flow with ID "flow_id" from the graph with name "myGraph".
-
-DELETE /graph/myGraph/flow_id HTTP/1.1
-
-===============================================================================
-
-Retrieve information on the available physical interfaces.
-
-GET /interfaces HTTP/1.1
-
-===============================================================================
-
-If the un-orchestrator is compiled with the flag READ_JSON_FROM_FILE enabled,
-it not start the rest server; hence, it is not possible to sent commands at 
-runtime. However, at the startup you have to provide to the un-orchestrator a file 
-containing the JSON representing a command to create a graph; this graph is the
-only one created by the un-orchestrator, and will be destroyed only when the
-un-orchestrator itself terminates.
-
-Please check "example.json", which contains an example of file to be provided to
-the un-orchestrator in case the flag READ_JSON_FROM_FILE is enabled.
