@@ -1,5 +1,5 @@
 #ifndef SwitchManager_H_
-#define SwitchManager_ 1
+#define SwitchManager_H_ 1
 
 #pragma once
 
