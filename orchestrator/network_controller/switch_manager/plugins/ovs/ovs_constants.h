@@ -10,5 +10,6 @@
 #define PATH_SCRIPT_ID_PORT			"./network_controller/switch_manager/plugins/ovs/scripts/IdPort.sh %s %s"
 #define PATH_SCRIPT_OF_VERSION		"./network_controller/switch_manager/plugins/ovs/scripts/OFVersion.sh %s %s"
 
+#define TMP_XML_FILE				"file.xml"
 
 #endif //OVS_CONSTANTS_H_

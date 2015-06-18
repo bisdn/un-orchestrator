@@ -1,7 +1,5 @@
 #include "libvirt.h"
 
-virConnectPtr conn;
-
 /*error handler libvirt*/
 static void customErrorFunc(void *userdata, virErrorPtr err)
 {
@@ -67,11 +65,11 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 	
 	/* Create a new XmlWriter for memory, with no compression.*/
-    	writer = xmlNewTextWriterMemory(buf, 0);
-    	if (writer == NULL) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error creating the xml writer\n");
+	writer = xmlNewTextWriterMemory(buf, 0);
+	if (writer == NULL) {
+    	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error creating the xml writer\n");
 		return 0;
-    	}
+	}
 
 	/*Root element "domain"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "domain");
@@ -526,7 +524,8 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		}
 	
 		/*add attribute "mode"*/
-		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "mode", "passthrough");//I use this mode because all other modes drop the unicast traffic - https://seravo.fi/2012/virtualized-bridged-networking-with-macvtap
+		//XXX I use this mode because all other modes drop the unicast traffic - https://seravo.fi/2012/virtualized-bridged-networking-with-macvtap
+		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "mode", "passthrough");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;

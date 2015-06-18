@@ -23,6 +23,7 @@ using namespace std;
 class Libvirt
 {
 private:
+	virConnectPtr conn;
 
 public:
 
