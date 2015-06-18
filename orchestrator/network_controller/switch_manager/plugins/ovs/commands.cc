@@ -81,7 +81,7 @@ static int send_recv_process(const char* operation, nc_rpc* rpc, const char* out
 	case NC_MSG_REPLY:
 		switch (nc_reply_get_type(reply)) {
 		case NC_REPLY_OK:
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Result OK\n");
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result OK");
 			break;
 		case NC_REPLY_DATA:
 			if (output_file != NULL) {
