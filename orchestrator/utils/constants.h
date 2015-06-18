@@ -112,7 +112,7 @@
 /**
 *	@brief: Constants related to the configuration file containing the description of the physical ports
 */
-#define PHY_PORTS_XSD				"config/physical-ports.xsd"
+#define PHY_PORTS_XSD				"config/physical_ports-schema.xsd"
 
 #define PORT_ELEMENT				"port"
 #define NAME_ATTRIBUTE				"name"
