@@ -15,7 +15,9 @@ bool RestServer::init(char *nffg_filename,int core_mask, char *ports_file_name)
 
 	//Handle the file containing the first graph to be deployed
 	if(nffg_filename != NULL)
-	{
+	{	
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the initial graph described in file '%s'",nffg_filename);
+	
 		sleep(2); //XXX This give time to the controller to be initialized
 
 		std::ifstream file;
@@ -34,7 +36,7 @@ bool RestServer::init(char *nffg_filename,int core_mask, char *ports_file_name)
 		if(createGraphFromFile(stream.str()) == 0)
 			return false;
 	}
-		
+			
 	return true;
 }
 

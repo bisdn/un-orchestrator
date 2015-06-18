@@ -100,7 +100,7 @@ static struct option lgopts[] = {
 	};
 
 	argvopt = argv;
-	uint32_t arg_c = 0, arg_f = 0, arg_p = 0, arg_i;
+	uint32_t arg_c = 0, arg_f = 0, arg_p = 0, arg_i = 0;
 
 	*core_mask = CORE_MASK;
 	ports_file_name[0] = '\0';
