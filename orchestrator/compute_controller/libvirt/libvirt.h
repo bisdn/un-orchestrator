@@ -1,5 +1,5 @@
-#ifndef COMMANDS_H_
-#define COMMANDS_H_
+#ifndef LIBVIRT_COMMANDS_H_
+#define LIBVIRT_COMMANDS_H_ 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,4 +35,4 @@ public:
 	int cmd_destroy(uint64_t lsiID, string nf_name);
 };
 
-#endif
+#endif //LIBVIRT_COMMANDS_H_

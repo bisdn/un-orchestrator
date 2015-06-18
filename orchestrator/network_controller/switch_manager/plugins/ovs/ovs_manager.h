@@ -1,5 +1,5 @@
 #ifndef OVSManager_H_
-#define OVSManager_H_
+#define OVSManager_H_ 1
 
 #include "../../switch_manager.h"
 
@@ -65,4 +65,4 @@ public:
 	}
 };
 
-#endif
+#endif //OVSManager_H_

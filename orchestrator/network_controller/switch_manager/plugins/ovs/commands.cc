@@ -1,10 +1,5 @@
-#ifndef COMMANDS
-#define COMMANDS
-
 #include "ovs_manager.h"
 #include "ovs_constants.h"
-
-#endif
 
 struct nc_session* session = NULL;
 
@@ -26,7 +21,7 @@ char *password(const char *username, const char *hostname){
 	
 	char *psw = new char[64];	
 
-	printf("Insert password: ");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Insert ssh password for OFConfig server on OvS:");
 
 	scanf("%s", psw);
 

@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Root permissions are required to run %s\n",argv[0]);
 		exit(EXIT_FAILURE);	
 	}
-
+	
 	int core_mask;
 	int rest_port;
 	char *ports_file_name = NULL;

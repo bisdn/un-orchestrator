@@ -1,9 +1,4 @@
-#ifndef COMMANDS
-#define COMMANDS
-
 #include "libvirt.h"
-
-#endif
 
 virConnectPtr conn;
 
