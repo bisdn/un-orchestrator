@@ -9,18 +9,12 @@
 /**
 *	Private variables
 */
-#ifndef READ_JSON_FROM_FILE
-	struct MHD_Daemon *http_daemon = NULL;
-#endif
+struct MHD_Daemon *http_daemon = NULL;
 
 /**
 *	Private prototypes
 */
-#ifndef READ_JSON_FROM_FILE
-bool parse_command_line(int argc, char *argv[],int *rest_port,int *core_mask, char **ports_file_name);
-#else
-bool parse_command_line(int argc, char *argv[], char **file_name,int *core_mask, char **ports_file_name);
-#endif
+bool parse_command_line(int argc, char *argv[],int *rest_port, char **nffg_file_name,int *core_mask, char **ports_file_name);
 bool usage(void);
 
 /**
@@ -31,9 +25,7 @@ void singint_handler(int sig)
 {    
     logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is terminating...",MODULE_NAME);
 
-#ifndef READ_JSON_FROM_FILE
 	MHD_stop_daemon(http_daemon);
-#endif
 	
 	try
 	{
@@ -56,24 +48,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);	
 	}
 
-#ifdef READ_JSON_FROM_FILE
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "*************************************************************");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* The orchestrator has been compiled to read a JSON command *");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "* from a file, hence the REST server will not be started    *");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "*************************************************************");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
-#endif
-	
 	int core_mask;
-	char *ports_file_name = NULL;
-#ifdef READ_JSON_FROM_FILE
-	char *file_name = NULL;
-	if(!parse_command_line(argc,argv,&file_name,&core_mask,&ports_file_name))
-#else
 	int rest_port;
-	if(!parse_command_line(argc,argv,&rest_port,&core_mask,&ports_file_name))
-#endif
+	char *ports_file_name = NULL;
+	char *nffg_file_name = NULL;
+
+	if(!parse_command_line(argc,argv,&rest_port,&nffg_file_name,&core_mask,&ports_file_name))
 		exit(EXIT_FAILURE);	
 
 	//XXX: this code avoids that the program terminates when system() is executed
@@ -81,17 +61,12 @@ int main(int argc, char *argv[])
 	sigfillset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
-#ifdef READ_JSON_FROM_FILE
-	if(!RestServer::init(file_name,core_mask,ports_file_name))
-#else
-	if(!RestServer::init(core_mask,ports_file_name))
-#endif
+	if(!RestServer::init(nffg_file_name,core_mask,ports_file_name))
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the %s",MODULE_NAME);
 		exit(EXIT_FAILURE);	
 	}
 
-#ifndef READ_JSON_FROM_FILE
 	http_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, rest_port, NULL, NULL,&RestServer::answer_to_connection, 
 		NULL, MHD_OPTION_NOTIFY_COMPLETED, &RestServer::request_completed, NULL,MHD_OPTION_END);
 	
@@ -100,56 +75,37 @@ int main(int argc, char *argv[])
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the HTTP deamon. The %s cannot be run.",MODULE_NAME);
 		return EXIT_FAILURE;
 	}
-#endif
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The '%s' is started!",MODULE_NAME);
 	signal(SIGINT,singint_handler);
 	rofl::cioloop::get_loop().run();
-	//pause();
 	
 	return 0;
 }
 
-#ifndef READ_JSON_FROM_FILE
-bool parse_command_line(int argc, char *argv[], int *rest_port, int *core_mask, char **ports_file_name)
-#else
-bool parse_command_line(int argc, char *argv[], char **file_name, int *core_mask, char **ports_file_name)
-#endif
+bool parse_command_line(int argc, char *argv[],int *rest_port, char **nffg_file_name,int *core_mask, char **ports_file_name)
 {
 	int opt;
 	char **argvopt;
 	int option_index;
 	
-#ifdef READ_JSON_FROM_FILE
-	static struct option lgopts[] = {
-		{"c", 1, 0, 0},
-		{"w", 1, 0, 0},
-		{"f", 1, 0, 0},
-		{"p", 1, 0, 0},
-		{"h", 0, 0, 0},
-		{NULL, 0, 0, 0}
-	};
-#else
 static struct option lgopts[] = {
 		{"p", 1, 0, 0},
 		{"c", 1, 0, 0},
+		{"i", 1, 0, 0},
 		{"f", 1, 0, 0},
 		{"w", 1, 0, 0},
 		{"h", 0, 0, 0},
 		{NULL, 0, 0, 0}
 	};
-#endif
 
 	argvopt = argv;
-	uint32_t arg_c = 0, arg_f = 0, arg_p = 0;
+	uint32_t arg_c = 0, arg_f = 0, arg_p = 0, arg_i;
 
 	*core_mask = CORE_MASK;
 	ports_file_name[0] = '\0';
-#ifdef READ_JSON_FROM_FILE
-	file_name[0] = '\0';
-#else
+	nffg_file_name[0] = '\0';
 	*rest_port = REST_PORT;
-#endif
 
 	while ((opt = getopt_long(argc, argvopt, "", lgopts, &option_index)) != EOF)
     {
@@ -173,17 +129,23 @@ static struct option lgopts[] = {
 	   			}
 				else if (!strcmp(lgopts[option_index].name, "f"))
 	   			{
-	   				if(arg_f > 0)		/* REST port */
+	   				if(arg_f > 0)		/* physical ports file name */
 	   				{
 		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--f\" can appear only once in the command line");
 	   					return usage();
 	   				}
-#ifdef READ_JSON_FROM_FILE
-	   				*file_name = optarg;			/* command file */
-#else	   				
-	   				*ports_file_name = optarg;		/* ports file */
-#endif	   				
+	   				*ports_file_name = optarg;
 	   				arg_f++;
+	   			}
+	   			else if (!strcmp(lgopts[option_index].name, "i"))
+	   			{
+	   				if(arg_i > 0)		/* first nf-fg file name */
+	   				{
+		   				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Argument \"--i\" can appear only once in the command line");
+	   					return usage();
+	   				}
+	   				*nffg_file_name = optarg;
+	   				arg_i++;
 	   			}
 	   			else if (!strcmp(lgopts[option_index].name, "p"))
 	   			{
@@ -193,18 +155,12 @@ static struct option lgopts[] = {
 	   					return usage();
 	   				}
 	   			
-#ifdef READ_JSON_FROM_FILE
-	   				*file_name = optarg;	/* ports file */
-	   				arg_p++;
-#else
-					/* REST port */
 	   				char *port = (char*)malloc(sizeof(char)*(strlen(optarg)+1));
 	   				strcpy(port,optarg);
 	   				
 	   				sscanf(port,"%d",rest_port);
 	   				
 	   				arg_p++;
-#endif
 				}
 				else if (!strcmp(lgopts[option_index].name, "h"))/* help */
 	   			{
@@ -223,11 +179,7 @@ static struct option lgopts[] = {
 
 	/* Check that all mandatory arguments are provided */
 
-	if ( (arg_f == 0) 
-#ifdef READ_JSON_FROM_FILE	
-	|| (arg_p == 0) 
-#endif	
-	)
+	if (arg_f == 0) 
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Not all mandatory arguments are present in the command line");
 		return usage();
@@ -239,8 +191,6 @@ static struct option lgopts[] = {
 bool usage(void)
 {
 	char message[]=	\
-
-#ifndef READ_JSON_FROM_FILE
 	"Usage:                                                                                   \n" \
 	"  sudo ./name-orchestrator --f file_name                                                 \n" \
 	"                                                                                         \n" \
@@ -250,6 +200,8 @@ bool usage(void)
 	"        orchestrator                                                                     \n" \
 	"                                                                                         \n" \
 	"Options:                                                                                 \n" \
+	"  --i file_name                                                                          \n" \
+	"        Name of the file describing the firtst NF-FG to be deployed on the node          \n" \
 	"  --p tcp_port                                                                           \n" \
 	"        TCP port used by the REST server to receive commands (default is 8080)           \n" \
 	"  --c core_mask                                                                          \n" \
@@ -261,29 +213,6 @@ bool usage(void)
 	"                                                                                         \n" \
 	"Example:                                                                                 \n" \
 	"  sudo ./node-orchestrator --f config/example.xml                                        \n\n";
-#else
-	"Usage:                                                                                   \n" \
-	"  sudo ./name-orchestrator --p file_name --f file_name                                   \n" \
-	"                                                                                         \n" \
-	"Parameters:                                                                              \n" \
-	"  --p file_name                                                                          \n" \
-	"        Name of the file containing the physical ports to be handled by the node         \n" \
-	"        orchestrator                                                                     \n" \
-	"  --f file_name                                                                          \n" \
-	"        Name of the file describing the NF-FG to be deployed on the node                 \n" \
-	"                                                                                         \n" \
-	"Options:                                                                                 \n" \
-	"  --c core_mask                                                                          \n" \
-	"        Mask that specifies which cores must be used for DPDK network functions. These   \n" \
-	"        cores will be allocated to the DPDK network functions in a round robin fashion   \n" \
-	"        (default is 0x2)                                                                 \n" \
-	"  --h                                                                                    \n" \
-	"        Print this help.                                                                 \n" \
-	"                                                                                         \n" \
-	"Example:                                                                                 \n" \
-	"  sudo ./node-orchestrator --p example/config.xml --f example.json                       \n\n";
-
-#endif
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\n\n%s",message);
 	

@@ -6,8 +6,6 @@
 #include "logger.h"
 #include "constants.h"
 
-#define _DEBUG 1
-
 extern void logger(int LoggingLevel, const char *ModuleName, const char *File, int Line, const char *Format, ...)
 {
 		char Buffer[BUFFER_SIZE];
