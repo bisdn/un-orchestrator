@@ -77,18 +77,18 @@ example:
 PUT /graph/myGraph HTTP/1.1   
 Content-Type : application/json   
   
-{  
-	"flow-graph":  
-	{  
-		"VNFs": [  
-			{  
+    {  
+        "flow-graph":  
+        {  
+            "VNFs": [  
+		    {  
 				"id": "bridge"  
 			}  
-		],  
-		"flow-rules": [  
-			{  
-				"id": "00000001",  
-				"match":  
+		    ],  
+		    "flow-rules": [  
+		    {  
+			    "id": "00000001",  
+    			"match":  
 				{  
 					"port" : "ge0"  
 				},  
@@ -108,9 +108,9 @@ Content-Type : application/json
 					"port": "ge1"  
 				}  
 			}  
-		]  
-	}  
-}  
+		    ]  
+    	}  
+    }  
 
 This example implements the following graph:
 
@@ -120,10 +120,10 @@ This example implements the following graph:
 PUT /graph/myGraph HTTP/1.1   
 Content-Type : application/json   
                
-{  
-	"flow-graph":   
-	{  
-		"VNFs": [  
+    { 
+    	"flow-graph":   
+	    {  
+		    "VNFs": [  
 			{  
 				"id": "firewall"  
 			},  
@@ -133,8 +133,8 @@ Content-Type : application/json
 			{  
 				"id": "web-cache"  
 			}  
-		],  
-		"flow-rules": [  
+	    	],  
+	    	"flow-rules": [  
 			{  
 				"id": "00000001",  
 				"match":  
@@ -193,9 +193,9 @@ Content-Type : application/json
 					"port": "eth1"  
 				}  
 			}  
-		]  
-	}  
-}  
+    		]  
+	    }  
+    }  
 
 * This example implements the following graph:
 
@@ -212,99 +212,115 @@ Content-Type : application/json
 PUT /graph/myGraph HTTP/1.1   
 Content-Type : application/json 
                
-{   
-   "flow-graph":{   
-      "VNFs":[   
-         {    
-            "id":"bridge",  
-            "ports_with_requirements":[    
-               {    
-                  "name":"bridge:3",  
-                  "ipv4":{    
-                     "address":"130.192.225.176",  
-                     "netmask":"255.255.255.128"  
-                  }  
-               }  
+    {   
+        "flow-graph":
+        {   
+            "VNFs":[   
+             {    
+                "id":"bridge",  
+                "ports_with_requirements":[    
+                {    
+                    "name":"bridge:3",  
+                    "ipv4":
+                    {    
+                        "address":"130.192.225.176",  
+                        "netmask":"255.255.255.128"  
+                    }  
+                }  
+                ]  
+             }  
+            ],  
+            "flow-rules":[   
+            {    
+                "id":"00000001",  
+                "match":
+                {    
+                   "port":"ge0",  
+                   "eth_src":"00:e0:ed:22:ee:de"  
+                },  
+                "action":
+                {    
+                   "VNF_id":"bridge:1"  
+                }  
+                },  
+                {    
+                    "id":"00000002",  
+                    "match":
+                    {    
+                        "VNF_id":"bridge:2"  
+                    },  
+                    "action":
+                    {    
+                        "port":"ge3"  
+                    }  
+                },  
+                {    
+                    "id":"00000003",  
+                    "match":
+                    {    
+                        "port":"ge3",  
+                        "eth_dst":"00:e0:ed:22:ee:de"  
+                    },  
+                    "action":
+                    {    
+                       "VNF_id":"bridge:2"  
+                    }  
+                },  
+                {    
+                    "id":"00000004",  
+                    "match":
+                    {    
+                        "VNF_id":"bridge:1"  
+                    },  
+                    "action":
+                    {    
+                        "port":"ge0"  
+                    }  
+                },  
+                {    
+                "id":"00000005",  
+                "priority":"25",  
+                "match":
+                {    
+                    "port":"ge0",  
+                    "eth_src":"00:e0:ed:22:ee:de",  
+                    "ethertype":"0x800",  
+                    "ipv4_dst":"130.192.225.176"  
+                },  
+                "action":
+                {    
+                    "VNF_id":"bridge:3"  
+                }  
+            },  
+            {    
+                "id":"00000006",  
+                "match":
+                {    
+                   "VNF_id":"bridge:3"  
+                },  
+                "action":
+                {    
+                   "port":"ge0"  
+                }  
+            },  
+            {    
+                "id":"00000007",  
+                "priority":"26",  
+                "match":
+                {    
+                   "port":"ge0",  
+                   "eth_src":"00:e0:ed:22:ee:de",  
+                   "ethertype":"0x806",  
+                   "arp_tpa":"130.192.225.176"  
+                },  
+                "action":
+                {    
+                   "VNF_id":"bridge:3"  
+                }  
+            }  
             ]  
-         }  
-      ],  
-      "flow-rules":[   
-         {    
-            "id":"00000001",  
-            "match":{    
-               "port":"ge0",  
-               "eth_src":"00:e0:ed:22:ee:de"  
-            },  
-            "action":{    
-               "VNF_id":"bridge:1"  
-            }  
-         },  
-         {    
-            "id":"00000002",  
-            "match":{    
-               "VNF_id":"bridge:2"  
-            },  
-            "action":{    
-               "port":"ge3"  
-            }  
-         },  
-        {    
-            "id":"00000003",  
-            "match":{    
-               "port":"ge3",  
-               "eth_dst":"00:e0:ed:22:ee:de"  
-            },  
-            "action":{    
-               "VNF_id":"bridge:2"  
-            }  
-         },  
-         {    
-            "id":"00000004",  
-            "match":{    
-               "VNF_id":"bridge:1"  
-            },  
-            "action":{    
-               "port":"ge0"  
-            }  
-         },  
-         {    
-            "id":"00000005",  
-            "priority":"25",  
-            "match":{    
-               "port":"ge0",  
-               "eth_src":"00:e0:ed:22:ee:de",  
-               "ethertype":"0x800",  
-               "ipv4_dst":"130.192.225.176"  
-            },  
-            "action":{    
-               "VNF_id":"bridge:3"  
-            }  
-         },  
-         {    
-            "id":"00000006",  
-            "match":{    
-               "VNF_id":"bridge:3"  
-            },  
-            "action":{    
-               "port":"ge0"  
-            }  
-         },  
-         {    
-            "id":"00000007",  
-            "priority":"26",  
-            "match":{    
-               "port":"ge0",  
-               "eth_src":"00:e0:ed:22:ee:de",  
-               "ethertype":"0x806",  
-               "arp_tpa":"130.192.225.176"  
-            },  
-            "action":{    
-               "VNF_id":"bridge:3"  
-            }  
-         }  
-      ]  
-   }  
-}  
+        }  
+    }  
 
 * It is possible to connect multiple graphs together by using the so called "endpoints".
   An endpoint is always in the form "graph_id:endpoint_id_in_the_graph", where "graph_id"
@@ -318,70 +334,80 @@ Content-Type : application/json
 PUT /graph/myGraph HTTP/1.1   
 Content-Type : application/json
                
-{   
-   "flow-graph":{   
-      "VNFs":[   
-         {  
-            "id":"bridge"  
-         }  
-      ],  
-      "flow-rules":[   
-         {    
-            "id":"00000001",  
-            "match":{    
-               "endpoint_id":"myGraph:1"  
-            },  
-            "action":{    
-               "VNF_id":"bridge:1"  
+    {   
+        "flow-graph":
+        {   
+            "VNFs":[   
+            {  
+                "id":"bridge"  
             }  
-         },  
-         {    
-            "id":"00000002",  
-            "match":{    
-               "VNF_id":"bridge:2"  
+            ],  
+            "flow-rules":[   
+            {    
+                "id":"00000001",  
+                "match":
+                {    
+                    "endpoint_id":"myGraph:1"  
+                },  
+                "action":
+                {    
+                    "VNF_id":"bridge:1"  
+                }  
             },  
-            "action":{    
-               "port":"ge1"  
+            {    
+                "id":"00000002",  
+                "match":
+                {    
+                    "VNF_id":"bridge:2"  
+                },  
+                "action":
+                {    
+                    "port":"ge1"  
+                }  
             }  
-         }  
-      ]  
-   }  
-}  
+            ]  
+       }  
+    }  
 
 PUT /graph/othweGraph HTTP/1.1   
 Content-Type : application/json   
                
-{   
-   "flow-graph":{   
-      "VNFs":[   
-         {    
-            "id":"bridge"  
-         }  
-      ],  
-      "flow-rules":[   
-         {    
-            "id":"00000001",  
-            "priority":"25",  
-            "match":{    
-               "port":"ge0",  
-               "eth_src":"aa:aa:aa:aa:aa:aa"   
-            },  
-            "action":{    
-               "endpoint_id":"myGraph:1"  
+    {   
+       "flow-graph":
+        {   
+            "VNFs":[   
+            {    
+                "id":"bridge"  
             }  
-         },  
-         {    
-            "id":"00000002",  
-            "match":{    
-               "port":"ge0"  
+            ],  
+            "flow-rules":[   
+            {    
+                "id":"00000001",  
+                "priority":"25",  
+                "match":
+                {    
+                    "port":"ge0",  
+                    "eth_src":"aa:aa:aa:aa:aa:aa"   
+                },  
+                "action":
+                {    
+                    "endpoint_id":"myGraph:1"  
+                }  
             },  
-            "action":{    
-               "port":"ge1"  
+            {    
+                "id":"00000002",  
+                "match":
+                {    
+                    "port":"ge0"  
+                },  
+                "action":
+                {    
+                    "port":"ge1"  
+                }  
             }  
-         }  
-      ]  
-   }  
-}  
+            ]  
+        }  
+    }  
 
   Since the endpoint "myGraph:1" is defined in a match of the graph "myGraph",
   other graphs can use it only in an action.
