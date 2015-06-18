@@ -1,2 +1,7 @@
 * Change the message towards xDPd, in order to select the openflow version
-     This requires changes in the node_orchestrator plugin on xDPd
+	This requires changes in the node_orchestrator plugin on xDPd
+     
+* Patrick:
+	Commands.h/cc in the OvS plugin MUST be a class
+	Use the constant TMP_XML_FILE (see ovs_constants.h) instead of the embedded name for the tmp file containing the XML to be sent to OvS
+		Is this file necessary? It looks strange..
