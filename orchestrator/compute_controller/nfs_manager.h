@@ -50,13 +50,6 @@ using namespace json_spirit;
 #define STOP_DPDK_NF			"./compute_controller/scripts/dpdk/stopNF.sh"
 #define NUM_MEMORY_CHANNELS 	2
 
-/**
-*	@brief: constants related to KVM NFs
-*/
-#define CHECK_KVM				"./compute_controller/scripts/kvm/checkKvmRun.sh"
-#define PULL_AND_RUN_KVM_NF		"./compute_controller/scripts/kvm/pullAndRunNF.sh"
-#define STOP_KVM_NF				"./compute_controller/scripts/kvm/stopNF.sh"
-
 class Implementation;
 
 typedef enum{NFManager_OK,NFManager_SERVER_ERROR, NFManager_NO_NF}nf_manager_ret_t;

@@ -1,10 +1,5 @@
-#ifndef COMMANDS
-#define COMMANDS
-
 #include "ovs_manager.h"
 #include "ovs_constants.h"
-
-#endif
 
 struct nc_session* session = NULL;
 
@@ -26,7 +21,7 @@ char *password(const char *username, const char *hostname){
 	
 	char *psw = new char[64];	
 
-	printf("Insert password: ");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Insert ssh password for OFConfig server on OvS:");
 
 	scanf("%s", psw);
 
@@ -86,7 +81,7 @@ static int send_recv_process(const char* operation, nc_rpc* rpc, const char* out
 	case NC_MSG_REPLY:
 		switch (nc_reply_get_type(reply)) {
 		case NC_REPLY_OK:
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Result OK\n");
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result OK");
 			break;
 		case NC_REPLY_DATA:
 			if (output_file != NULL) {

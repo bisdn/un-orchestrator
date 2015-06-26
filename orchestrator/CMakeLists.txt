@@ -85,16 +85,6 @@ IF(RUN_NFS)
 ENDIF(RUN_NFS)
 
 OPTION(
-	READ_JSON_FROM_FILE
-	"Turn on to read the json describing a graph from file. In this case the REST server does not start."
-	OFF
-)
-IF(READ_JSON_FROM_FILE)
-	ADD_DEFINITIONS(-DREAD_JSON_FROM_FILE)
-ENDIF(READ_JSON_FROM_FILE)
-
-
-OPTION(
 	ENABLE_DOCKER
 	"Turn on the support of NFs implemented in Docker containers"
 	ON
@@ -262,8 +252,6 @@ ADD_EXECUTABLE(
 	node-orchestrator
 	${SOURCES3}
 )
-
-
 
 LINK_DIRECTORIES(
 	/usr/lib/

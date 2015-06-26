@@ -1,3 +1,5 @@
+#ifndef OVS_COMMANDS_H_
+#define OVS_COMMANDS_H_ 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,9 +17,6 @@
 
 #include "inttypes.h"
 
-#ifndef COMMANDS_H_
-#define COMMANDS_H_
-
 int cmd_connect(char *user);
 int cmd_disconnect();
 CreateLsiOut* cmd_editconfig_lsi (CreateLsiIn cli);
@@ -29,4 +28,4 @@ void cmd_editconfig_NFPorts_delete(DestroyNFportsIn dnpi);
 int cmd_editconfig_port (NC_EDIT_TESTOPT_TYPE testopt, int operation_type, AddNFportsIn anpi);
 void cmd_delete_virtual_link(uint64_t dpid, uint64_t id);
 
-#endif
+#endif //OVS_COMMANDS_H_

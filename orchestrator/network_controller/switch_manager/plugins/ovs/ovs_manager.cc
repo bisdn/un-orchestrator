@@ -3,20 +3,22 @@
 char *host = NULL, *user = NULL;	
 
 //this is a message printing function
-void clb_print(NC_VERB_LEVEL level, const char* msg) {
-	switch (level) {
-	case NC_VERB_ERROR:
-		fprintf(stderr, "libnetconf ERROR: %s\n", msg);
-		break;
-	case NC_VERB_WARNING:
-		fprintf(stderr, "libnetconf WARNING: %s\n", msg);
-		break;
-	case NC_VERB_VERBOSE:
-		fprintf(stderr, "libnetconf VERBOSE: %s\n", msg);
-		break;
-	case NC_VERB_DEBUG:
-		fprintf(stderr, "libnetconf DEBUG: %s\n", msg);
-		break;
+void clb_print(NC_VERB_LEVEL level, const char* msg) 
+{
+	switch (level) 
+	{
+		case NC_VERB_ERROR:
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "libnetconf: \"%s\"",msg);
+			break;
+		case NC_VERB_WARNING:
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "libnetconf: \"%s\"",msg);
+			break;
+		case NC_VERB_VERBOSE:
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "libnetconf: \"%s\"",msg);
+			break;
+		case NC_VERB_DEBUG:
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "libnetconf: \"%s\"",msg);
+			break;
 	}
 }
 
@@ -38,8 +40,7 @@ OVSManager::OVSManager()
 	nc_ssh_pref(NC_SSH_AUTH_PUBLIC_KEYS, 1);
 	nc_ssh_pref(NC_SSH_AUTH_INTERACTIVE, 2);*/
 
-	printf("Insert current user: ");
-
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Insert the user name for the OFConfig server:",MODULE_NAME);
 	scanf("%s", user);
 
 	/*connect to a of-config server*/

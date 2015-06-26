@@ -2,11 +2,7 @@
 
 GraphManager *RestServer::gm = NULL;
 
-#ifdef READ_JSON_FROM_FILE
-	bool RestServer::init(char *filename, int core_mask, char *ports_file_name)
-#else
-	bool RestServer::init(int core_mask, char *ports_file_name)
-#endif
+bool RestServer::init(char *nffg_filename,int core_mask, char *ports_file_name)
 {	
 	try
 	{
@@ -16,28 +12,31 @@ GraphManager *RestServer::gm = NULL;
 	{
 		return false;		
 	}
+
+	//Handle the file containing the first graph to be deployed
+	if(nffg_filename != NULL)
+	{	
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the initial graph described in file '%s'",nffg_filename);
 	
-#ifdef READ_JSON_FROM_FILE
+		sleep(2); //XXX This give time to the controller to be initialized
 
-	sleep(2); //This give time to the controller to be initialized
-
-	std::ifstream file;
-	file.open(filename);
-	if(file.fail())
-    {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot open the file %s",filename);
-		return false;
+		std::ifstream file;
+		file.open(nffg_filename);
+		if(file.fail())
+		{
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot open the file %s",nffg_filename);
+			return false;
+		}
+	
+		stringstream stream;
+		string str; 
+		while (std::getline(file, str))
+		    stream << str << endl;
+		        
+		if(createGraphFromFile(stream.str()) == 0)
+			return false;
 	}
-	
-	stringstream stream;
-	string str; 
-    while (std::getline(file, str))
-        stream << str << endl;
-            
-    if(doPut(stream.str()) == 0)
-		return false;
-#endif
-		
+			
 	return true;
 }
 
@@ -46,7 +45,6 @@ void RestServer::terminate()
 	delete(gm);
 }
 
-#ifndef READ_JSON_FROM_FILE
 void RestServer::request_completed (void *cls, struct MHD_Connection *connection,
 						void **con_cls, enum MHD_RequestTerminationCode toe)
 {
@@ -153,15 +151,9 @@ int RestServer::print_out_key (void *cls, enum MHD_ValueKind kind, const char *k
 	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "%s: %s", key, value);
 	return MHD_YES;
 }
-#endif
 
-#ifndef READ_JSON_FROM_FILE
 int RestServer::doPut(struct MHD_Connection *connection, const char *url, void **con_cls)
-#else
-int RestServer::doPut(string toBeCreated)
-#endif
 {
-#ifndef READ_JSON_FROM_FILE
 	struct MHD_Response *response;
 	
 	struct connection_info_struct *con_info = (struct connection_info_struct *)(*con_cls);
@@ -218,7 +210,7 @@ put_malformed_url:
 		return ret;
 	}
 	
-/*	const char *c_type = MHD_lookup_connection_value (connection,MHD_HEADER_KIND, "Content-Type");
+	/*	const char *c_type = MHD_lookup_connection_value (connection,MHD_HEADER_KIND, "Content-Type");
 	if(strcmp(c_type,JSON_C_TYPE) != 0)
 	{
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content-Type must be: "JSON_C_TYPE);
@@ -227,21 +219,12 @@ put_malformed_url:
 		MHD_destroy_response (response);
 		return ret;
 	}*/
-#else
-	char graphID[BUFFER_SIZE];
-	strcpy(graphID,"NF-FG");
 	
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Resource to be created/updated: %s",graphID);
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Content:");
-	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",toBeCreated.c_str());
-#endif
-
 	bool newGraph = !(gm->graphExists(graphID));
 	
 	string gID(graphID);
 	highlevel::Graph *graph = new highlevel::Graph(gID);
-
-#ifndef READ_JSON_FROM_FILE
+	
 	if(!parsePutBody(*con_info,*graph,newGraph))
 	{
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
@@ -250,36 +233,23 @@ put_malformed_url:
 		MHD_destroy_response (response);
 		return ret;
 	}
-#else
-	if(!parsePutBody(toBeCreated,*graph,newGraph))
-	{
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
-		return 0;
-	}
-#endif
-
-	graph->print();
+	
+		graph->print();
 	try
 	{
-#ifndef READ_JSON_FROM_FILE
+
 		if(newGraph)
-#endif
 		{
 			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "A new graph must be created");		
 			if(!gm->newGraph(graph))
 			{
 				logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph description is not valid!");
-#ifndef READ_JSON_FROM_FILE
 				response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 				int ret = MHD_queue_response (connection, MHD_HTTP_BAD_REQUEST, response);
 				MHD_destroy_response (response);
 				return ret;
-#else
-				return 0;
-#endif
 			}
 		}
-#ifndef READ_JSON_FROM_FILE
 		else
 		{
 			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "An existing graph must be updated");
@@ -293,21 +263,15 @@ put_malformed_url:
 				return ret;		
 			}	
 		}
-#endif
 	}catch (...)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the %s of the graph!",(newGraph)? "creation" : "update");
-#ifndef READ_JSON_FROM_FILE
 		response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 		MHD_destroy_response (response);
 		return ret;
-#else
-		return 0;
-#endif
 	}
-
-#ifndef READ_JSON_FROM_FILE
+	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph has been properly %s!",(newGraph)? "created" : "updated");
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
 	
@@ -320,16 +284,58 @@ put_malformed_url:
 
 	MHD_destroy_response (response);
 	return ret;	
-#else
-	return 1;
-#endif
 }
 
-#ifndef READ_JSON_FROM_FILE
+int RestServer::createGraphFromFile(string toBeCreated)
+{
+	char graphID[BUFFER_SIZE];
+	strcpy(graphID,"NF-FG");
+	
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s",graphID);
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph content:");
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "%s",toBeCreated.c_str());
+	
+	string gID(graphID);
+	highlevel::Graph *graph = new highlevel::Graph(gID);
+	
+	if(!parseGraphFromFile(toBeCreated,*graph,true))
+	{
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Malformed content");
+		return 0;
+	}
+	
+	graph->print();
+	try
+	{
+		if(!gm->newGraph(graph))
+		{
+			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph description is not valid!");
+			return 0;
+		}
+	}catch (...)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the creation of the graph!");
+		return 0;
+	}
+
+	return 1;
+}
+
+bool RestServer::parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph) //startup. cambiare nome alla funzione
+{
+	Value value;
+	read(toBeCreated, value);
+	return parseGraph(value, graph, newGraph);
+}
+
 bool RestServer::parsePutBody(struct connection_info_struct &con_info,highlevel::Graph &graph, bool newGraph)
-#else
-bool RestServer::parsePutBody(string toBeCreated,highlevel::Graph &graph, bool newGraph)
-#endif
+{
+	Value value;
+	read(con_info.message, value);
+	return parseGraph(value, graph, newGraph);
+}
+
+bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 {
 	//for each NF, contains the set of ports it requires
 	map<string,set<unsigned int> > nfs_ports_found;
@@ -343,12 +349,6 @@ bool RestServer::parsePutBody(string toBeCreated,highlevel::Graph &graph, bool n
 
 	try
 	{
-		Value value;
-#ifndef READ_JSON_FROM_FILE
-		read(con_info.message, value );
-#else
-		read(toBeCreated, value );		
-#endif
 		Object obj = value.getObject();
 		
 	  	bool foundFlowGraph = false;
@@ -692,7 +692,6 @@ bool RestServer::parsePutBody(string toBeCreated,highlevel::Graph &graph, bool n
 											ports_found.insert(port);
 											nfs_ports_found[name] = ports_found;
 										}
-#ifndef READ_JSON_FROM_FILE
 										else if(a_name == ENDPOINT_ID)
 										{
 											if(foundOne)
@@ -714,7 +713,6 @@ bool RestServer::parsePutBody(string toBeCreated,highlevel::Graph &graph, bool n
 											action = new highlevel::ActionEndPoint(graph_id, endPoint);
 											graph.addEndPoint(graph_id,action->toString());
 										}
-#endif
 										else
 										{
 											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in \"%s\"",a_name.c_str(),ACTION);
@@ -870,7 +868,6 @@ bool RestServer::parsePutBody(string toBeCreated,highlevel::Graph &graph, bool n
     return true;
 }
 
-#ifndef READ_JSON_FROM_FILE
 int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 {
 	struct MHD_Response *response;
@@ -1130,5 +1127,4 @@ delete_malformed_url:
 		return ret;
 	}	
 }
-#endif
 
