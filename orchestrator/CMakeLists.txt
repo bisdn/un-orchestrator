@@ -96,7 +96,7 @@ ENDIF(ENABLE_DOCKER)
 OPTION(
 	ENABLE_KVM
 	"Turn on the support of NFs implemented in KVM virtual machines"
-	ON
+	OFF
 )
 IF(ENABLE_KVM)
 	ADD_DEFINITIONS(-DENABLE_KVM)
@@ -128,6 +128,16 @@ OPTION(
 IF(DEBUG_OPENFLOW)
 	ADD_DEFINITIONS(-DDEBUG_OPENFLOW)
 ENDIF(DEBUG_OPENFLOW)
+
+
+OPTION(
+	UNIFY_NFFG
+	"Turn on to support the NF-FG defined in the Unify project"
+	OFF
+)
+IF(UNIFY_NFFG)
+	ADD_DEFINITIONS(-DUNIFY_NFFG)
+ENDIF(UNIFY_NFFG)
 
 
 # Set source files
@@ -246,6 +256,13 @@ INCLUDE_DIRECTORIES (
 	/usr/include/libxml2
 )
 
+#Include specific for the NF-FG library defined in the Unify project
+IF(UNIFY_NFFG)
+	find_package(PythonLibs REQUIRED)
+	INCLUDE_DIRECTORIES (
+		${PYTHON_INCLUDE_DIRS}
+	)
+ENDIF(UNIFY_NFFG)
 
 # Create the executable
 ADD_EXECUTABLE(
@@ -258,6 +275,7 @@ LINK_DIRECTORIES(
 	/usr/local/lib/
 	/usr/x86_64-linux-gnu/
 	/usr/lib/x86_64-linux-gnu/
+	/usr/lib/python2.7/config-x86_64-linux-gnu/
 )
 
 
@@ -284,4 +302,12 @@ IF(ENABLE_KVM)
 		libvirt.so
 	)
 ENDIF(ENABLE_KVM)
+
+#Links specific for the NF-FG library defined in the Unify project
+IF(UNIFY_NFFG)
+    TARGET_LINK_LIBRARIES( node-orchestrator
+		libpython2.7.so
+		${PYTHON_LIBRARIES}
+	)
+ENDIF(UNIFY_NFFG)
 

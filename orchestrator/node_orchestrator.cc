@@ -1,3 +1,7 @@
+#ifdef UNIFY_NFFG
+	#include <Python.h>
+#endif	
+
 #include "utils/constants.h"
 #include "utils/logger.h"
 #include "node_resource_manager/rest_server/rest_server.h"
