@@ -95,7 +95,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "memory"*/
 	rc = xmlTextWriterWriteElement(writer, BAD_CAST "memory", BAD_CAST /*"4194304"*/MEMORY_SIZE);
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -130,7 +130,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "os"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "os");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -164,7 +164,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 
 	/*close element "type"*/
 	rc = xmlTextWriterEndElement(writer);
-	   if (rc < 0) {
+	if (rc < 0) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
 	}
@@ -185,10 +185,10 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "boot"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
     	
     	/*add element "boot"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "boot");
@@ -206,17 +206,17 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "boot"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "os"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element features*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "features");
@@ -234,10 +234,10 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "acpi"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
     	
     	/*add element apic*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "apic");
@@ -248,10 +248,10 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "apic"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
     	
     	/*add element pae*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "pae");
@@ -262,17 +262,17 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "pae"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "features"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "devices"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "devices");
@@ -282,9 +282,9 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 	
 	/*add element "emulator"*/
-	rc = xmlTextWriterWriteElement(writer, BAD_CAST "emulator", BAD_CAST "/usr/bin/qemu-kvm");
+	rc = xmlTextWriterWriteElement(writer, BAD_CAST "emulator", BAD_CAST "/home/dverbeir/qemu/qemu_git/x86_64-softmmu/qemu-system-x86_64"); // TODO: Make configurable!
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -312,7 +312,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "source"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "source");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -325,15 +325,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "source"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "driver"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "driver");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -353,15 +353,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "driver"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+    if (rc < 0) {
+    	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "target"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -381,17 +381,17 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "target"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "disk"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
     	
     	/*add element "disk"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "disk");
@@ -417,7 +417,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "driver"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "driver");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -429,7 +429,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 	
 	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "qcow2");
+	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "raw" /*"qcow2"*/);
 	if (rc < 0) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 		return 0;
@@ -437,15 +437,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "driver"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "target"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -465,29 +465,29 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "target"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "disk"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
-    	
+	}
+
 	/*create the bridge_name*/
 	sprintf(temp, "%" PRIu64, lsiID);
 	strcat(sw, temp);
 	strcpy(bridge_name, sw);
-	
+
 	/*create NIC*/
 	for(unsigned int i=1;i<=n_ports;i++){
 		/*add element "interface"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "interface");
 		if (rc < 0) {
-	       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
 	
@@ -501,7 +501,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		/*add element "source"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "source");
 		if (rc < 0) {
-	       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
 	
@@ -533,15 +533,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 		/*close element "source"*/
 		rc = xmlTextWriterEndElement(writer);
-	    	if (rc < 0) {
+		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
-	    	}
+		}
 	
 		/*add element "model"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "model");
 		if (rc < 0) {
-	       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
 	
@@ -554,15 +554,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	    	
 	    	/*close element "model"*/
 		rc = xmlTextWriterEndElement(writer);
-	    	if (rc < 0) {
+		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
-	    	}
+		}
 	    	
 	    	/*add element "virtualport"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "virtualport");
 		if (rc < 0) {
-	       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
 	
@@ -575,25 +575,25 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 		/*close element "virtualport"*/
 		rc = xmlTextWriterEndElement(writer);
-	    	if (rc < 0) {
+		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
-	    	}
+		}
 
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%u\n", n_ports);
 		
 		/*close element "interface"*/
 		rc = xmlTextWriterEndElement(writer);
-	    	if (rc < 0) {
+		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
-	    	}	
+		}
 	}
 	
 	/*add element "serial"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "serial");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -607,7 +607,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "target"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -620,22 +620,22 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		
 	/*close element "target"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 		
 	/*close element "serial"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "console"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "console");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -649,7 +649,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "target"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -669,22 +669,22 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		
 	/*close element "target"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 		
 	/*close element "console"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "input"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "input");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -704,15 +704,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		
 	/*close element "input"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
     	
     	/*add element "input"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "input");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -732,15 +732,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		
 	/*close element "input"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "graphics"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "graphics");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -767,22 +767,22 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		
 	/*close element "graphics"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "devices"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "sound"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "sound");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -796,7 +796,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "address"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "address");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -837,29 +837,29 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "address"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "sound"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "video"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "sound");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
 	/*add element "model"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "model");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -886,15 +886,15 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "model"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*add element "address"*/
 	rc = xmlTextWriterStartElement(writer, BAD_CAST "address");
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -935,26 +935,26 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	
 	/*close element "address"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "video"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
 	
 	/*close element "domain"*/
 	rc = xmlTextWriterEndElement(writer);
-    	if (rc < 0) {
-        	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+	if (rc < 0) {
+    	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 		return 0;
-    	}
+	}
     	
-    	xmlFreeTextWriter(writer);
+	xmlFreeTextWriter(writer);
 	
 	xmlconfig = (const char *)buf->content;
 	dom = virDomainCreateXML(conn, xmlconfig, 0);
