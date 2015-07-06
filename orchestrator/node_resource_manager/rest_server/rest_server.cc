@@ -117,16 +117,14 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 	PyObject *pythonFile = PyImport_Import(pythonFileName);
 	Py_DECREF(pythonFileName);
 	if (pythonFile != NULL) 
-    {
-		//TODO: passare alla funzione: method, url, body  	
-    
+    {  
 		PyObject *pythonFunction = PyObject_GetAttrString(pythonFile, PYTHON_METHOD);
 		if (pythonFunction && PyCallable_Check(pythonFunction)) 
         {
 	    	PyObject *pythonArgs = NULL, *pythonRetVal, *pythonValue;
 	    	
             
-            //Extract the body
+            //Extract the body of the HTTP request
             struct connection_info_struct *con_info = (struct connection_info_struct *)(*con_cls);
 			assert(con_info != NULL);
 			if (*upload_data_size != 0)
@@ -139,37 +137,50 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 			else if (NULL != con_info->message)
 			{
 				con_info->message[con_info->length] = '\0';
-				//return (0 == strcmp (method, PUT))? doPut(connection,url,con_cls) : doDelete(connection,url,con_cls);
 			}
-            
- 			/****************************/
- 			
- 			int numArgs = (con_info->message != NULL)? 3 : 2;
 
+			//Set the arguments to the python function            			
+ 			int numArgs = (con_info->message != NULL)? 3 : 2;
 			pythonArgs = PyTuple_New(numArgs);	
 	    	pythonValue = PyString_FromString(method);
             PyTuple_SetItem(pythonArgs, 0, pythonValue);
             pythonValue = PyString_FromString(url);
             PyTuple_SetItem(pythonArgs, 1, pythonValue);
-
-
 			if(con_info->message != NULL)
 			{
 				pythonValue = PyString_FromString(con_info->message);
 				PyTuple_SetItem(pythonArgs, 2, pythonValue);
-			}
-//			else
-				//pythonValue = PyString_FromString(NULL);
-   		  //      PyTuple_SetItem(pythonArgs, 2, NULL);
-            
+			}        
 	    	
+	    	//Call the python function
 	    	pythonRetVal = PyObject_CallObject(pythonFunction, pythonArgs);
             Py_DECREF(pythonArgs);
+                
+            logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
             
-            logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
-            Py_DECREF(pythonRetVal);
+	    	
+//	    	if (0 == strcmp (method, GET))
+	    	{
+	    		//All the GET have the same answer
+	    			    		
+			    string tmp = PyString_AsString(pythonRetVal);
+			  	char *tmpString;
+		 		tmpString = (char*)malloc(sizeof(char) * (tmp.size()+1));
+		 		memcpy(tmpString, tmp.c_str(),tmp.size()+1);
+		 		tmpString[tmp.size()] = '\0';
+			    
+			    struct MHD_Response *response = MHD_create_response_from_buffer (tmp.size(),(void*)tmpString, MHD_RESPMEM_PERSISTENT);
+			    stringstream absolute_url;
+				absolute_url << REST_URL << ":" << REST_PORT << url;
+				MHD_add_response_header (response, "Cache-Control",NO_CACHE);
+				MHD_add_response_header (response, "Location", absolute_url.str().c_str());
+				int ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+				return ret;
+			}
+			
+			Py_DECREF(pythonRetVal);
             Py_XDECREF(pythonFunction);
-	        Py_DECREF(pythonFile);
+	    	Py_DECREF(pythonFile);
 	    }
 	    else 
         {
@@ -186,8 +197,6 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 	        
 	        return ret;			
 		}
-        
-   	    exit(0); //FIXME: tmp code
     }
     else
     {
