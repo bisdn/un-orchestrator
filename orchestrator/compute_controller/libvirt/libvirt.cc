@@ -20,6 +20,7 @@ int Libvirt::cmd_connect(){
 
 	virSetErrorFunc(NULL, customErrorFunc);
 
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Connecting to Libvirt ...\n");
 	conn = virConnectOpen("qemu:///system");
 	if (conn == NULL) {
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Failed to open connection to qemu:///system\n");
@@ -34,6 +35,7 @@ int Libvirt::cmd_connect(){
 /*close connection*/
 void Libvirt::cmd_close(){
 	virConnectClose(conn);
+	conn = NULL;
 }
 
 /*retrieve and start NF*/
@@ -88,7 +90,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/*add element "name"*/
 	rc = xmlTextWriterWriteElement(writer, BAD_CAST "name", BAD_CAST tmmp_file);
 	if (rc < 0) {
-       		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 		return 0;
 	}
 	
@@ -957,6 +959,14 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	xmlFreeTextWriter(writer);
 	
 	xmlconfig = (const char *)buf->content;
+#if 0  /* Debug */
+	FILE* fp = fopen(tmmp_file, "w");
+	if (fp) {
+		fwrite(xmlconfig, 1, strlen(xmlconfig), fp);
+		fclose(fp);
+	}
+#endif
+
 	dom = virDomainCreateXML(conn, xmlconfig, 0);
 	if (!dom) {
 		virDomainFree(dom);

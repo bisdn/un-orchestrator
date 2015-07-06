@@ -5,9 +5,23 @@ pthread_mutex_t NFsManager::nfs_manager_mutex = PTHREAD_MUTEX_INITIALIZER;
 map<int,uint64_t> NFsManager::cores;
 int NFsManager::nextCore = 0;
 
+NFsManager::NFsManager()
+{
 #ifdef ENABLE_KVM
-	Libvirt *libvirt;
+	libvirt = NULL;
 #endif
+}
+
+NFsManager::~NFsManager()
+{
+#ifdef ENABLE_KVM
+	/*close the connection*/
+	if (libvirt) {
+		libvirt->cmd_close();
+		libvirt = NULL;
+	}
+#endif
+}
 
 void NFsManager::setCoreMask(uint64_t core_mask)
 {
@@ -309,8 +323,15 @@ bool NFsManager::selectImplementation()
 #ifdef ENABLE_KVM
 	//Check if KVM is running
 
-	retVal = libvirt->cmd_connect();
+	if (libvirt == NULL)
+		libvirt = new Libvirt();
 
+	if (libvirt == NULL) {
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Failed to create Libvirt\n");
+		return false;
+	}
+
+	retVal = libvirt->cmd_connect();
 	logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Connect returned: %d\n",retVal);
 
 	if(retVal > 0)
@@ -321,9 +342,8 @@ bool NFsManager::selectImplementation()
 	}
 	else
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "KVM  is not running.");
-	
-	/*close the connection*/	
-	libvirt->cmd_close();
+
+	libvirt->cmd_close(); // TODO - Can't we keep the connection open? Because of multi-threading issues?
 #endif
 
 	return false;

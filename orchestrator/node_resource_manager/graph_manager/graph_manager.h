@@ -18,11 +18,12 @@
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION XDPDManager
 #endif
 #ifdef VSWITCH_IMPLEMENTATION_OVS
 	#include "../../network_controller/switch_manager/plugins/ovs/ovs_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSManager
 #endif
-
 //[+] Add here other implementations for the virtual switch
 
 #include <list>
@@ -109,13 +110,7 @@ private:
 	/**
 	*	The module that interacts with the virtual switch
 	*/
-#ifdef VSWITCH_IMPLEMENTATION_XDPD
-	XDPDManager switchManager;
-#endif
-#ifdef VSWITCH_IMPLEMENTATION_OVS
-	OVSManager switchManager;
-#endif
-	//[+] Add here other implementations for the virtual switch
+	SWITCH_MANAGER_IMPLEMENTATION switchManager;
 	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action
