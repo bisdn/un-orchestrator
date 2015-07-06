@@ -41,7 +41,7 @@ void singint_handler(int sig)
 	
 #ifdef UNIFY_NFFG
 	//Close the Python code used to handle the requests coming from the upper layers
-	  Py_Finalize();
+	Py_Finalize();
 #endif
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");

@@ -118,7 +118,7 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 	Py_DECREF(pythonFileName);
 	if (pythonFile != NULL) 
     {  
-		PyObject *pythonFunction = PyObject_GetAttrString(pythonFile, PYTHON_METHOD);
+		PyObject *pythonFunction = PyObject_GetAttrString(pythonFile, PYTHON_HANDLE_REQ);
 		if (pythonFunction && PyCallable_Check(pythonFunction)) 
         {
 	    	PyObject *pythonArgs = NULL, *pythonRetVal, *pythonValue;
@@ -159,6 +159,7 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
             logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
             
 	    	
+	    	//TODO: handle better the stuffs here
 //	    	if (0 == strcmp (method, GET))
 	    	{
 	    		//All the GET have the same answer
@@ -187,7 +188,7 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
             if (PyErr_Occurred())
                 PyErr_Print();
             
-		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_METHOD);
+		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_HANDLE_REQ);
 			struct MHD_Response *response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 			int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 			MHD_destroy_response (response);

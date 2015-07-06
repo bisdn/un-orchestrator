@@ -141,7 +141,8 @@ enum
 #ifdef UNIFY_NFFG
 	#define PYTHON_DIRECTORY    "node_resource_manager/rest_server/python/"
 	#define PYTHON_MAIN_FILE    "parser"
-	#define PYTHON_METHOD		"handle_request"
+	#define PYTHON_HANDLE_REQ	"handle_request"
+	#define PYTHON_INIT_ORCH	"init_orchestrator"
 #endif	
 
 #endif //CONSTANTS_H_

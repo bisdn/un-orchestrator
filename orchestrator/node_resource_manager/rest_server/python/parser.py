@@ -6,9 +6,6 @@ import nffglib
 #Constants used by the parser
 import constants
 
-import os
-
-
 import logging
 
 #Set the logger
@@ -22,6 +19,10 @@ sh.setFormatter(f)
 LOG.addHandler(sh)
 
 def handle_request(method, url, content = None):
+	'''
+	Handles HTTP commands coming from the network
+	'''
+
 	LOG.debug("Method: %s",method)
 	LOG.debug("Url: %s",url)
 	
@@ -47,17 +48,18 @@ def handle_request(method, url, content = None):
 			LOG.debug("Returning: %s",answer)
 			
 			return answer
+			
 	elif method == 'POST':
-		LOG.debug("POST!") 
 		if url == '/ping':
 			return 'OK'
+			
 		elif url == '/get-config':
-			#answer = get_config()
-			return get_config()
-#			return "BBBBBBBBBB"
+			return get_config(constants.TMP_FILE)
+			
 		elif url == '/edit-config':
 			#TODO
 			return
+			
 		else:
 			#TODO: this should not happen
 			return
@@ -65,17 +67,14 @@ def handle_request(method, url, content = None):
 		#TODO: this should not happen
 		return
 
-
-def get_config():
+def get_config(fileName):
 	'''
 	Return the current configuration of the node
 	'''
-	
-	print os.path.dirname(__file__)
-	
+		
 	try:
-		LOG.debug("Reading file: %s",constants.TMP_FILE)
-		config = nffglib.Virtualizer.parse(file=constants.TMP_FILE)
+		LOG.debug("Reading file: %s",fileName)
+		config = nffglib.Virtualizer.parse(file=fileName)
 	except IOError as e:
 		#TODO
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
@@ -85,4 +84,36 @@ def get_config():
 	LOG.debug("File correctly read!")
 	LOG.debug("%s",config_xml)
 	return config_xml
+
 	
+def init_orchestrator(fileName):
+	'''
+	Read the configuration file of the orchestrator and retrieves information
+	related to the ports of the Universal Node
+	
+	In the file, there must be one and only one node in the infrastructure.
+	I don't do any check on this statement.
+	'''
+	
+	infrastructure_xml = get_config(fileName)
+	
+	LOG.debug('Parsing the physical infrastructure...')
+	
+	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
+	
+	universal_node = infrastructure.c_nodes.list_node[0]
+	
+	LOG.debug("Infrastructure node: ")
+	LOG.debug("\t %s",universal_node.g_node.g_idNameType.g_idName.l_id)
+	LOG.debug("\t %s",universal_node.g_node.g_idNameType.g_idName.l_name)
+	
+	LOG.debug("Available ports: ")
+	toBeReturned = []
+	ports = universal_node.g_node.c_ports.list_port;
+	for port in ports:
+		LOG.debug("\t %s - %s",port.g_idName.l_id,port.g_idName.l_name)
+		toBeReturned.append(port.g_idName.l_id)
+		toBeReturned.append(port.g_idName.l_name)
+	
+	return toBeReturned
+
