@@ -33,6 +33,10 @@
 
 #define __STDC_FORMAT_MACROS
 
+#ifdef UNIFY_NFFG
+	#include <Python.h>
+#endif	
+
 #include <microhttpd.h>
 
 #include <string.h>

@@ -130,9 +130,18 @@ enum
 };
 
 /*
- * Constants to Libvirt.
+ * Constants used by Libvirt
  */
  #define MEMORY_SIZE 				"4194304"
- #define NUMBER_OF_CORES			   "4"
+ #define NUMBER_OF_CORES			 "4"
+
+/*
+ * Constant required with the Unify NF-FG library is used
+ */
+#ifdef UNIFY_NFFG
+	#define PYTHON_DIRECTORY    "node_resource_manager/rest_server/python/"
+	#define PYTHON_MAIN_FILE    "parser"
+	#define PYTHON_METHOD		"handle_request"
+#endif	
 
 #endif //CONSTANTS_H_

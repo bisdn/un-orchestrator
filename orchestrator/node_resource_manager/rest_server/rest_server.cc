@@ -4,6 +4,16 @@ GraphManager *RestServer::gm = NULL;
 
 bool RestServer::init(char *nffg_filename,int core_mask, char *ports_file_name)
 {	
+
+#ifdef UNIFY_NFFG
+	if(nffg_filename != NULL)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "You are using the NF-FG defined in the Unify project.");
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The NF-FG from configuration file is not supported in this case!",nffg_filename);
+		return false;
+	}
+#endif
+
 	try
 	{
 		gm = new GraphManager(core_mask,string(ports_file_name));
@@ -99,6 +109,98 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 		return MHD_YES;
 	}
 
+#ifdef UNIFY_NFFG
+	//TODO: move this code in a function
+
+	//In this case, the request in handled by the Python code
+	PyObject *pythonFileName = PyString_FromString(PYTHON_MAIN_FILE);
+	PyObject *pythonFile = PyImport_Import(pythonFileName);
+	Py_DECREF(pythonFileName);
+	if (pythonFile != NULL) 
+    {
+		//TODO: passare alla funzione: method, url, body  	
+    
+		PyObject *pythonFunction = PyObject_GetAttrString(pythonFile, PYTHON_METHOD);
+		if (pythonFunction && PyCallable_Check(pythonFunction)) 
+        {
+	    	PyObject *pythonArgs = NULL, *pythonRetVal, *pythonValue;
+	    	
+            
+            //Extract the body
+            struct connection_info_struct *con_info = (struct connection_info_struct *)(*con_cls);
+			assert(con_info != NULL);
+			if (*upload_data_size != 0)
+			{
+				strcpy(&con_info->message[con_info->length],upload_data);
+				con_info->length += *upload_data_size;
+				*upload_data_size = 0;
+				return MHD_YES;
+			}
+			else if (NULL != con_info->message)
+			{
+				con_info->message[con_info->length] = '\0';
+				//return (0 == strcmp (method, PUT))? doPut(connection,url,con_cls) : doDelete(connection,url,con_cls);
+			}
+            
+ 			/****************************/
+ 			
+ 			int numArgs = (con_info->message != NULL)? 3 : 2;
+
+			pythonArgs = PyTuple_New(numArgs);	
+	    	pythonValue = PyString_FromString(method);
+            PyTuple_SetItem(pythonArgs, 0, pythonValue);
+            pythonValue = PyString_FromString(url);
+            PyTuple_SetItem(pythonArgs, 1, pythonValue);
+
+
+			if(con_info->message != NULL)
+			{
+				pythonValue = PyString_FromString(con_info->message);
+				PyTuple_SetItem(pythonArgs, 2, pythonValue);
+			}
+//			else
+				//pythonValue = PyString_FromString(NULL);
+   		  //      PyTuple_SetItem(pythonArgs, 2, NULL);
+            
+	    	
+	    	pythonRetVal = PyObject_CallObject(pythonFunction, pythonArgs);
+            Py_DECREF(pythonArgs);
+            
+            logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
+            Py_DECREF(pythonRetVal);
+            Py_XDECREF(pythonFunction);
+	        Py_DECREF(pythonFile);
+	    }
+	    else 
+        {
+            if (PyErr_Occurred())
+                PyErr_Print();
+            
+		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_METHOD);
+			struct MHD_Response *response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
+			int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+			MHD_destroy_response (response);
+			
+			Py_XDECREF(pythonFunction);
+	        Py_DECREF(pythonFile);
+	        
+	        return ret;			
+		}
+        
+   	    exit(0); //FIXME: tmp code
+    }
+    else
+    {
+       	PyErr_Print();
+       	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python file \"%s\"",PYTHON_MAIN_FILE);
+		struct MHD_Response *response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
+		int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+		MHD_destroy_response (response);
+		Py_DECREF(pythonFile);
+		return ret;
+    }
+    
+#else
 	if (0 == strcmp (method, GET))
 		return doGet(connection,url);
 	else if( (0 == strcmp (method, PUT)) || (0 == strcmp (method, DELETE)) )
@@ -140,6 +242,7 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 			return ret;
 		}
 	}
+#endif	
 	
 	//Just to remove a warning in the compiler
 	return MHD_YES;

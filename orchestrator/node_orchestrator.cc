@@ -39,6 +39,11 @@ void singint_handler(int sig)
 		//Do nothing, since the program is terminating
 	}
 	
+#ifdef UNIFY_NFFG
+	//Close the Python code used to handle the requests coming from the upper layers
+	  Py_Finalize();
+#endif
+	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
 	exit(EXIT_SUCCESS);
 }
@@ -64,6 +69,13 @@ int main(int argc, char *argv[])
 	sigset_t mask;
 	sigfillset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
+	
+#ifdef UNIFY_NFFG
+	//Initialize the Python code used to handle the requests coming from the upper layers
+	setenv("PYTHONPATH",PYTHON_DIRECTORY ,1);
+	Py_SetProgramName(argv[0]);  /* optional but recommended */
+    Py_Initialize();
+#endif
 
 	if(!RestServer::init(nffg_file_name,core_mask,ports_file_name))
 	{
