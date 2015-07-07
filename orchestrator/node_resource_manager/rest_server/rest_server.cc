@@ -123,20 +123,22 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
         {
 	    	PyObject *pythonArgs = NULL, *pythonRetVal, *pythonValue;
 	    	
-            
-            //Extract the body of the HTTP request
-            struct connection_info_struct *con_info = (struct connection_info_struct *)(*con_cls);
+	    	struct connection_info_struct *con_info = (struct connection_info_struct *)(*con_cls);
 			assert(con_info != NULL);
-			if (*upload_data_size != 0)
-			{
-				strcpy(&con_info->message[con_info->length],upload_data);
-				con_info->length += *upload_data_size;
-				*upload_data_size = 0;
-				return MHD_YES;
-			}
-			else if (NULL != con_info->message)
-			{
-				con_info->message[con_info->length] = '\0';
+	    	if (0 != strcmp (method, GET))
+	    	{
+		        //Extract the body of the HTTP request		        
+				if (*upload_data_size != 0)
+				{
+					strcpy(&con_info->message[con_info->length],upload_data);
+					con_info->length += *upload_data_size;
+					*upload_data_size = 0;
+					return MHD_YES;
+				}
+				else if (NULL != con_info->message)
+				{
+					con_info->message[con_info->length] = '\0';
+				}
 			}
 
 			//Set the arguments to the python function            			
