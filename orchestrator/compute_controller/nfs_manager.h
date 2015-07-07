@@ -85,6 +85,11 @@ private:
 	uint64_t lsiID;
 	
 	/**
+	 *	@brief: connection to Libvirt
+	 */
+	Libvirt *libvirt;
+
+	/**
 	*	@brief: parse the JSON answer received from the name translator database
 	*
 	*	@param:	answer	Answer to be parsed
@@ -125,7 +130,9 @@ private:
 	bool allSelected(bool lastCall);
 
 public:
-	
+	NFsManager();
+	~NFsManager();
+
 	/**
 	*	@brief: Retrieve the information for a specific NF
 	*
