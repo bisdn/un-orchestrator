@@ -45,7 +45,8 @@ def handle_request(method, url, content = None):
 			
 			answer = a + b + c + d + e
 			
-			LOG.debug("Returning: %s",answer)
+			LOG.debug("Returning: ")
+			LOG.debug("%s",answer)
 			
 			return answer
 			
@@ -75,7 +76,7 @@ def get_config(fileName):
 	try:
 		LOG.debug("Reading file: %s",fileName)
 		config = nffglib.Virtualizer.parse(file=fileName)
-	except IOError as e:
+	except (IOError,InvalidXML) as e:
 		#TODO
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
 		return "AAAA"
@@ -114,6 +115,16 @@ def init_orchestrator(fileName):
 		LOG.debug("\t %s - %s",port.g_idName.l_id,port.g_idName.l_name)
 		toBeReturned.append(port.g_idName.l_id)
 		toBeReturned.append(port.g_idName.l_name)
+		
+	''' 
+		Save the configuration file in the tmp file that will be used for the rest of the
+		execution to maintain the current configuration of the node
+	'''
+	
+	
+	tmpFile = open(constants.TMP_FILE, "w")
+	tmpFile.write(infrastructure_xml)
+	tmpFile.close()
 	
 	return toBeReturned
 
