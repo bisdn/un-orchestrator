@@ -72,17 +72,23 @@ def get_config(fileName):
 	'''
 	Return the current configuration of the node
 	'''
-		
+	
 	try:
 		LOG.debug("Reading file: %s",fileName)
 		config = nffglib.Virtualizer.parse(file=fileName)
-	except (IOError,InvalidXML) as e:
+	except:
+	#(IOError,InvalidXML) as e:
 		#TODO
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+#		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		print "EXCEPTIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNn"
 		return "AAAA"
-	
-	config_xml = config.xml()
-	LOG.debug("File correctly read!")
+		
+	LOG.debug("Parsing the file content")
+	try:
+		config_xml = config.xml()
+	except:
+		print "----"
+	LOG.debug("File correctly managed!")
 	LOG.debug("%s",config_xml)
 	return config_xml
 
@@ -95,7 +101,7 @@ def init_orchestrator(fileName):
 	In the file, there must be one and only one node in the infrastructure.
 	I don't do any check on this statement.
 	'''
-	
+
 	infrastructure_xml = get_config(fileName)
 	
 	LOG.debug('Parsing the physical infrastructure...')
@@ -120,11 +126,34 @@ def init_orchestrator(fileName):
 		Save the configuration file in the tmp file that will be used for the rest of the
 		execution to maintain the current configuration of the node
 	'''
-	
-	
+		
 	tmpFile = open(constants.TMP_FILE, "w")
 	tmpFile.write(infrastructure_xml)
 	tmpFile.close()
 	
 	return toBeReturned
+
+################################
+
+def main():
+	'''
+	Only used for debug purposes
+	'''
+	
+	fileName = "/home/kvmuser/Desktop/un-orchestrator/orchestrator/config/infra_domain.xml"
+	
+	print "First execution"
+	init_orchestrator(fileName)
+	print "Done"
+	
+	print "Second execution"
+	init_orchestrator(fileName)
+	print "Done"
+	
+if __name__ == '__main__':
+	'''
+	Only used for debug purposes
+	'''
+	main()
+
 

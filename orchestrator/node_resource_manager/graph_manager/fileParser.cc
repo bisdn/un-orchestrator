@@ -115,13 +115,20 @@ set<CheckPhysicalPortsIn> FileParser::parsePortsFile(string fileName)
     	if (pythonFunction && PyCallable_Check(pythonFunction)) 
     	{
 			PyObject *pythonArgs = PyTuple_New(1);	
-	    	PyObject *pythonValue = PyString_FromString(fileName.c_str());    	
+	    	PyObject *pythonValue = PyString_FromString(fileName.c_str());
+	    	if(!pythonValue)
+	    	{
+	    		Py_DECREF(pythonArgs);
+				Py_DECREF(pythonFile);
+				//TODO: put an error message
+				throw new FileParserException();		
+	    	}
 	    	PyTuple_SetItem(pythonArgs, 0, pythonValue);
 	    	
 	    	PyObject *pythonRetVal = PyObject_CallObject(pythonFunction, pythonArgs);
             Py_DECREF(pythonArgs);
-            
-            assert(PyList_Check(pythonRetVal));
+                     
+			assert(PyList_Check(pythonRetVal));
             
             int count = (int) PyList_Size(pythonRetVal);
             assert(count%2 == 0);
@@ -134,11 +141,9 @@ set<CheckPhysicalPortsIn> FileParser::parsePortsFile(string fileName)
 		        //TODO: handle the ID!
 		        physicalPortType_t ptype = ETHERNET_PORT; //FIXME: probably this is not always correct
 				physicalPortSide_t pside = NONE;	//FIXME: is this information important? I can completely remove it from the code
-				CheckPhysicalPortsIn cppi(PyString_AsString(name),ptype,pside);
+				string aux = PyString_AsString(name);
+				CheckPhysicalPortsIn cppi(aux,ptype,pside);
 				physicalPorts.insert(cppi);
-		        
-				Py_DECREF(id);
-				Py_DECREF(name);
 		    }
             
             Py_DECREF(pythonRetVal);
