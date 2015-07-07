@@ -31,9 +31,21 @@ private:
 public:
 
 	/**
-	*	@brief: parse the file describing the ports to be connected to the node
+	*	@brief: parse the configuration file of the Universal Node, and retrieves information
+	*		related to the physical ports to be connected to the node itself
 	*/
-	static set<CheckPhysicalPortsIn> parsePortsFile(string fileName);
+	static set<CheckPhysicalPortsIn> parseConfigurationFile(string fileName);
+	
+#ifdef UNIFY_NFFG
+	/**
+	*	@brief: In the tmp file of the Universal Node, replaces the ID of a given port with the ID provided
+	*
+	*	@param: portName	Name of the port whose ID has to be replaced
+	*	@param: ID			New ID to be associated with the port
+	*/
+	static void EditPortID(string portName, unsigned int ID);
+#endif	
+	
 };
 
 class FileParserException: public exception

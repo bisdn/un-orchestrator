@@ -1,7 +1,7 @@
 #include "fileParser.h"
 
 #ifndef UNIFY_NFFG
-set<CheckPhysicalPortsIn> FileParser::parsePortsFile(string fileName)
+set<CheckPhysicalPortsIn> FileParser::parseConfigurationFile(string fileName)
 {
 	set<CheckPhysicalPortsIn> physicalPorts;
 
@@ -99,7 +99,7 @@ set<CheckPhysicalPortsIn> FileParser::parsePortsFile(string fileName)
 	return physicalPorts;
 }
 #else
-set<CheckPhysicalPortsIn> FileParser::parsePortsFile(string fileName)
+set<CheckPhysicalPortsIn> FileParser::parseConfigurationFile(string fileName)
 {
 	//The configuration file has the format required by the NF-FG library defined in Unify.
 	//Then, let's exploit the NF-FG library to parse it and retrieve the ports!
@@ -137,8 +137,7 @@ set<CheckPhysicalPortsIn> FileParser::parsePortsFile(string fileName)
 		        PyObject *id = PyList_GetItem(pythonRetVal,i);
 		        PyObject *name = PyList_GetItem(pythonRetVal,i+1);
 		        logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s - %s",PyString_AsString(id),PyString_AsString(name));
-		        
-		        //TODO: handle the ID!
+		
 		        physicalPortType_t ptype = ETHERNET_PORT; //FIXME: probably this is not always correct
 				physicalPortSide_t pside = NONE;	//FIXME: is this information important? I can completely remove it from the code
 				string aux = PyString_AsString(name);
@@ -192,4 +191,79 @@ void FileParser::freeXMLResources(xmlSchemaParserCtxtPtr parser_ctxt, xmlSchemaV
 	xmlCleanupParser();
 }
 #endif
+
+
+#ifdef UNIFY_NFFG
+void FileParser::EditPortID(string portName, unsigned int ID)
+{
+
+	PyObject *pythonFileName = PyString_FromString(PYTHON_MAIN_FILE);
+	PyObject *pythonFile = PyImport_Import(pythonFileName);
+	Py_DECREF(pythonFileName);
+	if (pythonFile != NULL) 
+	{ 
+    	PyObject *pythonFunction = PyObject_GetAttrString(pythonFile, PYTHON_EDIT_PORT_ID);
+    	if (pythonFunction && PyCallable_Check(pythonFunction)) 
+    	{
+			PyObject *pythonArgs = PyTuple_New(2);	
+	    	PyObject *pythonValue = PyString_FromString(portName.c_str());
+	    	if(!pythonValue)
+	    	{
+	    		Py_DECREF(pythonArgs);
+				Py_DECREF(pythonFile);
+				//TODO: put an error message
+				throw new FileParserException();		
+	    	}
+	    	PyTuple_SetItem(pythonArgs, 0, pythonValue);
+	    	pythonValue = PyInt_FromLong(ID);
+	    	if(!pythonValue)
+	    	{
+	    		Py_DECREF(pythonArgs);
+				Py_DECREF(pythonFile);
+				//TODO: put an error message
+				throw new FileParserException();		
+	    	}
+	    	PyTuple_SetItem(pythonArgs, 1, pythonValue);
+	    	
+	    	PyObject *pythonRetVal = PyObject_CallObject(pythonFunction, pythonArgs);
+            Py_DECREF(pythonArgs);
+            
+/*            int count = (int) PyList_Size(pythonRetVal);
+            assert(count%2 == 0);
+		    for (int i = 0 ; i < count ; i+=2 )
+		    {
+		        PyObject *id = PyList_GetItem(pythonRetVal,i);
+		        PyObject *name = PyList_GetItem(pythonRetVal,i+1);
+		        logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s - %s",PyString_AsString(id),PyString_AsString(name));
+		
+		        physicalPortType_t ptype = ETHERNET_PORT; //FIXME: probably this is not always correct
+				physicalPortSide_t pside = NONE;	//FIXME: is this information important? I can completely remove it from the code
+				string aux = PyString_AsString(name);
+				CheckPhysicalPortsIn cppi(aux,ptype,pside);
+				physicalPorts.insert(cppi);
+		    }
+            */
+            Py_DECREF(pythonRetVal);
+            Py_XDECREF(pythonFunction);
+	    	Py_DECREF(pythonFile);
+    	}
+    	else 
+        {
+            if (PyErr_Occurred())
+                PyErr_Print();
+		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_INIT_ORCH);
+			Py_XDECREF(pythonFunction);
+	        Py_DECREF(pythonFile);
+	        throw new FileParserException();		
+		}
+	}
+	else
+    {
+	   	PyErr_Print();
+	   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python file \"%s\"",PYTHON_MAIN_FILE);
+	   	throw new FileParserException();
+	}
+}
+#endif	
+
 

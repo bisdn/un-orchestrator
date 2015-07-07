@@ -143,6 +143,7 @@ enum
 	#define PYTHON_MAIN_FILE    "parser"
 	#define PYTHON_HANDLE_REQ	"handle_request"
 	#define PYTHON_INIT_ORCH	"init_orchestrator"
+	#define PYTHON_EDIT_PORT_ID	"editPortID"
 #endif	
 
 #endif //CONSTANTS_H_

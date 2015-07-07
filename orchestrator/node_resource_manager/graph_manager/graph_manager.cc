@@ -15,7 +15,7 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 	set<CheckPhysicalPortsIn> phyPortsRequired;
 	try
 	{
-		phyPortsRequired = FileParser::parsePortsFile(portsFileName);
+		phyPortsRequired = FileParser::parseConfigurationFile(portsFileName);
 	}
 	catch(...)
 	{
@@ -81,6 +81,9 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 				delete(clo);
 				throw GraphManagerException();
 			}
+#ifdef UNIFY_NFFG
+			FileParser::EditPortID(it->first,it->second);
+#endif
 		}
 		
 		map<string,map<string, unsigned int> > nfsports = clo->getNetworkFunctionsPorts();

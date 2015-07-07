@@ -76,11 +76,9 @@ def get_config(fileName):
 	try:
 		LOG.debug("Reading file: %s",fileName)
 		config = nffglib.Virtualizer.parse(file=fileName)
-	except:
-	#(IOError,InvalidXML) as e:
+	except (IOError,InvalidXML) as e:
 		#TODO
-#		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		print "EXCEPTIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNn"
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
 		return "AAAA"
 		
 	LOG.debug("Parsing the file content")
@@ -132,6 +130,45 @@ def init_orchestrator(fileName):
 	tmpFile.close()
 	
 	return toBeReturned
+	
+def editPortID(portName, portID):
+	'''
+	Set portID as ID of the port named portName
+	'''
+	
+	found = False
+	
+	LOG.debug("Reading file: %s",constants.TMP_FILE)
+
+	tmpFile = open(constants.TMP_FILE,"r")
+	infrastructure_xml = tmpFile.read()
+	tmpFile.close()
+	
+	LOG.debug("File content: ")
+	LOG.debug("%s",infrastructure_xml)
+	
+	LOG.debug("I'm going to set the ID of port %s to %d",portName,portID)
+	
+	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
+	universal_node = infrastructure.c_nodes.list_node[0]
+	ports = universal_node.g_node.c_ports.list_port;
+	for port in ports:
+		if port.g_idName.l_name == portName:
+			port.g_idName.l_id = str(portID)
+			found = True		
+			
+	if not found:
+		'''There has been some internal error'''
+		LOG.debug("Port %s not found!",portName)
+		return False
+	
+	new_infrastructure_xml = infrastructure.xml()
+	
+	tmpFile = open(constants.TMP_FILE, "w")
+	tmpFile.write(new_infrastructure_xml)
+	tmpFile.close()
+
+	return True
 
 ################################
 
