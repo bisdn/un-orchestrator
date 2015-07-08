@@ -50,6 +50,7 @@
 						</xsd:element>	
 					</xsd:sequence>
 					<xsd:attribute ref="name" use="required"/>
+					<xsd:attribute name="num-ports" type="xsd:integer"/>
 				</xsd:complexType>
 			</xsd:element> 
 		</xsd:sequence>

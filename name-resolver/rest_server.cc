@@ -76,13 +76,19 @@ bool RestServer::init(string fileName)
 		if ((cur_root_child->type == XML_ELEMENT_NODE)&&(!xmlStrcmp(cur_root_child->name, (const xmlChar*)NETWORK_FUNCTION_ELEMENT)))
 		{
 			xmlChar* attr_name = xmlGetProp(cur_root_child, (const xmlChar*)NAME_ATTRIBUTE);
+			xmlChar* attr_nports = xmlGetProp(cur_root_child, (const xmlChar*)NUM_PORTS_ATTRIBUTE);
+		
+			int nports = 0;
 
 			assert(attr_name != NULL);
+			if(attr_nports != NULL)
+				sscanf((const char*)attr_nports,"%d",&nports);
 
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Network function: %s",attr_name);
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Number of ports: %d",nports);
 
 			string name((const char*)attr_name);
-			NF *nf = new NF(name);
+			NF *nf = new NF(name,nports);
 	
 			xmlNodePtr nf_elem = cur_root_child;
 			for(xmlNodePtr cur_impl = nf_elem->xmlChildrenNode; cur_impl != NULL; cur_impl = cur_impl->next)

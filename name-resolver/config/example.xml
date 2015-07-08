@@ -28,7 +28,7 @@
 		file system.
 	-->
 
-	<network-function name="example">
+	<network-function name="example" num-ports="10">
 		<!-- Several implementations are available for this network function -->
 		<implementation type="docker" uri="localhost:5000/example"/>
 		<implementation type="dpdk" uri="https://nf_repository.com/example" cores="1" location="remote"/>

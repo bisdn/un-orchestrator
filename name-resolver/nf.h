@@ -28,10 +28,18 @@ private:
 	*/
 	string name;
 	
+	/**
+	*	@brief: number of ports of the NF. 0 means "unbounded"
+	*/
+	int nports;
+	
+	/**
+	*	@brief: list of implementations for the network function
+	*/
 	list<Implementation*> implementations;
 	
 public:
-	NF(string name);
+	NF(string name, int nports);
 	void addImplementation(Implementation *implementation);
 	
 	string getName();
