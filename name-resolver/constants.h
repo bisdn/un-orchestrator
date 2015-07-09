@@ -12,6 +12,7 @@
 #define REST_PORT 				2828
 #define BASE_URL 				"nfs"
 #define REST_URL 				"http://localhost"
+#define DIGEST_URL 				"digest"
 
 /*
 *	Rest methods

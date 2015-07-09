@@ -29,7 +29,7 @@ private:
 	string name;
 	
 	/**
-	*	@brief: number of ports of the NF. 0 means "unbounded"
+	*	@brief: number of ports of the NF
 	*/
 	int nports;
 	
