@@ -20,6 +20,13 @@ private:
 	*/
 	string name;
 	
+#ifdef UNIFY_NFFG
+	/**
+	*	@brief: number of ports of a VNF
+	*/
+	unsigned int numPorts;
+#endif
+	
 	/**
 	*	@brief: available implementations of the NF
 	*/
@@ -33,7 +40,11 @@ private:
 	bool isRunning;
 	
 public:
+#ifdef UNIFY_NFFG
+	NF(string name, unsigned int numPorts); //FIXME: togliere da opzionale
+#else
 	NF(string name);
+#endif
 	
 	void addImplementation(Implementation *implementation);
 	list<Implementation*> getAvailableImplementations();
@@ -43,6 +54,12 @@ public:
 	
 	void setRunning(bool val);
 	bool getRunning();
+	
+	string getName();
+	
+#ifdef UNIFY_NFFG
+	unsigned int getNumPorts();
+#endif	
 };
 
 #endif //NF_H_ 1

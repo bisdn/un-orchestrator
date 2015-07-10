@@ -112,12 +112,24 @@
 /**
 *	@brief: Constants related to the configuration file containing the description of the physical ports
 */
-#define PHY_PORTS_XSD				"config/physical_ports-schema.xsd"
+#define PHY_PORTS_XSD			"config/universal-node-schema.xsd"
 
-#define PORT_ELEMENT				"port"
-#define NAME_ATTRIBUTE				"name"
-#define TYPE_ATTRIBUTE				"type"
-#define SIDE_ATTRIBUTE				"side"
+#define RESOURCES_ELEMENT		"resources"
+#define CPU_ELEMENT				"cpu"
+#define MEMORY_ELEMENT			"memory"
+#define STORAGE_ELEMENT			"storage"
+#define AMOUNT_ATTRIBUTE		"amount"
+#define UNIT_ATTRIBUTE			"unit"
+
+#define PORTS_ELEMENT			"ports"
+#define PORT_ELEMENT			"port"
+#define NAME_ATTRIBUTE			"name"
+#define TYPE_ATTRIBUTE			"type"
+#define SIDE_ATTRIBUTE			"side"
+
+#define VIRTUALIZED_ELEMENT		"virtualized"
+#define AS_ATTRIBUTE			"as"
+#define PORT_TYPE_ATTRIBUTE		"port-type"
 
 /*
  * Supported Openflow versions.
@@ -139,11 +151,21 @@ enum
  * Constant required with the Unify NF-FG library is used
  */
 #ifdef UNIFY_NFFG
-	#define PYTHON_DIRECTORY    "node_resource_manager/rest_server/python/"
-	#define PYTHON_MAIN_FILE    "parser"
+	#define PYTHON_DIRECTORY    "node_resource_manager/virtualizer"
+	#define PYTHON_MAIN_FILE    "virtualizer"
+
+	/*
+	* Methods
+	*/
+	#define PYTHON_INIT					"init"
+	#define PYTHON_TERMINATE			"terminate"
+	#define PYTHON_ADDRESOURCES			"addResources"
+	#define PYTHON_ADDNODEPORT			"addNodePort"
+	#define PYTHON_EDIT_PORT_ID			"editPortID"
+	#define PYTHON_ADD_SUUPORTED_VNFs	"addSupportedVNFs"
+	
 	#define PYTHON_HANDLE_REQ	"handle_request"
 	#define PYTHON_INIT_ORCH	"init_orchestrator"
-	#define PYTHON_EDIT_PORT_ID	"editPortID"
 #endif	
 
 #endif //CONSTANTS_H_

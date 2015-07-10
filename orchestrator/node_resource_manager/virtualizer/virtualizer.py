@@ -7,10 +7,11 @@ import nffglib
 import constants
 
 import logging
+import os
 
 #Set the logger
 LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)	#Change here the logging level
+LOG.setLevel(logging.WARNING)	#Change here the logging level
 LOG.propagate = False
 sh = logging.StreamHandler()
 sh.setLevel(logging.DEBUG)
@@ -130,6 +131,156 @@ def init_orchestrator(fileName):
 	tmpFile.close()
 	
 	return toBeReturned
+		
+	
+###########################
+
+def init():
+	
+	'''
+	The virtualizer maintains the state of the node in a tmp file.
+	This function initializes such a file.
+	'''
+	
+	LOG.debug("Initializing the virtualizer...")
+
+	t = """<?xml version="1.0" ?>
+	<virtualizer>
+		<id>""" + constants.INFRASTRUCTURE_ID + """</id>
+		<name>""" + constants.INFRASTRUCTURE_NAME + """</name>
+		<nodes>
+			<node>
+				<id>""" +  constants.NODE_ID + """</id>
+				<name>""" + constants.NODE_NAME + """</name>
+				<type>BisBis</type>
+				<ports>
+				</ports>
+				<resources>
+					<cpu>0</cpu>
+					<mem>0</mem>
+					<storage>0</storage>
+				</resources>
+				<capabilities>
+	                <supported_NFs>
+	               </supported_NFs>
+	            </capabilities>
+			</node>
+		</nodes>
+	</virtualizer>"""
+
+	try:
+		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile.write(t)
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+	
+	return 1
+		
+def terminate():
+	'''
+	Removes the tmp file used by the virtualizer to maintain the
+	stae of the ndoe.
+	'''
+	
+	LOG.debug("Terminating the virtualizer'...",)
+	os.remove(constants.TMP_FILE)
+
+def addResources(cpu, memory, memory_unit, storage, storage_unit):
+	'''
+	Adds the description of the resources of the node to the 
+	tmp file
+	'''
+	
+	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	try:
+		tmpFile = open(constants.TMP_FILE,"r")
+		infrastructure_xml = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+	LOG.debug("File correctly read")
+	
+	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
+	universal_node = infrastructure.c_nodes.list_node[0]
+	
+	resources = universal_node.g_node.c_resources.g_softwareResource
+	
+	resources.l_cpu = str(cpu) + " VCPU"
+	resources.l_mem = str(memory) + " " + memory_unit
+	resources.l_storage = str(storage) + " " + storage_unit
+	
+	new_infrastructure_xml = infrastructure.xml()
+	
+	try:
+		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile.write(new_infrastructure_xml)
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+		
+	LOG.debug("Resources added")
+
+	return 1
+	
+def addNodePort(name, ptype):
+	'''
+	Adds the description of a port of the node
+	'''
+	
+	#TODO: support the port-sap
+	#TODO: The port-abstract should have the capabilities (that are optional)
+
+	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	try:
+		tmpFile = open(constants.TMP_FILE,"r")
+		infrastructure_xml = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+	LOG.debug("File correctly read")
+	
+	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
+	
+	universal_node = infrastructure.c_nodes.list_node[0]
+	
+	ports = universal_node.g_node.c_ports
+	
+	port = nffglib.PortGroup(ports)
+	ports.list_port.append(port)
+	
+	portid = nffglib.IdNameGroup(port)
+	port.g_idName = portid
+    
+	porttype = nffglib.PortTypeGroup(port)
+	port.g_portType = porttype
+	
+	portid.l_id = str(0)
+	portid.l_name = name
+	if(ptype == 'port-sap'):
+		LOG.error("port-sap is not supported!")
+		return 0
+	
+	porttype.l_portType = ptype
+
+	
+	new_infrastructure_xml = infrastructure.xml()
+	
+	try:
+		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile.write(new_infrastructure_xml)
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+
+	LOG.debug("Port added")
+
+	return 1
 	
 def editPortID(portName, portID):
 	'''
@@ -138,17 +289,17 @@ def editPortID(portName, portID):
 	
 	found = False
 	
-	LOG.debug("Reading file: %s",constants.TMP_FILE)
-
-	tmpFile = open(constants.TMP_FILE,"r")
-	infrastructure_xml = tmpFile.read()
-	tmpFile.close()
-	
-	LOG.debug("File content: ")
-	LOG.debug("%s",infrastructure_xml)
-	
+	LOG.debug("Reading tmp file: %s",constants.TMP_FILE)
+	try:
+		tmpFile = open(constants.TMP_FILE,"r")
+		infrastructure_xml = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+	LOG.debug("File correctly read")
+		
 	LOG.debug("I'm going to set the ID of port %s to %d",portName,portID)
-	
 	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
 	universal_node = infrastructure.c_nodes.list_node[0]
 	ports = universal_node.g_node.c_ports.list_port;
@@ -160,15 +311,96 @@ def editPortID(portName, portID):
 	if not found:
 		'''There has been some internal error'''
 		LOG.debug("Port %s not found!",portName)
-		return False
+		return 0
 	
 	new_infrastructure_xml = infrastructure.xml()
 	
-	tmpFile = open(constants.TMP_FILE, "w")
-	tmpFile.write(new_infrastructure_xml)
-	tmpFile.close()
+	try:
+		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile.write(new_infrastructure_xml)
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+		
+	LOG.debug("Port ID changed")
 
-	return True
+	return 1
+
+def addSupportedVNFs(ID, name, vnftype, numports):
+	'''
+	Adds the description of a VNF that can be deployed on the node
+	'''
+		
+	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	try:
+		tmpFile = open(constants.TMP_FILE,"r")
+		infrastructure_xml = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+	LOG.debug("File correctly read")
+	
+	LOG.debug("Inserting VNF %s, ID %s, type %d, num ports %d...",ID,name,vnftype,numports)
+	
+	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
+	universal_node = infrastructure.c_nodes.list_node[0]
+
+	capabilities = universal_node.c_capabilities.g_capabilities
+	supportedVNFs = capabilities.c_supportedNFs
+	
+	#Create here the VNF
+	nf = nffglib.NodeGroup(supportedVNFs)
+	supportedVNFs.list_node.append(nf)
+
+	nfidt = nffglib.IdNameTypeGroup(nf)
+	nf.g_idNameType = nfidt
+
+	nfid = nffglib.IdNameGroup(nfidt)
+	nfidt.g_idName = nfid
+
+	nfports = nffglib.Ports(nf)
+	nf.c_ports = nfports
+
+	i = 1
+	for x in range(0, numports):
+		nfport = nffglib.PortGroup(nfports)
+		nfports.list_port.append(nfport)
+		
+		nfportid = nffglib.IdNameGroup(nfport)
+		nfport.g_idName = nfportid
+
+		nfporttype = nffglib.PortTypeGroup(nfport)
+		nfport.g_portType = nfporttype
+		
+		nfportid.l_id = str(i)
+		
+		#FIXME: what is the name?
+		nfportid.l_name = 'VNF port ' + str(i)
+		
+		#FIXME: is it correct to set the port type always to port-abstract?
+		nfporttype.l_portType = "port-abstract"
+		
+		i = i+1
+
+	nfid.l_id = ID
+	nfid.l_name = name
+	nfidt.l_type = str(vnftype)
+		
+	new_infrastructure_xml = infrastructure.xml()
+	
+	try:
+		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile.write(new_infrastructure_xml)
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+
+	LOG.debug("VNF added")
+	
+	return 1
 
 ################################
 
@@ -176,16 +408,28 @@ def main():
 	'''
 	Only used for debug purposes
 	'''
+
+	LOG.info("Initializing the virtualizer...")
+	init()
 	
-	fileName = "/home/kvmuser/Desktop/un-orchestrator/orchestrator/config/infra_domain.xml"
+	LOG.info("Adding resources...")
+	addResources(10,31,"GB",5,"TB")
+
+	LOG.info("Adding a port...")
+	addNodePort("OVS-north external port","port-abstract")
+	LOG.info("Adding a port...")
+	addNodePort("OVS-south external port","port-abstract")
+
+	LOG.info("Adding a VNF...")	
+	addSupportedVNFs("A", "myVNF", 0, 2)	
+	LOG.info("Adding a VNF...")	
+	addSupportedVNFs("B", "myVNF", 0, 3)
+
+#	print "Terminating the virtualizer..."
+#	terminate()
 	
-	print "First execution"
-	init_orchestrator(fileName)
-	print "Done"
+	LOG.info("Bye :D")
 	
-	print "Second execution"
-	init_orchestrator(fileName)
-	print "Done"
 	
 if __name__ == '__main__':
 	'''

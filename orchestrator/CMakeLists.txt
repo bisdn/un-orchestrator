@@ -251,6 +251,21 @@ ELSE()
     	)
 ENDIF(ENABLE_KVM)
 
+
+IF(UNIFY_NFFG)
+	SET(SOURCES4
+    ${SOURCES3}
+    node_resource_manager/virtualizer/virtualizer.cc
+    node_resource_manager/virtualizer/virtualizer.h
+	)
+ELSE()
+	SET(SOURCES4
+    	${SOURCES3}
+	)
+ENDIF(UNIFY_NFFG)
+
+
+
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
 	/usr/include/libxml2
@@ -267,7 +282,7 @@ ENDIF(UNIFY_NFFG)
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES3}
+	${SOURCES4}
 )
 
 LINK_DIRECTORIES(

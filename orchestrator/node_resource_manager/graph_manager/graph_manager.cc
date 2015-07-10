@@ -82,7 +82,8 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 				throw GraphManagerException();
 			}
 #ifdef UNIFY_NFFG
-			FileParser::EditPortID(it->first,it->second);
+			if(!Virtualizer::EditPortID(it->first,it->second))
+				throw GraphManagerException();
 #endif
 		}
 		
@@ -149,6 +150,11 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "LSI-0 and its controller are created");
 
 	NFsManager::setCoreMask(core_mask);
+
+#ifdef UNIFY_NFFG	
+	if(NFsManager::retrieveAllAvailableNFs() != NFManager_OK)
+		throw GraphManagerException();	
+#endif
 }
 
 GraphManager::~GraphManager()

@@ -25,12 +25,17 @@
 	#include "libvirt/libvirt.h"
 #endif
 
+#ifdef UNIFY_NFFG
+	#include "../node_resource_manager/virtualizer/virtualizer.h"
+#endif
+
 using namespace std;
 using namespace json_spirit;
 
 #define DATABASE_ADDRESS	"localhost"
 #define DATABASE_PORT		"2828"
 #define DATABASE_BASE_URL	"/nfs/"
+#define DATABASE_DIGEST_URL	"digest/"
 
 #define CODE_POSITION				9
 #define CODE_METHOD_NOT_ALLLOWED	"405"
@@ -198,6 +203,13 @@ public:
 	*	@brief: prints information on the VNFs deployed
 	*/
 	void printInfo(int graph_id);
+	
+#ifdef UNIFY_NFFG	
+	/**
+	*	@brief:	Retrieves information about all the available VNFs, in order to set the virtualizer
+	*/
+	static nf_manager_ret_t retrieveAllAvailableNFs();
+#endif
 };
 
 #endif //NFS_MANAGER_H_
