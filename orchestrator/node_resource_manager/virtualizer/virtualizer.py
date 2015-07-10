@@ -6,6 +6,7 @@ import nffglib
 #Constants used by the parser
 import constants
 
+import json
 import logging
 import os
 
@@ -18,6 +19,14 @@ sh.setLevel(logging.DEBUG)
 f = logging.Formatter('[%(asctime)s] [Local-Orchestrator] [%(levelname)s] %(message)s')
 sh.setFormatter(f)
 LOG.addHandler(sh)
+
+#############################################################
+#	Functions related to the boot and stop of the virtualizer
+#############################################################
+
+class VirtualizerError(Exception):
+   """Virtualizer Error!"""
+   pass
 	
 def init():
 	
@@ -59,17 +68,33 @@ def init():
 	except IOError as e:
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
 		return 0
+		
+	''' Initizialize the file describing the deployed graph as a json'''
 	
-	return 1
+	rules = []
+	return flowRulesToFile(rules,constants.JSON_FILE)
 		
 def terminate():
 	'''
-	Removes the tmp file used by the virtualizer to maintain the
-	stae of the ndoe.
+	Removes the tmp files used by the virtualizer to maintain the
+	state of the ndoe.
 	'''
 	
-	LOG.debug("Terminating the virtualizer'...",)
-	os.remove(constants.TMP_FILE)
+	LOG.debug("Terminating the virtualizer'...")
+	try:
+		os.remove(constants.TMP_FILE)
+	except:
+		pass
+		
+	try:
+		os.remove(constants.JSON_FILE)
+	except:
+		pass
+
+	try:
+		os.remove(constants.NEW_GRAPH_FILE)
+	except:
+		pass
 
 def addResources(cpu, memory, memory_unit, storage, storage_unit):
 	'''
@@ -285,6 +310,10 @@ def addSupportedVNFs(ID, name, vnftype, numports):
 	LOG.debug("VNF added")
 	
 	return 1
+
+#############################################################################################
+#	Functions to handle commands coming from the network and to the manupulation of the graph
+#############################################################################################
 	
 def handle_request(method, url, content = None):
 	'''
@@ -340,24 +369,133 @@ def get_config(fileName):
 	Return the current configuration of the node
 	'''
 	
+	LOG.debug("Executing the get-config command")
+	
 	try:
 		LOG.debug("Reading file: %s",fileName)
 		config = nffglib.Virtualizer.parse(file=fileName)
-	except (IOError,InvalidXML) as e:
-		#TODO
+	except IOError as e:
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		return "AAAA"
+		return 0
 		
 	LOG.debug("Parsing the file content")
-	try:
-		config_xml = config.xml()
-	except:
-		print "----"
+	config_xml = config.xml()
 	LOG.debug("File correctly managed!")
 	LOG.debug("%s",config_xml)
 	return config_xml
 
+def edit_config(content):
 
+	LOG.debug("Executing the edit-config command")
+
+	#TODO
+	
+	#All'update bisogna dare solo le regole nuove.. Altrimenti fallisce! :S
+	#Mi tengo il grafo sotto forma di json in un file (sono obbligato ad averlo in un file, siccome non si mantiene stato tra diverse chiamate
+	#C-python. 
+	#Quando arriva una richiesta, mi creo il nuovo grafo e mi carico quelli sul file.. Li confronto, e vedo quali sono le regole nuove. Ritorno le regole nuove al C,
+	#ed aggirno il json da mettere sul file
+	
+	theJson = {}
+	#TODO: fill the json starting from the complex content. Use the nffg library to do this!
+	
+	try:
+		rulesToBeAdded = readGraphFromFileAndCompare(theJson)
+		flowRulesToFile(rulesToBeAdded,constants.NEW_GRAPH_FILE)
+	except:
+		#TODO: handle the error
+		pass
+		
+	return "AAAA"
+	
+def flowRulesToFile(flowRules,fileName):
+	'''
+	Given a set (potentially empty) of flow rules, write it in a file respecting the syntax expected by the Univeral Node
+	'''
+	
+	LOG.debug("Writing rules on file '%s'",fileName)
+	
+	myjson = {}
+	graph = {}
+	vnfs = []
+	
+	graph['VNFs'] = vnfs
+	graph['flow-rules'] = flowRules
+	myjson['flow-graph'] = graph
+	
+	try:
+		tmpFile = open(fileName, "w")
+		tmpFile.write(json.dumps(myjson))
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0
+		
+	return 1
+	
+def readGraphFromFileAndCompare(newRules):
+	'''
+	Read the graph currently deployed. It is stored in a tmp file, in a json format.
+	Then, compare it with the new request, in order to identify the new rules to be
+	deployed.
+	'''
+	
+	LOG.debug("Compare the new rules received with those already deployed")
+	
+	try:
+		LOG.debug("Reading file: %s",constants.JSON_FILE)
+		tmpFile = open(constants.JSON_FILE,"r")
+		json_file = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		raise VirtualizerError
+	
+	whole = json.loads(json_file)
+	
+	
+	flowgraph = whole['flow-graph']
+	flowrules = flowgraph['flow-rules']
+	
+	rulesToBeAdded = []
+	
+	for newRule in newRules:
+		#For each new rule, compare it with the ones already part of the graph
+		newMatch = newRule['match']
+		newAction = newRule['action']
+		
+		equal = False
+		for rule in flowrules:
+			match = rule['match']
+			action = rule['action']
+			
+			if match == newMatch and action == newAction:
+				equal = True
+				break
+		
+		if not equal:
+			#The new rule is not yet part of the graph
+			LOG.debug("The rule must be inserted!")
+			LOG.debug("%s",json.dumps(newRule))
+			rulesToBeAdded.append(newRule)
+	
+	#Update the current graph deployed		
+	for tba in rulesToBeAdded:
+		flowrules.append(tba)
+	
+	LOG.debug("Updated graph:");	
+	LOG.debug("%s",json.dumps(whole));
+	
+	try:
+		tmpFile = open(constants.JSON_FILE, "w")
+		tmpFile.write(json.dumps(whole))
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		raise VirtualizerError
+	
+	return rulesToBeAdded
+	
 ################################
 
 def main():
@@ -365,22 +503,36 @@ def main():
 	Only used for debug purposes
 	'''
 
-	LOG.info("Initializing the virtualizer...")
-	init()
+	tmpFile = open("debug.json","r")
+	json_file = tmpFile.read()
+	tmpFile.close()
 	
-	LOG.info("Adding resources...")
-	addResources(10,31,"GB",5,"TB")
+	whole = json.loads(json_file)
+	
+	
+	flowgraph = whole['flow-graph']
+	flowrules = flowgraph['flow-rules']
+		
+	edit_config(flowrules)
+	
 
-	LOG.info("Adding a port...")
-	addNodePort("OVS-north external port","port-abstract")
-	LOG.info("Adding a port...")
-	addNodePort("OVS-south external port","port-abstract")
-
-	LOG.info("Adding a VNF...")	
-	addSupportedVNFs("A", "myVNF", 0, 2)	
-	LOG.info("Adding a VNF...")	
-	addSupportedVNFs("B", "myVNF", 0, 3)
-
+#
+#	LOG.info("Initializing the virtualizer...")
+#	init()
+#	
+#	LOG.info("Adding resources...")
+#	addResources(10,31,"GB",5,"TB")
+#
+#	LOG.info("Adding a port...")
+#	addNodePort("OVS-north external port","port-abstract")
+#	LOG.info("Adding a port...")
+#	addNodePort("OVS-south external port","port-abstract")
+#
+#	LOG.info("Adding a VNF...")	
+#	addSupportedVNFs("A", "myVNF", 0, 2)	
+#	LOG.info("Adding a VNF...")	
+#	addSupportedVNFs("B", "myVNF", 0, 3)
+#
 #	print "Terminating the virtualizer..."
 #	terminate()
 	
