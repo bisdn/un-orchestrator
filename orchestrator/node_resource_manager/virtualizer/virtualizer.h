@@ -85,6 +85,11 @@ public:
 	*/
 	static bool addSupportedVNFs(set<NF*> nfs);
 
+
+	/**
+	*	@brief
+	*/
+	static bool handleRestRequest(char *message, char **answer, const char *url, const char *method);
 };
 
 #endif //Virtualizer_H_

@@ -163,9 +163,7 @@ enum
 	#define PYTHON_ADDNODEPORT			"addNodePort"
 	#define PYTHON_EDIT_PORT_ID			"editPortID"
 	#define PYTHON_ADD_SUUPORTED_VNFs	"addSupportedVNFs"
-	
-	#define PYTHON_HANDLE_REQ	"handle_request"
-	#define PYTHON_INIT_ORCH	"init_orchestrator"
+	#define PYTHON_HANDLE_REQ			"handle_request"
 #endif	
 
 #endif //CONSTANTS_H_

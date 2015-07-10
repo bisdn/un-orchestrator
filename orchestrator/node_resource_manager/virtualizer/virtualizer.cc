@@ -251,7 +251,7 @@ bool Virtualizer::EditPortID(string physicalPortName, unsigned int ID)
         {
             if (PyErr_Occurred())
                 PyErr_Print();
-		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_INIT_ORCH);
+		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_EDIT_PORT_ID);
 			Py_XDECREF(pythonFunction);
 	        Py_DECREF(pythonFile);
 	        return false;		
@@ -289,10 +289,7 @@ bool Virtualizer::addSupportedVNFs(set<NF*> nfs)
 					
 					string id("NF"+sID.str());
 					currentID++;
-					
-					
-					
-										
+							
 					//Set the arguments to the python function
 					//TODO: check that pythonValue is not NULL
 					PyObject *pythonArgs = PyTuple_New(4);	
@@ -333,7 +330,7 @@ bool Virtualizer::addSupportedVNFs(set<NF*> nfs)
         {
             if (PyErr_Occurred())
                 PyErr_Print();
-		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_INIT_ORCH);
+		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_ADD_SUUPORTED_VNFs);
 			Py_XDECREF(pythonFunction);
 	        Py_DECREF(pythonFile);
 	        return false;		
@@ -350,4 +347,77 @@ bool Virtualizer::addSupportedVNFs(set<NF*> nfs)
 	return true;
 }
 
+bool Virtualizer::handleRestRequest(char *message, char **answer, const char *url, const char *method)
+{
+	//In this case, the request in handled by the Python code
+	PyObject *pythonFileName = PyString_FromString(PYTHON_MAIN_FILE);
+	PyObject *pythonFile = PyImport_Import(pythonFileName);
+	Py_DECREF(pythonFileName);
+	if (pythonFile != NULL) 
+    {  
+		PyObject *pythonFunction = PyObject_GetAttrString(pythonFile, PYTHON_HANDLE_REQ);
+		if (pythonFunction && PyCallable_Check(pythonFunction)) 
+        {
+	    	PyObject *pythonArgs = NULL, *pythonValue;
+	    	
+
+			//Set the arguments to the python function            			
+ 			int numArgs = (message != NULL)? 3 : 2;
+			pythonArgs = PyTuple_New(numArgs);	
+	    	pythonValue = PyString_FromString(method);
+            PyTuple_SetItem(pythonArgs, 0, pythonValue);
+            pythonValue = PyString_FromString(url);
+            PyTuple_SetItem(pythonArgs, 1, pythonValue);
+			if(message != NULL)
+			{
+				pythonValue = PyString_FromString(message);
+				PyTuple_SetItem(pythonArgs, 2, pythonValue);
+			}        
+	    	
+	    	//Call the python function
+	    	PyObject *pythonRetVal = PyObject_CallObject(pythonFunction, pythonArgs);
+            Py_DECREF(pythonArgs);
+                
+            logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
+            
+	    	
+	    	//TODO: handle better the stuffs here
+//	    	if (0 == strcmp (method, GET))
+	    	{
+	    		//All the GET have the same answer
+	    			    		
+			    string tmp = PyString_AsString(pythonRetVal);
+				*answer = NULL;
+		 		*answer = (char*)malloc(sizeof(char) * (tmp.size()+1));
+		 		memcpy((*answer), tmp.c_str(),tmp.size()+1);
+		 		(*answer)[tmp.size()] = '\0';
+			    
+				return true;
+			}
+			
+			Py_DECREF(pythonRetVal);
+            Py_XDECREF(pythonFunction);
+	    	Py_DECREF(pythonFile);
+	    }
+	    else 
+        {
+            if (PyErr_Occurred())
+                PyErr_Print();
+            
+		   	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python method \"%s\"",PYTHON_HANDLE_REQ);
+			Py_XDECREF(pythonFunction);
+	        Py_DECREF(pythonFile);
+	        
+	        return false;			
+		}
+    }
+    else
+    {
+       	PyErr_Print();
+       	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot load python file \"%s\"",PYTHON_MAIN_FILE);
+		Py_DECREF(pythonFile);
+		return false;
+    }
+
+}
 
