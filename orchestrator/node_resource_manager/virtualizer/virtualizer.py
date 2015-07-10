@@ -320,6 +320,8 @@ def handle_request(method, url, content = None):
 	Handles HTTP commands coming from the network
 	'''
 
+	#TODO: identify some return values to identify the errors
+
 	LOG.debug("Method: %s",method)
 	LOG.debug("Url: %s",url)
 	
@@ -395,8 +397,8 @@ def edit_config(content):
 	#C-python. 
 	#Quando arriva una richiesta, mi creo il nuovo grafo e mi carico quelli sul file.. Li confronto, e vedo quali sono le regole nuove. Ritorno le regole nuove al C,
 	#ed aggirno il json da mettere sul file
-	
-	theJson = {}
+		
+	theJson = extractRules(content)
 	#TODO: fill the json starting from the complex content. Use the nffg library to do this!
 	
 	try:
@@ -407,6 +409,14 @@ def edit_config(content):
 		pass
 		
 	return "AAAA"
+	
+def extractRules(content):
+	'''
+	Parses the message and translates the flowrules in the internal JSON representation
+	'''
+	#TODO: wait for some advanced parser to be added in the librery, in order to properly parse the match and the action
+	
+	#TODO: I think that the translation of the required VNFs should be done here
 	
 def flowRulesToFile(flowRules,fileName):
 	'''
