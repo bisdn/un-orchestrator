@@ -285,7 +285,11 @@ int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 				
 				Array networkFunctions;
 				for(set<NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
-					networkFunctions.push_back((*nf)->getName());
+				{
+					Object name;
+					name["name"] = (*nf)->getName();
+					networkFunctions.push_back(name);
+				}
 				json["network-functions"] = networkFunctions;
 			}
 			else
