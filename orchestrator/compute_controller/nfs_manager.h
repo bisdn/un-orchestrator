@@ -89,10 +89,12 @@ private:
 	**/
 	uint64_t lsiID;
 	
+#ifdef ENABLE_KVM
 	/**
 	 *	@brief: connection to Libvirt
 	 */
 	Libvirt *libvirt;
+#endif
 
 	/**
 	*	@brief: parse the JSON answer received from the name translator database
