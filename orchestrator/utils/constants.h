@@ -21,6 +21,9 @@
 #define PUT						"PUT"
 #define GET						"GET"
 #define DELETE					"DELETE"
+#ifdef UNIFY_NFFG
+	#define POST				"POST"
+#endif
 
 /*
 *	HTTP headers
@@ -155,15 +158,27 @@ enum
 	#define PYTHON_MAIN_FILE    "virtualizer"
 
 	/*
-	* Methods
+	* Python functionas
 	*/
 	#define PYTHON_INIT					"init"
 	#define PYTHON_TERMINATE			"terminate"
 	#define PYTHON_ADDRESOURCES			"addResources"
 	#define PYTHON_ADDNODEPORT			"addNodePort"
 	#define PYTHON_EDIT_PORT_ID			"editPortID"
-	#define PYTHON_ADD_SUUPORTED_VNFs	"addSupportedVNFs"
+	#define PYTHON_ADD_SUPPORTED_VNFs	"addSupportedVNFs"
 	#define PYTHON_HANDLE_REQ			"handle_request"
+	
+	/*
+	* File containing the NF-FG to be implemented
+	*/
+	#define NEW_GRAPH_FILE				"./node_resource_manager/virtualizer/.new_graph.json"
+	
+	/*
+	* File containing the rules to be removed from the graph
+	*/
+	#define REMOVE_GRAPH_FILE			"./node_resource_manager/virtualizer/.remove_graph.json"
+	
+	#define GRAPH_ID					"NF-FG"
 #endif	
 
 #endif //CONSTANTS_H_

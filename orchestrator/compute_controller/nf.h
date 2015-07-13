@@ -22,9 +22,14 @@ private:
 	
 #ifdef UNIFY_NFFG
 	/**
-	*	@brief: number of ports of a VNF
+	*	@brief: number of ports of a NF
 	*/
 	unsigned int numPorts;
+	
+	/**
+	*	@brief: text describing the NF
+	*/
+	string description;
 #endif
 	
 	/**
@@ -41,7 +46,7 @@ private:
 	
 public:
 #ifdef UNIFY_NFFG
-	NF(string name, unsigned int numPorts); //FIXME: togliere da opzionale
+	NF(string name, unsigned int numPorts, string description);
 #else
 	NF(string name);
 #endif
@@ -59,6 +64,7 @@ public:
 	
 #ifdef UNIFY_NFFG
 	unsigned int getNumPorts();
+	string getDescription();
 #endif	
 };
 

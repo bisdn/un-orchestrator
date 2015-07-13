@@ -26,27 +26,132 @@ bool RestServer::init(char *nffg_filename,int core_mask, char *ports_file_name)
 	//Handle the file containing the first graph to be deployed
 	if(nffg_filename != NULL)
 	{	
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the initial graph described in file '%s'",nffg_filename);
-	
 		sleep(2); //XXX This give time to the controller to be initialized
-
-		std::ifstream file;
-		file.open(nffg_filename);
-		if(file.fail())
-		{
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot open the file %s",nffg_filename);
-			return false;
-		}
-	
-		stringstream stream;
-		string str; 
-		while (std::getline(file, str))
-		    stream << str << endl;
-		        
-		if(createGraphFromFile(stream.str()) == 0)
-			return false;
+		return readGraphFromFile(nffg_filename);
 	}
 			
+	return true;
+}
+
+bool RestServer::readGraphFromFile(char *nffg_filename)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Considering the graph described in file '%s'",nffg_filename);
+	
+	std::ifstream file;
+	file.open(nffg_filename);
+	if(file.fail())
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot open the file %s",nffg_filename);
+		return false;
+	}
+
+	stringstream stream;
+	string str; 
+	while (std::getline(file, str))
+	    stream << str << endl;
+	        
+	if(createGraphFromFile(stream.str()) == 0)
+		return false;
+		
+	return true;
+}
+
+bool RestServer::readRulesToBeRemovedFromFile(char *filename)
+{
+	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Removing rules defined in file '%s'",filename);
+	
+	std::ifstream file;
+	file.open(filename);
+	if(file.fail())
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot open the file %s",filename);
+		return false;
+	}
+
+	stringstream stream;
+	string str; 
+	while (std::getline(file, str))
+	    stream << str << endl;
+	        
+	//Parse the content of the file
+	list<string> toBeRemoved;
+	Value value;
+	read(stream.str(), value);
+	try
+	{
+		Object obj = value.getObject();
+	
+		//Identify the flow rules
+		bool foundRemove = false;
+		for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
+		{
+	 	    const string& name  = i->first;
+		    const Value&  value = i->second;
+		    
+		    if(name == "remove")
+		    {
+		    	foundRemove = true;
+		    	
+		    	const Array& ids_array = value.getArray();
+		    	if(ids_array.size() == 0)
+		    	{
+			    	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" without ids",name.c_str());
+					return false;
+		    	}
+				    	
+		    	//Itearate on the IDs
+		    	for( unsigned int id = 0; id < ids_array.size(); ++id )
+				{
+					Object id_object = ids_array[id].getObject();
+		    		
+		    		bool foundID = false;
+		    		
+		    		for( Object::const_iterator currentID = id_object.begin(); currentID != id_object.end(); ++currentID )
+		    		{
+		    			const string& idName  = currentID->first;
+		    			const Value&  idValue = currentID->second;
+		    			
+		    			if(idName == "id")
+		    			{
+		    				string theID = idValue.getString();
+		    				toBeRemoved.push_back(theID);
+		    			}
+		    			else	
+						{
+							logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\"",name.c_str());
+							return false;
+						}
+		    		}
+		    		if(!foundID)
+					{
+						logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"id\" not found");
+						return false;
+					}
+		    	}
+			}
+			else	
+			{
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\"",name.c_str());
+				return false;
+			}
+		}
+		if(!foundRemove)
+		{
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"remove\" not found");
+			return false;
+		}
+	}catch(exception& e)
+	{
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The content does not respect the JSON syntax: ",e.what());
+		return false;
+	}	
+
+	for(list<string>::iterator tbr = toBeRemoved.begin(); tbr != toBeRemoved.end(); tbr++)
+	{
+		if(!gm->deleteFlow(GRAPH_ID,*tbr))
+			return false;
+	}
+
 	return true;
 }
 
@@ -134,7 +239,9 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 	*	http://stackoverflow.com/questions/2838038/c-programming-malloc-inside-another-function
 	*/
 	char *answer;
-	if(!Virtualizer::handleRestRequest(con_info->message, &answer,url,method))
+	handleRequest_status_t retVal = Virtualizer::handleRestRequest(con_info->message, &answer,url,method);
+	
+	if(retVal == HR_INTERNAL_ERROR)
 	{
 		struct MHD_Response *response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 		int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
@@ -143,6 +250,20 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 	}
 	else
 	{
+		if(retVal == HR_EDIT_CONFIG)
+		{
+			//Handle the graph received from the network
+			//Handle the rules to be removed as required 
+			if(!readGraphFromFile(NEW_GRAPH_FILE) || !readRulesToBeRemovedFromFile(REMOVE_GRAPH_FILE))
+			{
+				//Somathing wrong happened during the manipulation of the graph
+				struct MHD_Response *response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
+				int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
+				MHD_destroy_response (response);
+				return ret;
+			}
+		}
+	
 		struct MHD_Response *response = MHD_create_response_from_buffer (strlen(answer),(void*)answer, MHD_RESPMEM_PERSISTENT);
 	    stringstream absolute_url;
 		absolute_url << REST_URL << ":" << REST_PORT << url;
@@ -344,7 +465,7 @@ put_malformed_url:
 int RestServer::createGraphFromFile(string toBeCreated)
 {
 	char graphID[BUFFER_SIZE];
-	strcpy(graphID,"NF-FG");
+	strcpy(graphID,GRAPH_ID);
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph ID: %s",graphID);
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Graph content:");

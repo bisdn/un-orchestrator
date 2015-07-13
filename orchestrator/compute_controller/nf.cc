@@ -1,8 +1,8 @@
 #include "nf.h"
 
 #ifdef UNIFY_NFFG
-NF::NF(string name, unsigned int numPorts) :
-	name(name), numPorts(numPorts), selectedImplementation(NULL), isRunning(false)
+NF::NF(string name, unsigned int numPorts, string description) :
+	name(name), numPorts(numPorts), description(description), selectedImplementation(NULL), isRunning(false)
 #else
 NF::NF(string name) :
 	name(name), selectedImplementation(NULL), isRunning(false)
@@ -53,4 +53,10 @@ string NF::getName()
 	{
 		return numPorts;
 	}
+	
+	string NF::getDescription()
+	{
+		return description;
+	}
 #endif	
+

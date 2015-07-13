@@ -69,15 +69,24 @@ def init():
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
 		return 0
 		
+	''' Initizialize the file with the next ID to be assigned to the rule 
+	received from the network'''
+	try:
+		tmpFile = open(constants.RULE_ID_FILE, "w")
+		tmpFile.write(str(0))
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return 0	
+		
 	''' Initizialize the file describing the deployed graph as a json'''
-	
 	rules = []
-	return flowRulesToFile(rules,constants.JSON_FILE)
+	return flowRulesToFile(rules,constants.GRAPH_FILE)
 		
 def terminate():
 	'''
 	Removes the tmp files used by the virtualizer to maintain the
-	state of the ndoe.
+	state of the node.
 	'''
 	
 	LOG.debug("Terminating the virtualizer'...")
@@ -87,12 +96,22 @@ def terminate():
 		pass
 		
 	try:
-		os.remove(constants.JSON_FILE)
+		os.remove(constants.GRAPH_FILE)
 	except:
 		pass
 
 	try:
 		os.remove(constants.NEW_GRAPH_FILE)
+	except:
+		pass
+	
+	try:
+		os.remove(constants.REMOVE_GRAPH_FILE)
+	except:
+		pass
+		
+	try:
+		os.remove(constants.RULE_ID_FILE)
 	except:
 		pass
 
@@ -251,7 +270,7 @@ def addSupportedVNFs(ID, name, vnftype, numports):
 		return 0
 	LOG.debug("File correctly read")
 	
-	LOG.debug("Inserting VNF %s, ID %s, type %d, num ports %d...",ID,name,vnftype,numports)
+	LOG.debug("Inserting VNF %s, ID %s, type %s, num ports %d...",ID,name,vnftype,numports)
 	
 	infrastructure = nffglib.Virtualizer.parse(text=infrastructure_xml)
 	universal_node = infrastructure.c_nodes.list_node[0]
@@ -357,14 +376,15 @@ def handle_request(method, url, content = None):
 			return get_config(constants.TMP_FILE)
 			
 		elif url == '/edit-config':
-			return edit_config(content)
-			
+			if not edit_config(content):
+				return 'ERROR'
+			return 'config updated'
 		else:
-			#TODO: this should not happen
-			return
+			LOG.error("Resource '%s' does not exist", url)
+			return 'ERROR'
 	else:
-		#TODO: this should not happen
-		return
+		LOG.error("Method '%s' not implemented", method)
+		return 'ERROR'
 
 def get_config(fileName):
 	'''
@@ -396,27 +416,40 @@ def edit_config(content):
 	#Mi tengo il grafo sotto forma di json in un file (sono obbligato ad averlo in un file, siccome non si mantiene stato tra diverse chiamate
 	#C-python. 
 	#Quando arriva una richiesta, mi creo il nuovo grafo e mi carico quelli sul file.. Li confronto, e vedo quali sono le regole nuove. Ritorno le regole nuove al C,
-	#ed aggirno il json da mettere sul file
+	#ed aggiorno il json da mettere sul file
 		
-	theJson = extractRules(content)
+	theJson = extractNewRules(content)
 	#TODO: fill the json starting from the complex content. Use the nffg library to do this!
+	
+	rulesToBeRemoved = extractToBeRemovedRules(content)
 	
 	try:
 		rulesToBeAdded = readGraphFromFileAndCompare(theJson)
 		flowRulesToFile(rulesToBeAdded,constants.NEW_GRAPH_FILE)
+		toBeRemovedToFile(rulesToBeRemoved.constants.REMOVE_GRAPH_FILE)
 	except:
-		#TODO: handle the error
-		pass
+		return False
 		
-	return "AAAA"
+	LOG.debug("Configuration updated!")
+		
+	return True
 	
-def extractRules(content):
+def extractNewRules(content):
 	'''
 	Parses the message and translates the flowrules in the internal JSON representation
 	'''
-	#TODO: wait for some advanced parser to be added in the librery, in order to properly parse the match and the action
+	#TODO: wait for some advanced parser to be added in the library, in order to properly parse the match and the action
 	
 	#TODO: I think that the translation of the required VNFs should be done here
+	
+	#TODO: for each rule, this function has to insert an ID. The next ID is stored in constants.RULE_ID_FILE 
+	
+	
+	whole = json.loads(content)
+	flowgraph = whole['flow-graph']
+	flowrules = flowgraph['flow-rules']
+	
+	return flowrules
 	
 def flowRulesToFile(flowRules,fileName):
 	'''
@@ -439,9 +472,28 @@ def flowRulesToFile(flowRules,fileName):
 		tmpFile.close()
 	except IOError as e:
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
-		return 0
+		return False
 		
-	return 1
+	return True
+	
+def toBeRemovedToFile(rulesID,filename):
+	'''
+	Given a list (potentially empty) of rule IDs, write them in a file 
+	'''
+	
+	myjson = {}
+	remove = {}
+	vnfs = []
+	
+	for rule in rulesID:
+		current = {}
+		current['id'] = rule
+		vnfs.append(current)
+		
+	myjson['remove'] = vnfs
+	
+	
+	LOG.debug(json.dumps(myjson))
 	
 def readGraphFromFileAndCompare(newRules):
 	'''
@@ -453,8 +505,8 @@ def readGraphFromFileAndCompare(newRules):
 	LOG.debug("Compare the new rules received with those already deployed")
 	
 	try:
-		LOG.debug("Reading file: %s",constants.JSON_FILE)
-		tmpFile = open(constants.JSON_FILE,"r")
+		LOG.debug("Reading file: %s",constants.GRAPH_FILE)
+		tmpFile = open(constants.GRAPH_FILE,"r")
 		json_file = tmpFile.read()
 		tmpFile.close()
 	except IOError as e:
@@ -473,6 +525,9 @@ def readGraphFromFileAndCompare(newRules):
 		#For each new rule, compare it with the ones already part of the graph
 		newMatch = newRule['match']
 		newAction = newRule['action']
+		
+		LOG.debug("New match: %s",json.dumps(newMatch))
+		LOG.debug("New action: %s",json.dumps(newAction))
 		
 		equal = False
 		for rule in flowrules:
@@ -497,7 +552,7 @@ def readGraphFromFileAndCompare(newRules):
 	LOG.debug("%s",json.dumps(whole));
 	
 	try:
-		tmpFile = open(constants.JSON_FILE, "w")
+		tmpFile = open(constants.GRAPH_FILE, "w")
 		tmpFile.write(json.dumps(whole))
 		tmpFile.close()
 	except IOError as e:
@@ -513,17 +568,27 @@ def main():
 	Only used for debug purposes
 	'''
 
-	tmpFile = open("debug.json","r")
-	json_file = tmpFile.read()
-	tmpFile.close()
+	ids = []
+	ids.append(1)
+	ids.append(2)
+	ids.append(3)
+	ids.append(4)
+
+	toBeRemovedToFile(ids,"sara")
+
+#	tmpFile = open("debug.json","r")
+#	json_file = tmpFile.read()
+#	tmpFile.close()
 	
-	whole = json.loads(json_file)
+#	whole = json.loads(json_file)
 	
 	
-	flowgraph = whole['flow-graph']
-	flowrules = flowgraph['flow-rules']
+#	flowgraph = whole['flow-graph']
+#	flowrules = flowgraph['flow-rules']
+
+#	LOG.debug("%s",json.dumps(flowrules));
 		
-	edit_config(flowrules)
+#	edit_config(flowrules)
 	
 
 #

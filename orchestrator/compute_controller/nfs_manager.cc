@@ -150,6 +150,9 @@ bool NFsManager::parseAnswer(string answer, string nf)
 		string nf_name;
 #ifdef UNIFY_NFFG
 		unsigned int numports = 0;
+		string description;
+		
+		bool foundNports = false, foundDescription = false;
 #endif
 
 		for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
@@ -170,7 +173,15 @@ bool NFsManager::parseAnswer(string answer, string nf)
 		    else if(name == "nports")
 		    {
 #ifdef UNIFY_NFFG
+				foundNports = true;
 		    	numports = value.getInt();
+#endif
+		    }
+		    else if(name == "description")
+		    {
+#ifdef UNIFY_NFFG
+				foundDescription = true;
+		    	description = value.getString();
 #endif
 		    }
 		    else if(name == "implementations")
@@ -263,15 +274,23 @@ bool NFsManager::parseAnswer(string answer, string nf)
 			}
 		}//end iteration on the answer
 
-		if(!foundName || !foundImplementations)
+		if(!foundName || !foundImplementations
+#ifdef UNIFY_NFFG
+			|| !foundNports || !foundDescription
+#endif		
+		)
 		{
+#ifdef UNIFY_NFFG
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"name\", and/or key \"implementations\", and/or key \"num-ports\", and/or key \"description\" not found in the answer");
+#else
 			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"name\", or key \"implementations\", or both not found in the answer");
+#endif
 			return false;
 		}
 
 		NF *new_nf = new NF(nf_name
 #ifdef UNIFY_NFFG		
-			,numports
+			,numports, description
 #endif	
 		);
 		assert(possibleImplementations.size() != 0);

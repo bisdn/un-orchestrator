@@ -33,10 +33,6 @@
 
 #define __STDC_FORMAT_MACROS
 
-#ifdef UNIFY_NFFG
-	#include <Python.h>
-#endif	
-
 #include <microhttpd.h>
 
 #include <string.h>
@@ -87,6 +83,11 @@ private:
 	static bool parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
 	
 	static bool parseGraph(Value value, highlevel::Graph &graph, bool newGraph);
+	
+	static bool readGraphFromFile(char *nffg_filename);
+#ifdef UNIFY_NFFG
+	static bool readRulesToBeRemovedFromFile(char *filename);
+#endif
 	
 public:
 	static bool init(char *nffg_filename,int core_mask, char *ports_file_name);

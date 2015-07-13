@@ -17,6 +17,8 @@
 
 using namespace std;
 
+typedef enum{HR_OK,HR_EDIT_CONFIG,HR_INTERNAL_ERROR}handleRequest_status_t;
+
 class Virtualizer
 {
 private:
@@ -89,7 +91,7 @@ public:
 	/**
 	*	@brief
 	*/
-	static bool handleRestRequest(char *message, char **answer, const char *url, const char *method);
+	static handleRequest_status_t handleRestRequest(char *message, char **answer, const char *url, const char *method);
 };
 
 #endif //Virtualizer_H_
