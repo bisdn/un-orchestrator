@@ -36,6 +36,7 @@
 #define NETWORK_FUNCTION_ELEMENT	"network-function"
 #define IMPLEMENTATION_ELEMENT		"implementation"
 #define NAME_ATTRIBUTE				"name"
+#define DESCRIPTION_ATTRIBUTE		"description"
 #define NUM_PORTS_ATTRIBUTE			"num-ports"
 #define TYPE_ATTRIBUTE				"type"
 #define URI_ATTRIBUTE				"uri"

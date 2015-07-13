@@ -1,8 +1,8 @@
 #include "nf.h"
 
 
-NF::NF(string name, int nports) :
-	name(name),nports(nports)
+NF::NF(string name, int nports, string description) :
+	name(name),nports(nports),description(description)
 {
 
 }
@@ -23,6 +23,7 @@ Object NF::toJSON()
 	
 	nf["name"]  = name;
 	nf["nports"]  = nports;
+	nf["description"] = description;
 	
 	Array impl;
 	for(list<Implementation*>::iterator i = implementations.begin(); i != implementations.end();i++)

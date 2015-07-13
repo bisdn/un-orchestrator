@@ -77,6 +77,7 @@ bool RestServer::init(string fileName)
 		{
 			xmlChar* attr_name = xmlGetProp(cur_root_child, (const xmlChar*)NAME_ATTRIBUTE);
 			xmlChar* attr_nports = xmlGetProp(cur_root_child, (const xmlChar*)NUM_PORTS_ATTRIBUTE);
+			xmlChar* attr_description = xmlGetProp(cur_root_child, (const xmlChar*)DESCRIPTION_ATTRIBUTE);
 		
 			int nports = 0;
 
@@ -86,9 +87,11 @@ bool RestServer::init(string fileName)
 
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Network function: %s",attr_name);
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Number of ports: %d",nports);
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Description: %s",attr_description);
 
 			string name((const char*)attr_name);
-			NF *nf = new NF(name,nports);
+			string description((const char*)attr_description);
+			NF *nf = new NF(name,nports,description);
 	
 			xmlNodePtr nf_elem = cur_root_child;
 			for(xmlNodePtr cur_impl = nf_elem->xmlChildrenNode; cur_impl != NULL; cur_impl = cur_impl->next)

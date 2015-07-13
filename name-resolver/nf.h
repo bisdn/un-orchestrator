@@ -34,12 +34,17 @@ private:
 	int nports;
 	
 	/**
+	*	@brief: text describing the network function
+	*/
+	string description;
+		
+	/**
 	*	@brief: list of implementations for the network function
 	*/
 	list<Implementation*> implementations;
 	
 public:
-	NF(string name, int nports);
+	NF(string name, int nports, string description);
 	void addImplementation(Implementation *implementation);
 	
 	string getName();

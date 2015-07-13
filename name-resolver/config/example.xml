@@ -28,7 +28,7 @@
 		file system.
 	-->
 
-	<network-function name="example" num-ports="10">
+	<network-function name="example" num-ports="2" description="example VNF with several implementations">
 		<!-- Several implementations are available for this network function -->
 		<implementation type="docker" uri="localhost:5000/example"/>
 		<implementation type="dpdk" uri="https://nf_repository.com/example" cores="1" location="remote"/>
@@ -36,29 +36,24 @@
 		<implementation type="kvm" uri="/home/nf_repository/kvm/example.qcow2"/>
 	</network-function>
 	
-	<network-function name="firewall">
+	<network-function name="firewall"  num-ports="2" description="iptables based firewall">
 		<!-- Only a docker implementation is available for this network function -->
 		<implementation type="docker" uri="localhost:5000/iptables"/>
 	</network-function>
    
-	<network-function name="dpi">
+	<network-function name="dpi"  num-ports="2" description="DPI based on libpcre">
 		<!-- Only a DPDK implementaion is available for this network funcion -->
 		<implementation type="dpdk" uri="../NFs/dpdk/dpi/build/dpi" cores="1" location="local"/>
 	</network-function>
 
 	<!-- my network-function examples -->
-	<network-function name="VNFExample">
+	<network-function name="monitor"  num-ports="2" description="ntop monitor">
 		<!-- Only a VNF implementation is available for this network function -->
 		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="remote"/>
 	</network-function>
-	<network-function name="VNFExample1">
+	<network-function name="nat"  num-ports="2" description="NAT based on iptables">
 		<!-- Only a VNF implementation is available for this network function -->
 		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="local"/>
-	</network-function>
-
-	<network-function name="bridge">
-		<!-- Only a docker implementation is available for this network function -->
-		<implementation type="docker" uri="simple_bridge"/>
 	</network-function>
 
 </network-functions>
