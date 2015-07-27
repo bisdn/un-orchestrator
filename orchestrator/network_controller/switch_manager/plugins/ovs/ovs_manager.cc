@@ -2,6 +2,8 @@
 
 char *host = NULL, *user = NULL;	
 
+commands *c = NULL;
+
 //this is a message printing function
 void clb_print(NC_VERB_LEVEL level, const char* msg) 
 {
@@ -28,6 +30,8 @@ OVSManager::OVSManager()
 
 	char user[64] = "";
 
+	c = new commands();/*create a new object commands*/
+
 	/* initiate libnetconf - all subsystems */
 	nc_init(NC_INIT_ALL);
 		
@@ -44,7 +48,7 @@ OVSManager::OVSManager()
 	scanf("%s", user);
 
 	/*connect to a of-config server*/
-	cmd_connect(user);
+	c->cmd_connect(user);
 
 }
 
@@ -52,43 +56,43 @@ OVSManager::OVSManager()
 OVSManager::~OVSManager()
 {	
 	/*disconnect to a of-config server*/
-	cmd_disconnect();
+	c->cmd_disconnect();
 }
 
 //implementation of createLsi
 CreateLsiOut *OVSManager::createLsi(CreateLsiIn cli){
 	//printf("Enter in a createLsi!\n");
-	return cmd_editconfig_lsi(cli);
+	return c->cmd_editconfig_lsi(cli);
 }
 
 //implementation of destroyLsi
 void OVSManager::destroyLsi(uint64_t dpid){
-	cmd_editconfig_lsi_delete(dpid);
+	c->cmd_editconfig_lsi_delete(dpid);
 }
 
 //implementation of addNFPorts
 AddNFportsOut *OVSManager::addNFPorts(AddNFportsIn anpi){
-	return cmd_editconfig_NFPorts(anpi);
+	return c->cmd_editconfig_NFPorts(anpi);
 }
 
 //implementation of destroyNFPorts
 void OVSManager::destroyNFPorts(DestroyNFportsIn dnpi){
-	cmd_editconfig_NFPorts_delete(dnpi);
+	c->cmd_editconfig_NFPorts_delete(dnpi);
 }
 
 //implementation of addVirtualLink
 AddVirtualLinkOut *addVirtualLink(AddVirtualLinkIn avli){
-	return cmd_addVirtualLink(avli);
+	return c->cmd_addVirtualLink(avli);
 }
 
 //implementation of destroyVirtualLink
 void OVSManager::destroyVirtualLink(DestroyVirtualLinkIn dvli){
-	cmd_destroyVirtualLink(dvli);
+	c->cmd_destroyVirtualLink(dvli);
 }
 
 //implementation of addVirtualLink
 AddVirtualLinkOut *OVSManager::addVirtualLink(AddVirtualLinkIn avli){
-	return cmd_addVirtualLink(avli);
+	return c->cmd_addVirtualLink(avli);
 }
 
 //implementation of checkPhysicalInterfaces
