@@ -16,7 +16,7 @@ class NF
 {
 private:
 	/**
-	*	@brief: name of the NF
+	*	@brief: name of the NF. This should be unique
 	*/
 	string name;
 	

@@ -19,10 +19,10 @@
 
 	<ports>
 		<port name="10ge0" type="ethernet" side="edge">
-			<virtualized as="OVS-north external port" port-type="port-abstract"/>
+			<virtualized as="OVS-north external port" port-type="port-sap"/>
 		</port>
 		<port name="10ge1" type="ethernet" side="core">
-			<virtualized as="OVS-south external port" port-type="port-abstract"/>
+			<virtualized as="OVS-south external port" port-type="port-sap"/>
 		</port>
 		
 		<!-- 

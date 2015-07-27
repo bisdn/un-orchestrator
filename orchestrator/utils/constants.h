@@ -33,6 +33,8 @@
 
 /*
 *	Costants in the JSON describing the graph
+*	XXX: the list of supported matches MUST be aligned with that
+*	in [orchestrator]/node_resource_manager/virtualizer/constants.py
 */
 
 #define FLOW_GRAPH		"flow-graph"

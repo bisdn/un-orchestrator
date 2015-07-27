@@ -37,7 +37,7 @@ ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
 # Rather complicated CMake code for selecting the Openflow version
-SET(OFP_VERSION "OFP_10" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
+SET(OFP_VERSION "OFP_12" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
 SET(OFP_VERSION_VALUES "OFP_10" "OFP_12" "OFP_13")
 SET_PROPERTY(CACHE OFP_VERSION PROPERTY STRINGS ${OFP_VERSION_VALUES})
 LIST(FIND OFP_VERSION_VALUES ${OFP_VERSION} OFP_VERSION_INDEX)

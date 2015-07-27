@@ -207,7 +207,6 @@ bool Virtualizer::addPort(char *physicalName, char *name, char *type)
 
 bool Virtualizer::EditPortID(string physicalPortName, unsigned int ID)
 {
-
 	if(nameVirtualization.count(physicalPortName) == 0)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Virtualization unknown for physical port '%s'",physicalPortName.c_str());
@@ -267,6 +266,9 @@ bool Virtualizer::EditPortID(string physicalPortName, unsigned int ID)
 
 bool Virtualizer::addSupportedVNFs(set<NF*> nfs)
 {
+	//FIXME: I'm not using "NFVirtualization" at all!!
+	//I have to store the translation of the ID exported by the virtualizer in a VNF to be retrieved from the name resovler
+
 	PyObject *pythonFileName = PyString_FromString(PYTHON_MAIN_FILE);
 	PyObject *pythonFile = PyImport_Import(pythonFileName);
 	Py_DECREF(pythonFileName);

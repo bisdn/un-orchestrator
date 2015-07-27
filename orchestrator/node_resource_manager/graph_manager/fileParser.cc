@@ -131,7 +131,7 @@ set<CheckPhysicalPortsIn> FileParser::parseConfigurationFile(string fileName)
 		else
 #endif		
 		if ((cur_root_child->type == XML_ELEMENT_NODE)&&(!xmlStrcmp(cur_root_child->name, (const xmlChar*)PORTS_ELEMENT)))
-		{
+		{		
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "PORTS");
 			xmlNodePtr ports = cur_root_child;
 			for(xmlNodePtr port = ports->xmlChildrenNode; port != NULL; port = port->next) 
@@ -162,6 +162,7 @@ set<CheckPhysicalPortsIn> FileParser::parseConfigurationFile(string fileName)
 					
 #ifdef UNIFY_NFFG
 					xmlNodePtr virtualizers = port;
+					
 					for(xmlNodePtr virtualized = virtualizers->xmlChildrenNode; virtualized != NULL; virtualized = virtualized->next) 
 					{
 						if ((virtualized->type == XML_ELEMENT_NODE)&&(!xmlStrcmp(virtualized->name, (const xmlChar*)VIRTUALIZED_ELEMENT)))
