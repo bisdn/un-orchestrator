@@ -62,6 +62,11 @@ private:
 
 	static GraphManager *gm;
 
+#ifdef UNIFY_NFFG
+	static bool firstTime;
+#endif
+	
+
 	struct connection_info_struct
 	{
 		char *message;

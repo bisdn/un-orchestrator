@@ -549,6 +549,14 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsMa
 		{
 			throw GraphManagerException();
 		}
+#ifdef UNIFY_NFFG
+		unsigned int numPorts =  nfsManager->getNumPorts(nf->first);
+		
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF '%s' has %d ports",nf->first.c_str(),numPorts);
+		
+		for(unsigned int p = 1; p <= numPorts; p++)
+			graph->updateNetworkFunction(nf->first,p);
+#endif
 	}
 
 	return true;
@@ -1015,10 +1023,15 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		{
 			//The NF is not part of the graph
 			tmp->addNetworkFunction(it->first);
+#ifndef UNIFY_NFFG
+			//XXX The number of ports of a VNF does not depend on the flows described in the NFFG
 			list<unsigned int> ports = it->second;
 			for(list<unsigned int>::iterator p = ports.begin(); p != ports.end(); p++)
 				tmp->updateNetworkFunction(it->first,*p);
+#endif
 		}
+#ifndef UNIFY_NFFG
+		//XXX The number of ports of a VNF does not depend on the flows described in the NFFG
 		else
 		{
 			//The NF is already part of the graph, but the update
@@ -1040,6 +1053,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 				}
 			}
 		}
+#endif
 	}
 	
 	//Retrieve the ports already existing in the graph
@@ -1107,11 +1121,13 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	for(map<string, list<unsigned int> >::iterator nf = networkFunctions.begin(); nf != networkFunctions.end(); nf++)
 	{
 		graph->addNetworkFunction(nf->first);
+#ifndef UNIFY_NFFG
 		list<unsigned int> nfPorts = nf->second;
 		for(list<unsigned int>::iterator p = nfPorts.begin(); p != nfPorts.end(); p++)
 		{
 			graph->updateNetworkFunction(nf->first,*p);
 		}
+#endif
 	}
 	set<string> nep = tmp->getEndPoints();
 	for(set<string>::iterator ep = nep.begin(); ep != nep.end(); ep++)

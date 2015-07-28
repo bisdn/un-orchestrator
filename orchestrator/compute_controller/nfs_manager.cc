@@ -424,6 +424,20 @@ bool NFsManager::allSelected(bool lastCall)
 	return retVal;
 }
 
+#ifdef UNIFY_NFFG
+unsigned int NFsManager::getNumPorts(string name)
+{
+	assert(nfs.count(name) != 0);
+
+	NF *nf = nfs[name];
+	unsigned int np = nf->getNumPorts();
+	
+	assert(np != 0);
+	
+	return np;
+}
+#endif
+
 nf_t NFsManager::getNFType(string name)
 {
 	assert(nfs.count(name) != 0);

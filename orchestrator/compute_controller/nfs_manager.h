@@ -141,7 +141,7 @@ public:
 	~NFsManager();
 
 	/**
-	*	@brief: Retrieve the information for a specific NF
+	*	@brief: Retrieve, from the name resolver, the information for a specific NF
 	*
 	*	@param:	nf	Name of a network function
 	*/
@@ -159,6 +159,15 @@ public:
 	*		- KVM
 	*/
 	bool selectImplementation();
+	
+#ifdef UNIFY_NFFG
+	/**
+	*	@brief: Return the number of ports of a specific NF
+	*
+	*	@param:	name	Name of a network function
+	*/
+	unsigned int getNumPorts(string name);
+#endif
 	
 	/**
 	*	@brief: Return the type selected for a specific NF

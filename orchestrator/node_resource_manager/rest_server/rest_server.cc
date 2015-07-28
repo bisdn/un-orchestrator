@@ -1,6 +1,9 @@
 #include "rest_server.h"
 
 GraphManager *RestServer::gm = NULL;
+#ifdef UNIFY_NFFG
+	bool RestServer::firstTime = true;
+#endif
 
 bool RestServer::init(char *nffg_filename,int core_mask, char *ports_file_name)
 {	
@@ -256,7 +259,10 @@ int RestServer::answer_to_connection (void *cls, struct MHD_Connection *connecti
 			//Handle the rules to be removed as required 
 			if(!readGraphFromFile(NEW_GRAPH_FILE) || !readRulesToBeRemovedFromFile(REMOVE_GRAPH_FILE))
 			{
-				//Somathing wrong happened during the manipulation of the graph
+				//Something wrong happened during the manipulation of the graph
+				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the manipulation of the graph!");
+				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Please, reboot the orchestrator (and the vSwitch) in order to avoid inconsist state in the universal node");
+				
 				struct MHD_Response *response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
 				int ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
 				MHD_destroy_response (response);
@@ -483,11 +489,21 @@ int RestServer::createGraphFromFile(string toBeCreated)
 	graph->print();
 	try
 	{
+#ifndef UNIFY_NFFG
 		if(!gm->newGraph(graph))
+#else
+		//In case of NF-FG defined in the Unify project, only the first time a new graph must be created
+		//In fact, all the rules refer to a single NF-FG, and then the following times we simply update
+		//the graph already created.
+		if((firstTime && !gm->newGraph(graph)) || (!firstTime && !gm->updateGraph(graphID,graph)) )
+#endif
 		{
 			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "The graph description is not valid!");
 			return 0;
 		}
+#ifdef UNIFY_NFFG
+		firstTime = false;
+#endif
 	}catch (...)
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred during the creation of the graph!");
@@ -540,7 +556,9 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 		    	foundFlowGraph = true;
 		    	
 		    	bool foundVNFs = false;
+#ifndef UNIFY_NFFG
 		    	bool foundFlowRules = false;
+#endif
 		    	
 		  		Object flow_graph = value.getObject();
 		    	for(Object::const_iterator fg = flow_graph.begin(); fg != flow_graph.end(); fg++)
@@ -769,14 +787,18 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 				    }//end if(fg_name == VNFS)
 				    else if (fg_name == FLOW_RULES)
 				    {
-				    	foundFlowRules = true;
-				    	const Array& flow_rules_array = fg_value.getArray();
 				    	
+				    	const Array& flow_rules_array = fg_value.getArray();
+
+#ifndef UNIFY_NFFG
+						foundFlowRules = true;
+						//FIXME: put the flowrules optional also in case of "standard| nffg?
 				    	if(flow_rules_array.size() == 0)
 				    	{
 					    	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" without rules",FLOW_RULES);
 							return false;
 				    	}
+#endif
 				    	
 				    	//Itearate on the flow rules
 				    	for( unsigned int fr = 0; fr < flow_rules_array.size(); ++fr )
@@ -948,11 +970,13 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 						return false;
 					}
 		    	}
+#ifndef UNIFY_NFFG
 		    	if(!foundFlowRules)
 				{
 					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in \"%s\"",FLOW_RULES,FLOW_GRAPH);
 					return false;
 				}
+#endif
 				if(!foundVNFs)
 					logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in \"%s\"",VNFS,FLOW_GRAPH);
 		    }
@@ -973,6 +997,9 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 		return false;
 	}
     
+#ifndef UNIFY_NFFG
+	//XXX The number of ports is provided by the name resolver, and should not depend on the flows inserted. In fact,
+	//it should be possible to start VNFs without setting flows related to such a function!
     for(map<string,set<unsigned int> >::iterator it = nfs_ports_found.begin(); it != nfs_ports_found.end(); it++)
 	{
 		set<unsigned int> ports = it->second;
@@ -1004,7 +1031,7 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 		for(set<unsigned int>::iterator p = ports.begin(); p != ports.end(); p++)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\t%d",*p);
 	}
-	
+#endif	
 	
 	//Save the mac addresses
 	map<string,list<pair<unsigned int,string> > >::iterator macAddr = portsMacAddress.begin();
