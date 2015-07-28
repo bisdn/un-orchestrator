@@ -42,8 +42,25 @@ In the following we list the steps required on an Ubuntu 14.04.
 	; Now install the library it according to the description provided 
 	; in the cloned folder
 
+### NF-FG library
 
-### Install the xDPd virtual switch
+These steps are mandatory only if you plan to use the Network Functions - 
+Forwarding Graph (NF-FG) defined within the Unify project.
+
+	; Retrieve the NF-FG library. In order to do this operation, you need
+	; access to such a library.
+	
+	; Copy the library in the un-orchestrator folder
+	$ cp [nffg]/virtualizer3.pyc [un-orchestrator]/orchestrator/node_resource_manager/virtualizer
+
+### Virtual Switches
+
+You must install one of the following virtual switches:
+
+  * extensible Data-Path daemon (xDPd)
+  * Open vSwitch (OvS)
+
+##### Install the xDPd virtual switch
 
 In order to install xDPd, you have to follow the steps below.
 
@@ -73,7 +90,7 @@ Let's now launch the DPDK setup script:
 	$ sudo ./setup.sh  
 
 
-### Install the Open vSwitch (OVS) virtual switch
+##### Install the Open vSwitch (OvS) virtual switch
 
 Compile and install libnetconf as described here:
 
@@ -120,6 +137,8 @@ Follow the instruction provided here:
 
 ##### Libvirt (and KVM)
 
+This is needed in order to run network functions in KVM-based virtual machines.
+
 	; Clone the libvirt repository
 	git clone git://libvirt.org/libvirt.git  
 
@@ -137,7 +156,7 @@ We are now ready to compile the un-orchestrator.
 	$ ccmake .  
 
 Here you can select some configuration parameters for the un-orchestrator,
-e.g., the vSwitch implementation, the Openflow version, etc.
+e.g., the NF-FG description, the vSwitch implementation, the Openflow version, etc.
 when you're finished, exit from the 'ccmake' interface and type:
 
 	; Create makefile scripts based on the previously selected options
