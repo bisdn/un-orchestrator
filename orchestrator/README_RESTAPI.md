@@ -7,8 +7,8 @@ The un-orchestrator can either accept a NF-FG from a file, or from its
 REST interface (which features an embedded HTTP server).
 Some examples are available in the 'config' folder.
 
-**WARNING: these commands are not valid only if you use the NF-FG library defined
-in the Unify project.**
+**WARNING: these commands are not valid if you use the NF-FG library defined in
+the Unify project.**
 
 ### Main REST commands accepted by the un-orchestrator
 

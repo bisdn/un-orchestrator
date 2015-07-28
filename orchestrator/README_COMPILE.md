@@ -42,17 +42,6 @@ In the following we list the steps required on an Ubuntu 14.04.
 	; Now install the library it according to the description provided 
 	; in the cloned folder
 
-### NF-FG library
-
-These steps are mandatory only if you plan to use the Network Functions - 
-Forwarding Graph (NF-FG) defined within the Unify project.
-
-	; Retrieve the NF-FG library. In order to do this operation, you need
-	; access to such a library.
-	
-	; Copy the library in the un-orchestrator folder
-	$ cp [nffg]/virtualizer3.pyc [un-orchestrator]/orchestrator/node_resource_manager/virtualizer
-
 ### Virtual Switches
 
 You must install one of the following virtual switches:
@@ -144,7 +133,16 @@ This is needed in order to run network functions in KVM-based virtual machines.
 
 To compile and install libvirt, follow the instructions in the 
 INSTALL.md file present in the libvirt root folder.
-      
+
+### NF-FG library
+
+These steps are mandatory only if you plan to use the Network Functions - 
+Forwarding Graph (NF-FG) defined within the Unify project.
+
+	; Retrieve the NF-FG library.
+	
+	; Copy the library in the un-orchestrator folder
+	$ cp [nffg]/virtualizer3.pyc [un-orchestrator]/orchestrator/node_resource_manager/virtualizer      
 
 ### Compile the un-orchestrator
 
