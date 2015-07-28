@@ -345,12 +345,6 @@ def edit_config(content):
 
 	LOG.debug("Executing the edit-config command")
 	
-	#All'update bisogna dare solo le regole nuove.. Altrimenti fallisce! :S
-	#Mi tengo il grafo sotto forma di json in un file (sono obbligato ad averlo in un file, siccome non si mantiene stato tra diverse chiamate
-	#C-python. 
-	#Quando arriva una richiesta, mi creo il nuovo grafo e mi carico quelli sul file.. Li confronto, e vedo quali sono le regole nuove. Ritorno le regole nuove al C,
-	#ed aggiorno il json da mettere sul file
-	
 	try:
 		#Extract the needed information from the message received from the network
 		vnfs = extractVNFsInstantiated(content)	#VNF deployed on the universal node
@@ -432,16 +426,7 @@ def extractRules(content):
 		rule = {}
 		
 		f_id = flowentry.id.getValue()
-		priority = flowentry.priority.getValue()
-	
-		
-		
-		#out = flowentry.out.getTarget()
-	
-#		print port
-#		print out	
-		
-		
+		priority = flowentry.priority.getValue()	
 		
 		#Iterate on the match in order to translate it into the json syntax
 		#supported internally by the universal node
@@ -458,56 +443,70 @@ def extractRules(content):
 						raise VirtualizerError
 					match[node.tag] = node.text
 					
-		#TODO: Add the port to the match!
-		port = flowentry.port.getTarget()
-		print flowentry.port.getValue()
-		print port
-		
+		#The content of <port> must be added to the match
+		#XXX: the following code is quite dirty, but it is a consequence of the nffg library
+		portPath = flowentry.port.getTarget().getPath()
+		port = flowentry.port.getTarget()	
+		tokens = portPath.split('/');
+		if len(tokens) is not 5 and len(tokens) is not 7:
+			LOG.error("Invalid port '%s' defined in a flowentry",portPath)
+			raise VirtualizerError
+						
+		if tokens[3] == 'ports':
+			#This is a port of the universal node. We have to extract the virtualized port name
+			match['port'] = port.name.getValue()			
+		elif tokens[3] == 'NF_instances':
+			#This is a port of the NF. I have to extract the port ID and the type of the NF.
+			#XXX I'm using the port ID as name of the port
+			vnf = port.getParent().getParent()
+			vnfType = vnf.type.getValue()
+			portID = port.id.getValue()
+			match['VNF_id'] = vnfType + ":" + portID
+		else:
+			LOG.error("Invalid port '%s' defined in a flowentry",port)
+			raise VirtualizerError
+    		
 		action = {}
 		#The universal node supports only the output actions! But this is 
 		#expressed in the <out> element. Hence, the <action> element must
 		#be empty!!
 		if type(flowentry.action.data) is str or type(flowentry.action.data) is ET.Element:
+			LOG.error("Invalid flowrule with action!",port)
 			raise VirtualizerError
 		
-		#TODO: Add the port to the action!
+		#The content of <out> must be added to the action
+		#XXX: the following code is quite dirty, but it is a consequence of the nffg library
+		portPath = flowentry.out.getTarget().getPath()
+		port = flowentry.out.getTarget()	
+		tokens = portPath.split('/');
+		if len(tokens) is not 5 and len(tokens) is not 7:
+			LOG.error("Invalid port '%s' defined in a flowentry",portPath)
+			raise VirtualizerError
+						
+		if tokens[3] == 'ports':
+			#This is a port of the universal node. We have to extract the ID
+			#Then, I have to retrieve the virtualized port name, and from there
+			#the real name of the port on the universal node
+			action['port'] = port.name.getValue()			
+		elif tokens[3] == 'NF_instances':
+			#This is a port of the NF. I have to extract the port ID and the type of the NF.
+			#XXX I'm using the port ID as name of the port
+			vnf = port.getParent().getParent()
+			vnfType = vnf.type.getValue()
+			portID = port.id.getValue()
+			action['VNF_id'] = vnfType + ":" + portID
+		else:
+			LOG.error("Invalid port '%s' defined in a flowentry",port)
+			raise VirtualizerError
 
 		#Prepare the rule
 		rule['id'] = f_id
-		rule['priority'] = priority
+		if priority is not None:
+			rule['priority'] = priority
 		rule['match'] = match
 		rule['action'] = action
 				
 		rules.append(rule)
-#		
-		
-#		try:
-#			tree = ET.ElementTree(ET.fromstring(mat))
-#	except ET.ParseError as e:
-#		print('ParseError: %s' % e.message)
-#		return 0
-		
-#		stringmatch = match.getAsText()
-#		print "---- " + stringmatch
-#		if stringmatch != "None" :
-#			print "THERE IS MATCH"
-#		LOG.debug("++ %s",match.getAsText())
-		
-#		try:
-#			tree = ET.ElementTree(ET.fromstring(match.getAsText()))
-#		except ET.ParseError as e:
-#			print('ParseError: %s' % e.message)
-#			return 0
-			
-#		LOG.debug("--------------")
-		
-#		print "Port: " + port.getValue
-#		LOG.debug("++++++++++++++++")
-#		print "Match: " + match.getValue()
-#		print "Action: " + action.getAsText()
-#		print "Out: " + out.getValue
-		
-#		newRule = []
 	
 	LOG.debug("Rules extracted:")
 	LOG.debug(json.dumps(rules))
@@ -549,7 +548,7 @@ def supportedMatch(tag):
 		LOG.debug("'%s' is supported!",tag)
 		return True
 	else:
-		LOG.debug("'%s' is not supported!",tag)
+		LOG.error("'%s' is not a supported match!",tag)
 		return False
 	
 def flowRulesToFile(flowRules,vnfs,fileName):
@@ -639,7 +638,9 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 		#For each new rule, compare it with the ones already part of the graph
 		newMatch = newRule['match']
 		newAction = newRule['action']
-		newPriority = newRule['priority']
+		newPriority = ""
+		if "priority" in newRule.keys():
+			newPriority = newRule['priority']
 		newId = newRule['id']
 		
 		LOG.debug("New match: %s",json.dumps(newMatch))
@@ -649,7 +650,9 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 		for rule in flowrules:
 			match = rule['match']
 			action = rule['action']
-			priority = rule['priority']
+			priority = ""
+			if "priority" in newRule.keys():
+				priority = rule['priority']
 			theId = rule['id']
 			
 			if match == newMatch and action == newAction and priority == newPriority and theId == newId:

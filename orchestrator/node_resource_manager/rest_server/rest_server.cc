@@ -839,8 +839,24 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 												return false;
 											}
 											foundOne = true;
-											action = new highlevel::ActionPort(a_value.getString());
-											graph.addPort(a_value.getString());
+											
+#ifdef UNIFY_NFFG
+											//In this case, the virtualized port name must be translated into the real one.
+											try
+											{
+												string realName = Virtualizer::getRealName(a_value.getString());											
+#else
+												string realName = a_value.getString();
+#endif
+												action = new highlevel::ActionPort(realName);
+												graph.addPort(realName);
+#ifdef UNIFY_NFFG
+											}catch(exception e)
+											{
+												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Error while translating the virtualized port '%s': %s",value.getString().c_str(),e.what());
+												return false;
+											}
+#endif		
 										}
 										else if(a_name == VNF_ID)
 										{

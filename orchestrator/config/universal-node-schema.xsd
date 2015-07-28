@@ -106,6 +106,7 @@
 		<xsd:selector xpath="physical-ports/port" />
 		<xsd:field xpath="@name" />
 	</xsd:unique>
+	<!-- TODO: the "as" attribute must be unique! -->
 	
 </xsd:element>
 

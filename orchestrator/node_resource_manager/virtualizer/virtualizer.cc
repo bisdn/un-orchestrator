@@ -1,7 +1,6 @@
 #include "virtualizer.h"
 
 map<string,string> Virtualizer::nameVirtualization;
-map<string,pair<string,string> > Virtualizer::NFVirtualization;
 unsigned int Virtualizer::currentID = 1;
 
 bool Virtualizer::init()
@@ -266,9 +265,6 @@ bool Virtualizer::EditPortID(string physicalPortName, unsigned int ID)
 
 bool Virtualizer::addSupportedVNFs(set<NF*> nfs)
 {
-	//FIXME: I'm not using "NFVirtualization" at all!!
-	//I have to store the translation of the ID exported by the virtualizer in a VNF to be retrieved from the name resovler
-
 	PyObject *pythonFileName = PyString_FromString(PYTHON_MAIN_FILE);
 	PyObject *pythonFile = PyImport_Import(pythonFileName);
 	Py_DECREF(pythonFileName);
@@ -425,6 +421,23 @@ handleRequest_status_t Virtualizer::handleRestRequest(char *message, char **answ
 		Py_DECREF(pythonFile);
 		return HR_INTERNAL_ERROR;
     }
+}
 
+string Virtualizer::getRealName(string port)
+{
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Translating virtual port \"%s\"",port.c_str());
+
+	for(map<string,string>::iterator it = nameVirtualization.begin(); it != nameVirtualization.end(); it++)
+	{
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "\tcurrent: \"%s\"",it->second.c_str());
+		if(it->second == port)
+		{
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Virtual port \"%s\" is actually the port \"%s\" of the node",port.c_str(),(it->first).c_str());
+			return it->first;
+		}
+	}
+	
+	assert(0 && "There is a BUG!");
+	throw VirtualizerException();
 }
 

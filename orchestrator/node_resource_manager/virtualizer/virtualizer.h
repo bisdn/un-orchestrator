@@ -27,12 +27,6 @@ private:
 	*	@brief: maps the physical name of a port on the name exported by the virtualizer
 	*/
 	static map<string,string> nameVirtualization;
-
-	/**
-	*	@brief: maps the ID of a VNF, with a specific type of a specific VNF.
-	*		E.e.,	VNF1 -> NAT,KVM, VNF2 -> FIREWALL,DPDK
-	*/
-	static map<string,pair<string,string> > NFVirtualization;
 	
 	/**
 	*	@brief: number used to generate the ID of a VNF
@@ -78,6 +72,7 @@ public:
 	*						know the mapping between this name and the virtualized one)
 	*	@param: ID			New ID to be associated with the port
 	*/
+	//XXX Probably this function is useless
 	static bool EditPortID(string portName, unsigned int ID);
 	
 	/**
@@ -86,12 +81,27 @@ public:
 	*	@param: nfs			Set of the VNFs supported by the Universal node
 	*/
 	static bool addSupportedVNFs(set<NF*> nfs);
-
+	
+	/**
+	*	@brief: Given the virtualized name of a port, returns its real name
+	*
+	*	@param:	port	Virtualized name of the port to be translated
+	*/
+	static string getRealName(string port);
 
 	/**
 	*	@brief
 	*/
 	static handleRequest_status_t handleRestRequest(char *message, char **answer, const char *url, const char *method);
+};
+
+class VirtualizerException: public exception
+{
+public:
+	virtual const char* what() const throw()
+	{
+		return "VirtualizerException";
+	}
 };
 
 #endif //Virtualizer_H_

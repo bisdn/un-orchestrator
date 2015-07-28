@@ -4,6 +4,7 @@
 #pragma once
 
 #include "rest_server.h"
+#include "../virtualizer/virtualizer.h"
 
 class MatchParser
 {

@@ -141,9 +141,27 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, map<string,
 			}
 		
 			foundOne = true;
-			match.setInputPort(value.getString());
+#ifdef UNIFY_NFFG
+			//In this case, the virtualized port name must be translated into the real one.
+			try
+			{
+				string realName = Virtualizer::getRealName(value.getString());
 			
-			graph.addPort(value.getString());
+#else
+			string realName = value.getString()
+#endif			
+			
+			match.setInputPort(realName);
+			graph.addPort(realName);
+			
+#ifdef UNIFY_NFFG
+			}catch(exception e)
+			{
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Error while translating the virtualized port '%s': %s",value.getString().c_str(),e.what());
+				return false;
+			}
+#endif			
+			
 		}
 		else if(name == VNF_ID)
 		{

@@ -4,7 +4,6 @@
 #pragma once
 
 #ifdef UNIFY_NFFG
-	#include <Python.h>
 	#include "../virtualizer/virtualizer.h"
 #endif	
 
