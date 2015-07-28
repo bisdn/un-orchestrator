@@ -95,8 +95,8 @@ bool RestServer::readRulesToBeRemovedFromFile(char *filename)
 		    	const Array& ids_array = value.getArray();
 		    	if(ids_array.size() == 0)
 		    	{
-			    	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" without ids",name.c_str());
-					return false;
+			    	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "There are no rules to be removed");
+					continue;
 		    	}
 				    	
 		    	//Itearate on the IDs
