@@ -375,9 +375,9 @@ handleRequest_status_t Virtualizer::handleRestRequest(char *message, char **answ
 	    	
 	    	//Call the python function
 	    	PyObject *pythonRetVal = PyObject_CallObject(pythonFunction, pythonArgs);
-            Py_DECREF(pythonArgs);
-                
-            logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
+	    	Py_DECREF(pythonArgs);
+
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Result of call: %s\n", PyString_AsString(pythonRetVal));
             
             string retVal = PyString_AsString(pythonRetVal);
 	    	
