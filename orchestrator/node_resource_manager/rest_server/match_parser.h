@@ -4,7 +4,9 @@
 #pragma once
 
 #include "rest_server.h"
-#include "../virtualizer/virtualizer.h"
+#ifdef UNIFY_NFFG
+	#include "../virtualizer/virtualizer.h"
+#endif
 
 class MatchParser
 {

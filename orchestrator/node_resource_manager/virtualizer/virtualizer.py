@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 import re
 import xml.dom.minidom
 
+import copy
 
 #Set the logger
 LOG = logging.getLogger(__name__)
@@ -30,8 +31,15 @@ LOG.addHandler(sh)
 #############################################################
 
 class VirtualizerError(Exception):
-   """Virtualizer Error!"""
-   pass
+
+	def __init__(self,message=""):
+		self.message = message
+		#Call the base class constructor with the parameters it needs
+		super(VirtualizerError,self).__init__(message)
+		
+	def get_mess(self):
+		return self.message
+
 	
 def init():
 	
@@ -68,7 +76,7 @@ def init():
 	''' Initizialize the file describing the deployed graph as a json'''
 	rules = []
 	vnfs = []
-	return flowRulesToFile(rules,vnfs,constants.GRAPH_FILE)
+	return toBeAddedToFile(rules,vnfs,constants.GRAPH_FILE)
 		
 def terminate():
 	'''
@@ -285,13 +293,20 @@ def handle_request(method, url, content = None):
 		if url == '/ping':
 			return 'OK'
 		else:
+			LOG.debug("!!!!!!!!!!!!!!!!!!!")
+		
 			a = 'usage:\n'
 			b = 'get http://hostip:tcpport - this help message\n'
 			c = 'get http://hostip:tcpport/ping - test webserver aliveness\n'
 			d = 'post http://hostip:tcpport/get-config - query NF-FG\n'
-			e = 'post http://hostip:tcpport/edit-config - send NF-FG request in the post body'
+			e = 'post http://hostip:tcpport/edit-config - send NF-FG request in the post body\n'
+			f = '\n'
+			g = 'limitations:\n'
+			h = 'the flowrule ID must be unique on the node.\n'
+			i = 'type cannot be repeated in the NF instances.\n'
+			j = 'capabilities are not supported.\n'
 			
-			answer = a + b + c + d + e
+			answer = a + b + c + d + e + f + g + h + i + j
 			
 			LOG.debug("Returning: ")
 			LOG.debug("%s",answer)
@@ -347,26 +362,30 @@ def edit_config(content):
 	
 	try:
 		#Extract the needed information from the message received from the network
-		vnfs = extractVNFsInstantiated(content)	#VNF deployed on the universal node
-		theJson = extractRules(content)			#Flowrules installed on the universal ndoe
+		vnfsToBeAdded = extractVNFsInstantiated(content)	#VNF deployed/to be deployed on the universal node
+		rules = extractRulesToBeAdded(content)				#Flowrules installed/to be installed on the universal node
 		
-		#Extract the rules to be removed from the universal node
-		rulesToBeRemoved = extractToBeRemovedRules(content)
+		vnfsToBeRemoved = extractToBeRemovedVNFs(content)	#VNFs to be removed from the universal node
+		rulesToBeRemoved = extractToBeRemovedRules(content) #Rules to be removed from the universal node
+		
+		
 		#Selects, among the rules listed in the received configuration, those that are not 
 		#installed yet in the universal node
-		rulesToBeAdded = readGraphFromFileAndCompare(theJson,vnfs)
-
-		#FIXME: provide only the VNFs to be actually added, not all the ones described in the received configuration
-		#Prepare a file containing, in the json internal format, the new rules that have to be 
-		#installed in the universal node
-		flowRulesToFile(rulesToBeAdded,vnfs,constants.NEW_GRAPH_FILE)
-		#Prepare a file containing a list of IDs of the rules to be removed from the universal node
-		toBeRemovedToFile(rulesToBeRemoved)
+		rulesToBeAdded = readGraphFromFileAndCompare(rules,vnfsToBeAdded)
+		
+		#XXX The previous operation is not done for VNFs, since the C++ part supports such a case
+		
+		#
+		#	The following functions writes data on files.
+		#
+	
+		toBeAddedToFile(rulesToBeAdded,vnfsToBeAdded,constants.NEW_GRAPH_FILE)	#Save on a file the new rules and NFs to be installed in the universal node
+		toBeRemovedToFile(rulesToBeRemoved,vnfsToBeRemoved) #Save on a file the IDs of the rules and the NFs to be removed from the universal node
 		
 		#Updates the file containing the current configuration of the universal node, by editing the
 		#<flowtable> and the <NF_instances>
 		updateUniversalNodeConfig(content)
-	except:
+	except Exception as e:
 		Log.error("A fatal error occurred while handligng the configuration received")
 		Log.warning("The internal status of the universal node could not be coherent. Please reboot the universal node.")
 		return False
@@ -378,7 +397,24 @@ def edit_config(content):
 def extractVNFsInstantiated(content):
 	'''
 	Parses the message and extracts the type of the deployed network functions.
+	
+	As far as I understand, the 'type' if a NF is the linker between <NF_instances>
+	and <capabilities><supported_NFs>. Then, this function also checks that the type
+	of the NF to be instantiated is among those to be supported by the universal node
 	'''
+
+	try:
+		tree = ET.parse(constants.TMP_FILE)
+	except ET.ParseError as e:
+		print('ParseError: %s' % e.message)
+		raise VirtualizerError
+	
+	tmpInfrastructure = Virtualizer.parse(root=tree.getroot())
+	supportedNFs = tmpInfrastructure.nodes.node[constants.NODE_ID].capabilities.supported_NFs
+	supportedTypes = []
+	for nf in supportedNFs:
+		nfType = nf.type.getValue()
+		supportedTypes.append(nfType)
 	
 	LOG.debug("Extracting the network functions (to be) deployed on the universal node")
 
@@ -395,19 +431,31 @@ def extractVNFsInstantiated(content):
 	nfinstances = []
 	for instance in instances:
 		vnf = {}
-		vnf['id'] = instance.type.getValue()
+		print instance.xml()
+		if instance.operation == 'delete':
+			#This network function has to be removed from the universal node
+			continue
+			
+		vnfType = instance.type.getValue()
+		if vnfType not in supportedTypes:
+			LOG.warning("VNF of type '%s' is not supported by the UN!",vnfType)
+			raise VirtualizerError()
+		vnf['id'] = vnfType
 		nfinstances.append(vnf)
 		LOG.debug("Required VNF: '%s'",instance.type.getValue())
 		
-	#TODO: check if the required VNFs are supported by the node!!!!!
+	#TODO: check this and provide an error in case it happens!
+	LOG.warning("The universal node does not support more VNFs of the same type!")
 		
 	return nfinstances
 	
-def extractRules(content):
+def extractRulesToBeAdded(content):
 	'''
 	Parses the message and translates the flowrules in the internal JSON representation
 	Returns a json representing the rules in the internal format of the universal node
 	'''
+	
+	#TODO: check if the ports and NFs referenced exist in the universal node
 	
 	LOG.debug("Extracting the flowrules to be installed in the universal node")
 	
@@ -423,6 +471,11 @@ def extractRules(content):
 	
 	rules = []
 	for flowentry in flowtable:
+	
+		if flowentry.operation == 'delete':
+			#This rule has to be removed from the universal node
+			continue
+	
 		rule = {}
 		
 		f_id = flowentry.id.getValue()
@@ -515,8 +568,24 @@ def extractRules(content):
 	
 def extractToBeRemovedRules(content):
 	'''
-	Parses the message and identifies those flowrules to be removed
+	Parses the message and identifies those flowrules to be removed.
+	
+	The rules to be removed must be already instantiated on the universal node. The rule ID
+	is used as a unique identifier for the rules.
 	'''
+
+	try:
+		tree = ET.parse(constants.TMP_FILE)
+	except ET.ParseError as e:
+		print('ParseError: %s' % e.message)
+		raise VirtualizerError
+	
+	tmpInfrastructure = Virtualizer.parse(root=tree.getroot())
+	flowtable = tmpInfrastructure.nodes.node[constants.NODE_ID].flowtable
+	rulesDeployed = []
+	for flowrule in flowtable:
+		fid = flowrule.id.getValue()
+		rulesDeployed.append(fid)
 
 	LOG.debug("Identifying the flowrules to be removed from the universal node")
 	
@@ -532,12 +601,65 @@ def extractToBeRemovedRules(content):
 	
 	ids = []
 	for flowentry in flowtable:
-		#TODO: wating for an updated version of the library to extract the operation 
-		#associated with a flowentry
-		f_id = flowentry.id.getValue()		
-		ids.append(f_id)
+		if flowentry.operation == 'delete':
+			f_id = flowentry.id.getValue()
+			if f_id not in rulesDeployed:
+				LOG.warning("Rule with ID '%d' is not deployed in the UN!",int(f_id))
+				LOG.warning("The rule cannot be removed!")
+				raise VirtualizerError()
+						
+			LOG.debug("Rule with id %d has to be removed",int(f_id))
+			ids.append(f_id)
 
 	return ids
+	
+def	extractToBeRemovedVNFs(content):
+	'''
+	Parses the message and identifies those network functions to be removed
+	
+	The network functions to be removed must already be instantiated on the universal node. The
+	type is used as a unique identifier for the network function.
+	'''
+	
+	try:
+		tree = ET.parse(constants.TMP_FILE)
+	except ET.ParseError as e:
+		print('ParseError: %s' % e.message)
+		raise VirtualizerError
+	
+	tmpInfrastructure = Virtualizer.parse(root=tree.getroot())
+	nf_instances = tmpInfrastructure.nodes.node[constants.NODE_ID].NF_instances
+	
+	vnfsDeployed = []
+	for vnf in nf_instances:
+		ftype = vnf.type.getValue()
+		vnfsDeployed.append(ftype)
+		
+	LOG.debug("Identifying the network functions to be removed from the universal node")
+		
+	try:
+		tree = ET.ElementTree(ET.fromstring(content))
+	except ET.ParseError as e:
+		print('ParseError: %s' % e.message)
+		raise VirtualizerError
+	 
+	infrastructure = Virtualizer.parse(root=tree.getroot())
+	universal_node = infrastructure.nodes.node[constants.NODE_ID]
+	instances = universal_node.NF_instances	
+	
+	nfinstances = []
+	for instance in instances:
+		if instance.operation == 'delete':
+			vnfType = instance.type.getValue()
+			if vnfType not in vnfsDeployed:
+				LOG.warning("Network function with type '%s' is not deployed in the UN!",vnfType)
+				LOG.warning("The network function cannot be removed!")
+				raise VirtualizerError()
+			
+			LOG.debug("Network function with type '%s' has to be removed",vnfType)
+			nfinstances.append(vnfType)
+	
+	return nfinstances	
 	
 def supportedMatch(tag):
 	'''
@@ -551,9 +673,9 @@ def supportedMatch(tag):
 		LOG.error("'%s' is not a supported match!",tag)
 		return False
 	
-def flowRulesToFile(flowRules,vnfs,fileName):
+def toBeAddedToFile(flowRules,vnfs,fileName):
 	'''
-	Given a set (potentially empty) of flow rules, write it in a file respecting the syntax expected by the Univeral Node
+	Given a set (potentially empty) of flow rules and NFs, write it in a file respecting the syntax expected by the Univeral Node
 	'''
 	
 	LOG.debug("Writing rules on file '%s'",fileName)
@@ -575,24 +697,33 @@ def flowRulesToFile(flowRules,vnfs,fileName):
 		
 	return True
 	
-def toBeRemovedToFile(rulesID):
+def toBeRemovedToFile(rulesID,vnfsType):
 	'''
-	Given a list (potentially empty) of rule IDs, write them in a file 
+	Given a list (potentially empty) of rule IDs and NFs, write them in a file 
 	'''
 	
 	LOG.debug("Writing rules to be removed on file '%s'",constants.REMOVE_GRAPH_FILE)
 	
 	myjson = {}
-	remove = {}
+	graph = {}
+	
+	rules = []
 	vnfs = []
 	
 	for rule in rulesID:
 		current = {}
 		current['id'] = rule
-		#vnfs.append(current)
+		rules.append(current)
 		
-	myjson['remove'] = vnfs
+	for vnf in vnfsType:
+		current = {}
+		current['id'] = vnf
+		vnfs.append(current)
 	
+	graph['VNFs'] = vnfs
+	graph['flow-rules'] = rules
+	myjson['flow-graph'] = graph	
+
 	try:
 		tmpFile = open(constants.REMOVE_GRAPH_FILE, "w")
 		tmpFile.write(json.dumps(myjson))
@@ -693,6 +824,8 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 	
 def updateUniversalNodeConfig(newContent):
 
+	#TODO: implement the remove of NFs and flows!!!
+
 	LOG.debug("Reading tmp file '%s', which contains the current configuration of the universal node...",constants.TMP_FILE)
 	try:
 		oldTree = ET.parse(constants.TMP_FILE)
@@ -700,11 +833,13 @@ def updateUniversalNodeConfig(newContent):
 		print('ParseError: %s' % e.message)
 		return 0
 	LOG.debug("File correctly read")
-	
+		
 	infrastructure = Virtualizer.parse(root=oldTree.getroot())
 	universal_node = infrastructure.nodes.node[constants.NODE_ID]
 	flowtable = universal_node.flowtable
 	nfInstances = universal_node.NF_instances
+	
+	tmpInfra = copy.deepcopy(infrastructure)
 	
 	LOG.debug("Getting the new flowrules to be installed on the universal node")
 	try:
@@ -716,16 +851,24 @@ def updateUniversalNodeConfig(newContent):
 	newInfrastructure = Virtualizer.parse(root=newTree.getroot())
 	newFlowtable = newInfrastructure.nodes.node[constants.NODE_ID].flowtable
 	newNfInstances = newInfrastructure.nodes.node[constants.NODE_ID].NF_instances
-	
-	#Update the NF instances
+			
+	#Update the NF instances with the new NFs
 	for instance in newNfInstances:
+		if instance.operation == 'delete':
+			continue	
 		nfInstances.add(instance)
 	
-	#Update the flowtable
+	#Update the flowtable with the new flowentries
 	for flowentry in newFlowtable:
+		if flowentry.operation == 'delete':
+			continue	
 		flowtable.add(flowentry)
 	#It is not necessary to remove conflicts, since they are already handled by the library,
 	#i.e., it does not insert two identical rules
+	
+	#Update the NF instances removing the proper NFs
+	
+	#Update the flowtable removing the proper flowentries
 	
 	try:
 		tmpFile = open(constants.TMP_FILE, "w")

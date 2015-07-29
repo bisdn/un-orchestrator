@@ -415,6 +415,7 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 		return false;
 	}
 
+#ifndef UNIFY_NFFG
 	//if the graph has only this flow, remove the entre graph
 	if(graph->getNumberOfRules() == 1)
 	{
@@ -422,18 +423,17 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 		return deleteGraph(graphID);
 	}
 	
-	//Unfortunately this is not the only flow of the graph
-	
 	/**
 	*	The flow can be removed only if does not define an endpoint used by some other graph
 	*/
 	if(!canDeleteFlow(graph,flowID))
-		return false;
-		
+		return false;	
+				
 	string endpointInvolved = graph->getEndpointInvolved(flowID);
 	bool definedHere = false;
 	if(endpointInvolved != "")
 		definedHere = graph->isDefinedHere(endpointInvolved);
+#endif	
 	
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Removing the flow from the LSI-0 graph");
 	Controller *lsi0Controller = graphInfoLSI0.getController();
@@ -453,7 +453,8 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 	LSI *lsi = graphInfo.getLSI();
 	
 	removeUselessPorts_NFs_Endpoints_VirtualLinks(rri,nfs_manager,graph,lsi);
-	
+
+#ifndef UNIFY_NFFG	
 	if(endpointInvolved != "")
 	{
 		if(definedHere)
@@ -470,6 +471,7 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "endpoint \"%s\" still used %d times",endpointInvolved.c_str(), availableEndPoints[endpointInvolved]);
 		}
 	}
+#endif
 	
 	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 	
@@ -1560,7 +1562,9 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 
 	map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
 	map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
+#ifndef UNIFY_NFFG
 	map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
+#endif
 	
 	list<highlevel::Rule> rules = graph->getRules();
 	
@@ -1694,6 +1698,7 @@ next:
 	
 next2:
 
+#ifndef UNIFY_NFFG
 	if(rri.isEndpoint)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Check if the vlink associated with the endpoint '%s' must be removed (if this vlink exists)",rri.endpoint.c_str());
 	
@@ -1742,7 +1747,9 @@ next2:
 			}
 		}
 	}
+#endif
 
+#ifndef UNIFY_NFFG
 	//Remove NFs, if they no longer appear in the graph
 	for(list<string>::iterator nf = rri.nfs.begin(); nf != rri.nfs.end(); nf++)
 	{
@@ -1771,6 +1778,7 @@ next2:
 			}
 		}
 	}
+#endif
 	
 	//Remove physical ports, if they no longer appear in the graph
 	for(list<string>::iterator p = rri.ports.begin(); p != rri.ports.end(); p++)
@@ -1778,11 +1786,52 @@ next2:
 		if(!graph->stillExistPort(*p))
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The port '%s' is no longer part of the graph",(*p).c_str());
 	}
-	
+
+#ifndef UNIFY_NFFG
 	//Remove the endpoint, if it no longer appear in the graph
 	if((rri.endpoint != "") && (!graph->stillExistEndpoint(rri.endpoint)))
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The endpoint '%s' is no longer part of the graph",rri.endpoint.c_str());	
+#endif
 }
+
+#ifdef UNIFY_NFFG
+bool GraphManager::stopNetworkFunction(string graphID, string nf_name)
+{
+	//TODO: the NF must not have flows associated!!
+
+	GraphInfo graphInfo = (tenantLSIs.find(graphID))->second;
+	highlevel::Graph *graph = graphInfo.getGraph();
+	NFsManager *nfsManager = graphInfo.getNFsManager();
+	LSI *lsi = graphInfo.getLSI();
+	
+	if(graph->stillExistNF(nf_name))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The graph still contains flows associated with the NF: \"%s\"",nf_name.c_str());
+		return false;
+	}
+
+#ifdef RUN_NFS
+	nfsManager->stopNF(nf_name);
+#else
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Flag RUN_NFS disabled. No NF to be stopped");
+#endif
+	try
+	{
+		list<string> tmpListPorts = lsi->getNetworkFunctionsPortNames(nf_name);
+		set<string> portsToBeRemoved(tmpListPorts.begin(),tmpListPorts.end());
+		
+		DestroyNFportsIn dnpi(lsi->getDpid(),nf_name,portsToBeRemoved);
+		switchManager.destroyNFPorts(dnpi);
+		lsi->removeNF(nf_name);
+	} catch (SwitchManagerException e)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
+		return false;
+	}
+	
+	return true;
+}
+#endif
 
 string GraphManager::findEndPointTowardsNF(highlevel::Graph *graph, string nf)
 {
@@ -1811,6 +1860,7 @@ string GraphManager::findEndPointTowardsNF(highlevel::Graph *graph, string nf)
 	return ""; //just for the compiler
 }
 
+#ifndef UNIFY_NFFG
 bool GraphManager::canDeleteFlow(highlevel::Graph *graph, string flowID)
 {
 	highlevel::Rule r = graph->getRuleFromID(flowID);
@@ -1845,6 +1895,7 @@ bool GraphManager::canDeleteFlow(highlevel::Graph *graph, string flowID)
 	
 	return true;
 }
+#endif
 
 void GraphManager::printInfo(lowlevel::Graph graphLSI0, LSI *lsi0)
 {

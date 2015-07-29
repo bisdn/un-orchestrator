@@ -153,6 +153,11 @@ enum
  #define NUMBER_OF_CORES			 "4"
 
 /*
+ *	Misc
+ */
+ #define GRAPH_ID					"NF-FG"
+
+/*
  * Constant required with the Unify NF-FG library is used
  */
 #ifdef UNIFY_NFFG
@@ -179,8 +184,6 @@ enum
 	* File containing the rules to be removed from the graph
 	*/
 	#define REMOVE_GRAPH_FILE			"./node_resource_manager/virtualizer/.remove_graph.json"
-	
-	#define GRAPH_ID					"NF-FG"
 #endif	
 
 #endif //CONSTANTS_H_

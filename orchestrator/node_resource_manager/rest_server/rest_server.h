@@ -91,7 +91,7 @@ private:
 	
 	static bool readGraphFromFile(char *nffg_filename);
 #ifdef UNIFY_NFFG
-	static bool readRulesToBeRemovedFromFile(char *filename);
+	static bool toBeRemovedFromFile(char *filename);
 #endif
 	
 public:

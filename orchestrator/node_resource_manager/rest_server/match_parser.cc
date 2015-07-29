@@ -148,7 +148,7 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, map<string,
 				string realName = Virtualizer::getRealName(value.getString());
 			
 #else
-			string realName = value.getString()
+			string realName = value.getString();
 #endif			
 			
 			match.setInputPort(realName);
