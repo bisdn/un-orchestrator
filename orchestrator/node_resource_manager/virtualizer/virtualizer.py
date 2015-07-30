@@ -354,7 +354,13 @@ def edit_config(content):
 
 	#TODO: controllare che i flussi instanziati referinzino funzioni esistenti
 	#Controllare che le porte richieste esistano!
+	
+	print "------------------------------------------"
+	
+	if not isCorrect(content):
+		return False		
 
+	print "+++++++++++++++++++++++++++++++++++++++++"
 	
 	#
 	#	Extract the needed information from the message received from the network
@@ -395,13 +401,6 @@ def edit_config(content):
 		
 	if not toBeRemovedToFile(rulesToBeRemoved,vnfsToBeRemoved): #Save on a file the IDs of the rules and the NFs to be removed from the universal node
 		return False
-
-	#		
-	#	Before writing the new configuration on persistent files, let's check the correctness of the new configuration
-	#
-	
-	if not isCorrect(content):
-		return False		
 	
 	#		
 	# 	From here, we may have inconsist state in the universal node in case of errors..		
@@ -864,7 +863,9 @@ def diffRulesToBeAdded(newRules):
 	
 def isCorrect(newContent):
 	'''
-	Check if the new configuration of the node is correct:
+	Check if the new configuration of the node (in particular, the flowtable) is correct:
+	*	the ports are part of the universal  node
+	*	the VNFs referenced in the flows are instantiated
 	'''
 	
 	LOG.debug("Checking the correctness of the new configuration...")
@@ -909,7 +910,10 @@ def isCorrect(newContent):
 		else:
 			flowtable.add(flowentry)
 
-	#TODO: do the check here!
+	#Here, infrastructure contains the new configuration of the node
+	#Then, we execute the checks on it!
+	
+	#TODO
 		
 	return True
 
