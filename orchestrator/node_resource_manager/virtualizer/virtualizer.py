@@ -285,9 +285,7 @@ def handle_request(method, url, content = None):
 	if method == 'GET':
 		if url == '/ping':
 			return 'OK'
-		else:
-			LOG.debug("!!!!!!!!!!!!!!!!!!!")
-		
+		else:		
 			a = 'usage:\n'
 			b = 'get http://hostip:tcpport - this help message\n'
 			c = 'get http://hostip:tcpport/ping - test webserver aliveness\n'
@@ -296,10 +294,11 @@ def handle_request(method, url, content = None):
 			f = '\n'
 			g = 'limitations:\n'
 			h = 'the flowrule ID must be unique on the node.\n'
-			i = 'type cannot be repeated in the NF instances.\n'
+			i = 'type cannot be repeated in multiple NF instances.\n'
 			j = 'capabilities are not supported.\n'
+			k = 'actions are not supported.\n'
 			
-			answer = a + b + c + d + e + f + g + h + i + j
+			answer = a + b + c + d + e + f + g + h + i + j + j
 			
 			LOG.debug("Returning: ")
 			LOG.debug("%s",answer)
