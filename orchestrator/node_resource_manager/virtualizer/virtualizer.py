@@ -59,7 +59,7 @@ def init():
 	)
 
 	try:
-		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile = open(constants.CONFIGURATION_FILE, "w")
 		tmpFile.write(v.xml())
 		tmpFile.close()
 	except IOError as e:
@@ -79,7 +79,7 @@ def terminate():
 	
 	LOG.debug("Terminating the virtualizer'...")
 	try:
-		os.remove(constants.TMP_FILE)
+		os.remove(constants.CONFIGURATION_FILE)
 	except:
 		pass
 		
@@ -104,9 +104,9 @@ def addResources(cpu, memory, memory_unit, storage, storage_unit):
 	tmp file
 	'''
 	
-	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	LOG.debug("Reading tmp file '%s'...",constants.CONFIGURATION_FILE)
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		return 0
@@ -122,7 +122,7 @@ def addResources(cpu, memory, memory_unit, storage, storage_unit):
 	resources.storage.setValue(str(storage) + " " + storage_unit)
 	
 	try:
-		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile = open(constants.CONFIGURATION_FILE, "w")
 		tmpFile.write(infrastructure.xml())
 		tmpFile.close()
 	except IOError as e:
@@ -142,9 +142,9 @@ def addNodePort(name, ptype):
 	#TODO: The port-abstract should have the capabilities (that are optional)
 	#FIXME: Are the current info of port-sap correct?
 
-	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	LOG.debug("Reading tmp file '%s'...",constants.CONFIGURATION_FILE)
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		return 0
@@ -164,7 +164,7 @@ def addNodePort(name, ptype):
 		return 0
 	
 	try:
-		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile = open(constants.CONFIGURATION_FILE, "w")
 		tmpFile.write(infrastructure.xml())
 		tmpFile.close()
 	except IOError as e:
@@ -182,9 +182,9 @@ def editPortID(portName, portID):
 	
 	found = False
 	
-	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	LOG.debug("Reading tmp file '%s'...",constants.CONFIGURATION_FILE)
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		return 0
@@ -208,7 +208,7 @@ def editPortID(portName, portID):
 		return 0
 	
 	try:
-		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile = open(constants.CONFIGURATION_FILE, "w")
 		tmpFile.write(infrastructure.xml())
 		tmpFile.close()
 	except IOError as e:
@@ -224,9 +224,9 @@ def addSupportedVNFs(ID, name, vnftype, numports):
 	Adds the description of a VNF that can be deployed on the node
 	'''
 		
-	LOG.debug("Reading tmp file '%s'...",constants.TMP_FILE)
+	LOG.debug("Reading tmp file '%s'...",constants.CONFIGURATION_FILE)
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		return 0
@@ -250,7 +250,7 @@ def addSupportedVNFs(ID, name, vnftype, numports):
 	supportedNF.add(vnf)
 	
 	try:
-		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile = open(constants.CONFIGURATION_FILE, "w")
 		tmpFile.write(infrastructure.xml())
 		tmpFile.close()
 	except IOError as e:
@@ -331,9 +331,9 @@ def get_config():
 	
 	LOG.debug("Executing the get-config command")
 	
-	LOG.debug("Reading file: %s",constants.TMP_FILE)
+	LOG.debug("Reading file: %s",constants.CONFIGURATION_FILE)
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		return 0
@@ -353,7 +353,10 @@ def edit_config(content):
 
 	LOG.debug("Executing the edit-config command")
 	
+	#
 	#Extract the needed information from the message received from the network
+	#
+	
 	vnfsToBeAdded = extractVNFsInstantiated(content)	#VNF deployed/to be deployed on the universal node
 	if error:
 		return False
@@ -383,6 +386,9 @@ def edit_config(content):
 	
 	#XXX The previous operation is not done for VNFs, since the C++ part supports such a case
 	
+	if not removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved): #Update the file containing the json representing the deployed NF-FG
+		return inconsistentStateMessage()
+	
 	if not toBeAddedToFile(rulesToBeAdded,vnfsToBeAdded,constants.NEW_GRAPH_FILE):	#Save on a file the new rules and NFs to be installed in the universal node
 		return inconsistentStateMessage()
 		
@@ -410,7 +416,7 @@ def extractVNFsInstantiated(content):
 	global error
 
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		error = True
@@ -605,7 +611,7 @@ def extractToBeRemovedRules(content):
 	global error
 
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		error = True
@@ -657,7 +663,7 @@ def	extractToBeRemovedVNFs(content):
 	global error
 	
 	try:
-		tree = ET.parse(constants.TMP_FILE)
+		tree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		error = True
@@ -864,13 +870,62 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 	
 	return rulesToBeAdded
 	
+def removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved):
+	'''
+	Read the graph currently deployed. It is stored in a tmp file, in a json format.
+	Then, removes from it the VNFs and the flowrules to be removed
+	'''
+	
+	LOG.debug("Removes VNFs and flowrules from the graph containing the json representation of the graph")
+	
+	try:
+		LOG.debug("Reading file: %s",constants.GRAPH_FILE)
+		tmpFile = open(constants.GRAPH_FILE,"r")
+		json_file = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return False
+	
+	whole = json.loads(json_file)
+	
+	flowgraph = whole['flow-graph']
+	flowrules = flowgraph['flow-rules']
+	theVNFs = flowgraph['VNFs']	
+	
+	newVNFs = []
+	for vnf in theVNFs:
+		if vnf['id'] not in vnfsToBeRemoved:
+			newVNFs.append(vnf)
+	
+	flowgraph['VNFs'] = newVNFs
+	
+	newFlows = []
+	for rule in flowrules:
+		if rule['id'] not in rulesToBeRemoved:
+			newFlows.append(rule)
+			
+	flowgraph['flow-rules'] = newFlows	
+	
+	LOG.debug("Updated graph:");	
+	LOG.debug("%s",json.dumps(whole));
+	
+	try:
+		tmpFile = open(constants.GRAPH_FILE, "w")
+		tmpFile.write(json.dumps(whole))
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return False
+		
+	return True
+			
+	
 def updateUniversalNodeConfig(newContent):
 
-	#TODO: implement the remove of NFs and flows!!!
-
-	LOG.debug("Reading tmp file '%s', which contains the current configuration of the universal node...",constants.TMP_FILE)
+	LOG.debug("Reading file '%s', which contains the current configuration of the universal node...",constants.CONFIGURATION_FILE)
 	try:
-		oldTree = ET.parse(constants.TMP_FILE)
+		oldTree = ET.parse(constants.CONFIGURATION_FILE)
 	except ET.ParseError as e:
 		print('ParseError: %s' % e.message)
 		return False
@@ -897,23 +952,21 @@ def updateUniversalNodeConfig(newContent):
 	#Update the NF instances with the new NFs
 	for instance in newNfInstances:
 		if instance.operation == 'delete':
-			continue	
-		nfInstances.add(instance)
+			nfInstances.delete(instance)
+		else:
+			nfInstances.add(instance)
 	
 	#Update the flowtable with the new flowentries
 	for flowentry in newFlowtable:
 		if flowentry.operation == 'delete':
-			continue	
-		flowtable.add(flowentry)
+			flowtable.delete(flowentry)
+		else:
+			flowtable.add(flowentry)
 	#It is not necessary to remove conflicts, since they are already handled by the library,
 	#i.e., it does not insert two identical rules
 	
-	#Update the NF instances removing the proper NFs
-	
-	#Update the flowtable removing the proper flowentries
-	
 	try:
-		tmpFile = open(constants.TMP_FILE, "w")
+		tmpFile = open(constants.CONFIGURATION_FILE, "w")
 		tmpFile.write(infrastructure.xml())
 		tmpFile.close()
 	except IOError as e:

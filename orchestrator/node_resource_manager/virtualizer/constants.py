@@ -3,8 +3,8 @@
 	VNF instantiated
 '''
 
-#TMP file use by the orchestrator to maintain the state of the node
-TMP_FILE = './node_resource_manager/virtualizer/.universalnode.xml'
+#TMP file use by the orchestrator to maintain the current configuration of the node
+CONFIGURATION_FILE = './node_resource_manager/virtualizer/.universalnode.xml'
 
 #TMP file used by the orchestrator and representing the deployed graph,
 #in the JSON syntax internally used by the orchestrator itself
