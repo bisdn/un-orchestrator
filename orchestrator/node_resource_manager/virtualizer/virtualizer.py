@@ -351,9 +351,13 @@ def edit_config(content):
 	'''
 
 	LOG.debug("Executing the edit-config command")
+
+	#TODO: controllare che i flussi instanziati referinzino funzioni esistenti
+	#Controllare che le porte richieste esistano!
+
 	
 	#
-	#Extract the needed information from the message received from the network
+	#	Extract the needed information from the message received from the network
 	#
 	
 	vnfsToBeAdded = extractVNFsInstantiated(content)	#VNF deployed/to be deployed on the universal node
@@ -372,30 +376,45 @@ def edit_config(content):
 	if error:
 		return False
 	
-	#		
-	# From here, we may have inconsist state in the universal node in case of errors..		
-	# In fact, the following functions writes data on files.
-	#
-			
 	#Selects, among the rules listed in the received configuration, those that are not 
 	#installed yet in the universal node
-	rulesToBeAdded = readGraphFromFileAndCompare(rules,vnfsToBeAdded)
+	rulesToBeAdded = diffRulesToBeAdded(rules)
 	if error:
-		return inconsistentStateMessage()
-	
-	#XXX The previous operation is not done for VNFs, since the C++ part supports such a case
-	
-	if not removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved): #Update the file containing the json representing the deployed NF-FG
-		return inconsistentStateMessage()
+		return False
+		
+	#XXX The previous operation is not done for VNFs, since the C++ part supports such a case	
+		
+	#
+	#	Prapare files used to provide, to the C++ part, the
+	#	*	VNFs and rules to be added
+	#	*	VNFs and rules to be removed
+	#
 	
 	if not toBeAddedToFile(rulesToBeAdded,vnfsToBeAdded,constants.NEW_GRAPH_FILE):	#Save on a file the new rules and NFs to be installed in the universal node
-		return inconsistentStateMessage()
+		return False
 		
 	if not toBeRemovedToFile(rulesToBeRemoved,vnfsToBeRemoved): #Save on a file the IDs of the rules and the NFs to be removed from the universal node
+		return False
+
+	#		
+	#	Before writing the new configuration on persistent files, let's check the correctness of the new configuration
+	#
+	
+	if not isCorrect(content):
+		return False		
+	
+	#		
+	# 	From here, we may have inconsist state in the universal node in case of errors..		
+	# 	In fact, the following functions writes data on files maintaining the current configuration of the universal node
+	#
+			
+	if not addToGraphFile(rulesToBeAdded,vnfsToBeAdded): #Update the json representation of the deployed graph, by inserting the new VNFs/rules
 		return inconsistentStateMessage()
 	
-	#Updates the file containing the current configuration of the universal node, by editing the
-	#<flowtable> and the <NF_instances>
+	if not removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved): #Update the json representation of the deployed graph, by inserting the new VNFs/rules
+		return inconsistentStateMessage()
+
+	#Updates the file containing the current configuration of the universal node, by editing the #<flowtable> and the <NF_instances>
 	if not updateUniversalNodeConfig(content):
 		return inconsistentStateMessage()
 		
@@ -480,8 +499,6 @@ def extractRulesToBeAdded(content):
 	'''
 	
 	global error
-	
-	#TODO: check if the ports and NFs referenced exist in the universal node
 	
 	LOG.debug("Extracting the flowrules to be installed in the universal node")
 	
@@ -776,8 +793,8 @@ def toBeRemovedToFile(rulesID,vnfsType):
 		return False
 		
 	return True
-	
-def readGraphFromFileAndCompare(newRules,newVNFs):
+
+def diffRulesToBeAdded(newRules):
 	'''
 	Read the graph currently deployed. It is stored in a tmp file, in a json format.
 	Then, compare it with the new request, in order to identify the new rules to be
@@ -789,8 +806,10 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 	a diff.
 	'''
 	
-	global error
+	#FIXME: why don't just compare the IDs?
 	
+	global error	
+		
 	LOG.debug("Compare the new rules received with those already deployed")
 	
 	try:
@@ -807,7 +826,6 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 	
 	flowgraph = whole['flow-graph']
 	flowrules = flowgraph['flow-rules']
-	theVNFs = flowgraph['VNFs']	
 	
 	rulesToBeAdded = []
 	
@@ -841,14 +859,88 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 			LOG.debug("The rule must be inserted!")
 			LOG.debug("%s",json.dumps(newRule))
 			rulesToBeAdded.append(newRule)
+			
+	return rulesToBeAdded
+	
+def isCorrect(newContent):
+	'''
+	Check if the new configuration of the node is correct:
+	'''
+	
+	LOG.debug("Checking the correctness of the new configuration...")
+
+	LOG.debug("Reading file '%s', which contains the current configuration of the universal node...",constants.CONFIGURATION_FILE)
+	try:
+		oldTree = ET.parse(constants.CONFIGURATION_FILE)
+	except ET.ParseError as e:
+		print('ParseError: %s' % e.message)
+		return False
+	LOG.debug("File correctly read")
 		
-	#Update the current graph deployed with...
+	infrastructure = Virtualizer.parse(root=oldTree.getroot())
+	universal_node = infrastructure.nodes.node[constants.NODE_ID]
+	flowtable = universal_node.flowtable
+	nfInstances = universal_node.NF_instances
 	
-	#... the new flowrules
-	for tba in rulesToBeAdded:
-		flowrules.append(tba)
+	tmpInfra = copy.deepcopy(infrastructure)
 	
-	#... and the new VNFs
+	LOG.debug("Getting the new flowrules to be installed on the universal node")
+	try:
+		newTree = ET.ElementTree(ET.fromstring(newContent))
+	except ET.ParseError as e:
+		print('ParseError: %s' % e.message)
+		return False
+			
+	newInfrastructure = Virtualizer.parse(root=newTree.getroot())
+	newFlowtable = newInfrastructure.nodes.node[constants.NODE_ID].flowtable
+	newNfInstances = newInfrastructure.nodes.node[constants.NODE_ID].NF_instances
+			
+	#Update the NF instances with the new NFs
+	for instance in newNfInstances:
+		if instance.operation == 'delete':
+			nfInstances.delete(instance)
+		else:
+			nfInstances.add(instance)
+	
+	#Update the flowtable with the new flowentries
+	for flowentry in newFlowtable:
+		if flowentry.operation == 'delete':
+			flowtable.delete(flowentry)
+		else:
+			flowtable.add(flowentry)
+
+	#TODO: do the check here!
+		
+	return True
+
+def addToGraphFile(newRules,newVNFs):
+	'''
+	Read the graph currently deployed. It is stored in a tmp file, in a json format.
+	Then, adds to it the new VNFs and the new flowrules to be instantiated.
+	'''
+	
+	LOG.debug("Updating the json representation of the whole graph deployed")
+
+	try:
+		LOG.debug("Reading file: %s",constants.GRAPH_FILE)
+		tmpFile = open(constants.GRAPH_FILE,"r")
+		json_file = tmpFile.read()
+		tmpFile.close()
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		return False
+	
+	whole = json.loads(json_file)
+	
+	flowgraph = whole['flow-graph']
+	flowrules = flowgraph['flow-rules']
+	theVNFs = flowgraph['VNFs']	
+			
+	#Add the new flowrules
+	for nr in newRules:
+		flowrules.append(nr)
+	
+	#Add the new VNFs
 	for vnf in newVNFs:
 		LOG.debug("New VNF: %s!",vnf)
 		if vnf not in theVNFs:
@@ -865,9 +957,9 @@ def readGraphFromFileAndCompare(newRules,newVNFs):
 	except IOError as e:
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)
 		error = True
-		return
-	
-	return rulesToBeAdded
+		return False
+		
+	return True
 	
 def removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved):
 	'''
@@ -921,7 +1013,13 @@ def removeFromGraphFile(vnfsToBeRemoved,rulesToBeRemoved):
 			
 	
 def updateUniversalNodeConfig(newContent):
-
+	'''
+	Read the configuration of the universal node, and applies the required modifications to
+	the NF instances and to the flowtable
+	'''
+	
+	LOG.debug("Updating the file containing the configuration of the node...")
+	
 	LOG.debug("Reading file '%s', which contains the current configuration of the universal node...",constants.CONFIGURATION_FILE)
 	try:
 		oldTree = ET.parse(constants.CONFIGURATION_FILE)
