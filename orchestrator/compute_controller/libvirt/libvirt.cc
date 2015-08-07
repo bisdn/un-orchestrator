@@ -1,4 +1,13 @@
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
 #include "libvirt.h"
+
+/* TODO - These should come from an orchestrator config file (curently, there is only one for the UN ports) */
+static const char* QEMU_BIN_PATH = NULL; /* Can point to qemu bin or a wrapper script that tweaks the command line. If NULL, Libvirt default or path found in XML is used */
+static const char* OVS_BASE_SOCK_PATH = "/usr/local/var/run/openvswitch/";
 
 /*error handler libvirt*/
 static void customErrorFunc(void *userdata, virErrorPtr err)
@@ -43,7 +52,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 {
 	virDomainPtr dom = NULL;
 	char domain_name[64], bridge_name[64], port_name[64];
-	const char *xmlconfig = "";
+	const char *xmlconfig = NULL;
 	
 	int rc;
 	xmlTextWriterPtr writer;
@@ -67,8 +76,170 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	/* Create XML for VM */
 	if (use_template) {
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Using Libvirt XML template %s\n", uri_image.c_str());
+		xmlInitParser();
+
+		xmlDocPtr doc;
+		xmlXPathContextPtr xpathCtx;
+		xmlXPathObjectPtr xpathObj;
+
+		/* Load XML document */
+		doc = xmlParseFile(uri_image.c_str());
+		if (doc == NULL) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to parse file \"%s\"\n", uri_image.c_str());
+			return 0;
+		}
+
+		/* xpath evaluation for Libvirt various elements we may want to update */
+		xpathCtx = xmlXPathNewContext(doc);
+		if(xpathCtx == NULL) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to create new XPath context\n");
+			xmlFreeDoc(doc);
+			return 0;
+		}
+		const xmlChar* xpathExpr = BAD_CAST "/domain/devices/interface|/domain/name|/domain/devices/emulator";
+		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
+		if(xpathObj == NULL) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
+			xmlXPathFreeContext(xpathCtx);
+			xmlFreeDoc(doc);
+			return 0;
+		}
+
+		enum E_updates {
+			EMULATOR_UPDATED = 0x01,
+			DOMAIN_NAME_UPDATED = 0x02,
+		};
+		uint32_t update_flags = 0;
+
+		xmlNodeSetPtr nodes = xpathObj->nodesetval;
+		int size = (nodes) ? nodes->nodeNr : 0;
+    	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "xpath return size: %d\n", size);
+		int i;
+	    for(i = size - 1; i >= 0; i--) {
+	    	xmlNodePtr node = nodes->nodeTab[i];
+
+	    	if (node != NULL) {
+	    		switch (node->type) {
+	    		case XML_ELEMENT_NODE:
+	    			if (xmlStrcmp(node->name, (xmlChar*)"name") == 0) {
+	    				xmlNodeSetContent(node, BAD_CAST domain_name);
+	    				update_flags |= DOMAIN_NAME_UPDATED;
+	    			}
+	    			else if (xmlStrcmp(node->name, (xmlChar*)"emulator") == 0) {
+	    				if (QEMU_BIN_PATH) {
+	    					xmlNodeSetContent(node, (xmlChar*)QEMU_BIN_PATH);
+		    				update_flags |= EMULATOR_UPDATED;
+	    				}
+	    			}
+	    			else if (xmlStrcmp(node->name, (xmlChar*)"interface") == 0) {
+	    				// Currently we just remove any net interface device present in the temple and re-create our own
+	    				xmlUnlinkNode(node);
+	    				xmlFreeNode(node);
+	    			}
+	    			break;
+	    		case XML_ATTRIBUTE_NODE:
+	    			fprintf(stdout, "Error, ATTRIBUTE found here\n");
+	    			break;
+	    		default:
+	    			fprintf(stdout, "Other type\n");
+	    			break;
+	    		}
+	    	}
+
+	    	/*
+	    	 * All the elements returned by an XPath query are pointers to
+	    	 * elements from the tree *except* namespace nodes where the XPath
+	    	 * semantic is different from the implementation in libxml2 tree.
+	    	 * As a result when a returned node set is freed when
+	    	 * xmlXPathFreeObject() is called, that routine must check the
+	    	 * element type. But node from the returned set may have been removed
+	    	 * by xmlNodeSetContent() resulting in access to freed data.
+	    	 * This can be exercised by running
+	    	 *       valgrind xpath2 test3.xml '//discarded' discarded
+	    	 * There is 2 ways around it:
+	    	 *   - make a copy of the pointers to the nodes from the result set
+	    	 *     then call xmlXPathFreeObject() and then modify the nodes
+	    	 * or
+	    	 *   - remove the reference to the modified nodes from the node set
+	    	 *     as they are processed, if they are not namespace nodes.
+	    	 */
+	    	if (nodes->nodeTab[i]->type != XML_NAMESPACE_DECL) {
+	    	    nodes->nodeTab[i] = NULL;
+	    	}
+	    }
+
+		/* Cleanup of XPath data */
+		xmlXPathFreeObject(xpathObj);
+
+    	/* Add domain name if not present */
+    	if (0 == (update_flags & DOMAIN_NAME_UPDATED)) {
+			xmlNewTextChild(xmlDocGetRootElement(doc), NULL, BAD_CAST "name", BAD_CAST domain_name);
+    	}
+
+		/* Create xpath evaluation context for Libvirt domain/devices */
+		/* Evaluate xpath expression */
+		const xmlChar* xpathExpr_devs = BAD_CAST "/domain/devices";
+		xpathObj = xmlXPathEvalExpression(xpathExpr_devs, xpathCtx);
+		if(xpathObj == NULL) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
+			xmlXPathFreeContext(xpathCtx);
+			xmlFreeDoc(doc);
+			return 0;
+		}
+		nodes = xpathObj->nodesetval;
+		if (!nodes || (nodes->nodeNr != 1)) {
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "xpath(devices) failed accessing <devices> node\n");
+			xmlXPathFreeContext(xpathCtx);
+			xmlFreeDoc(doc);
+			return 0;
+		}
+
+    	xmlNodePtr devices = nodes->nodeTab[0];
+
+    	/* Add emulator if not present and must be modified */
+    	if ((0 == (update_flags & EMULATOR_UPDATED)) && (QEMU_BIN_PATH != NULL)) {
+    		xmlNewTextChild(devices, NULL, BAD_CAST "emulator", BAD_CAST QEMU_BIN_PATH);
+    	}
+
+		/* Create NICs */
+		for(unsigned int i=1;i<=n_ports;i++) {
+			// TODO: This is OVS vhostuser specific - Should be extracted to network plugin part...
+			char sock_path[255];
+			sprintf(sock_path, "%s/%s_%u", OVS_BASE_SOCK_PATH, domain_name, i);
+			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
+    	    xmlNewProp(ifn, BAD_CAST "type", BAD_CAST "vhostuser");
+
+    	    xmlNodePtr srcn = xmlNewChild(ifn, NULL, BAD_CAST "source", NULL);
+    	    xmlNewProp(srcn, BAD_CAST "type", BAD_CAST "unix");
+    	    xmlNewProp(srcn, BAD_CAST "path", BAD_CAST sock_path);
+    	    xmlNewProp(srcn, BAD_CAST "mode", BAD_CAST "client");
+
+    	    xmlNodePtr modeln = xmlNewChild(ifn, NULL, BAD_CAST "model", NULL);
+    	    xmlNewProp(modeln, BAD_CAST "type", BAD_CAST "virtio");
+
+    	    xmlNodePtr drvn = xmlNewChild(ifn, NULL, BAD_CAST "driver", NULL);
+    	    xmlNodePtr drv_hostn = xmlNewChild(drvn, NULL, BAD_CAST "host", NULL);
+    	    xmlNewProp(drv_hostn, BAD_CAST "csum", BAD_CAST "off");
+    	    xmlNewProp(drv_hostn, BAD_CAST "gso", BAD_CAST "off");
+    	    xmlNodePtr drv_guestn = xmlNewChild(drvn, NULL, BAD_CAST "guest", NULL);
+    	    xmlNewProp(drv_guestn, BAD_CAST "tso4", BAD_CAST "off");
+    	    xmlNewProp(drv_guestn, BAD_CAST "tso6", BAD_CAST "off");
+    	    xmlNewProp(drv_guestn, BAD_CAST "ecn", BAD_CAST "off");
+		}
+
+		/* Cleanup of XPath data */
+		xmlXPathFreeContext(xpathCtx);
+
+		/* Get resulting document */
+		xmlChar* xml_buf; int xml_bufsz;
+		xmlDocDumpMemory(doc, &xml_buf, &xml_bufsz);
+		xmlconfig = (const char *)xml_buf;
+
+	    /* Final XML Cleanup */
+	    xmlFreeDoc(doc);
+	    xmlCleanupParser();
 	}
-	else {
+	else {  /* TODO: This provides a largely hard-coded Libvirt domain definition. It can always be done by referring to an XML template. Hence this path could be subsumed in above one */
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating Libvirt XML template for image %s\n", uri_image.c_str());
 
 		buf = xmlBufferCreate();
@@ -294,13 +465,6 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			return 0;
 		}
 
-		/*add element "emulator"*/
-		rc = xmlTextWriterWriteElement(writer, BAD_CAST "emulator", BAD_CAST "/home/dverbeir/qemu/qemu_git/x86_64-softmmu/qemu-system-x86_64"); // TODO: Make configurable!
-		if (rc < 0) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-			return 0;
-		}
-
 		/*add element "disk"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "disk");
 		if (rc < 0) {
@@ -489,478 +653,479 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
 		}
-	}
 
-	sprintf(bridge_name, "Bridge%" PRIu64, lsiID);
+		sprintf(bridge_name, "Bridge%" PRIu64, lsiID);
 
-	/* Create NICs */
-	for(unsigned int i=1;i<=n_ports;i++){
-		/*add element "interface"*/
-		rc = xmlTextWriterStartElement(writer, BAD_CAST "interface");
+		/* Create NICs */
+		for(unsigned int i=1;i<=n_ports;i++){
+			/*add element "interface"*/
+			rc = xmlTextWriterStartElement(writer, BAD_CAST "interface");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+				return 0;
+			}
+
+			/*add attribute "type"*/
+			rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "direct");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+				return 0;
+			}
+
+			/*add element "source"*/
+			rc = xmlTextWriterStartElement(writer, BAD_CAST "source");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+				return 0;
+			}
+
+			/*add ports*/
+			/*lsi_example_i*/
+			sprintf(port_name, "%" PRIu64 "_%s_%u", lsiID, nf_name.c_str(), i);
+
+			/*add attribute "dev"*/
+			rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "dev", "%s", port_name);
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+				return 0;
+			}
+
+			/*add attribute "mode"*/
+			//XXX I use this mode because all other modes drop the unicast traffic - https://seravo.fi/2012/virtualized-bridged-networking-with-macvtap
+			rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "mode", "passthrough");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+				return 0;
+			}
+
+			/*close element "source"*/
+			rc = xmlTextWriterEndElement(writer);
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+				return 0;
+			}
+
+			/*add element "model"*/
+			rc = xmlTextWriterStartElement(writer, BAD_CAST "model");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+				return 0;
+			}
+
+			/*add attribute "type"*/
+			rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "type", "virtio");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+				return 0;
+			}
+
+				/*close element "model"*/
+			rc = xmlTextWriterEndElement(writer);
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+				return 0;
+			}
+
+				/*add element "virtualport"*/
+			rc = xmlTextWriterStartElement(writer, BAD_CAST "virtualport");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+				return 0;
+			}
+
+			/*add attribute "type"*/
+			rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "openvswitch");
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+				return 0;
+			}
+
+			/*close element "virtualport"*/
+			rc = xmlTextWriterEndElement(writer);
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+				return 0;
+			}
+
+			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%u\n", n_ports);
+
+			/*close element "interface"*/
+			rc = xmlTextWriterEndElement(writer);
+			if (rc < 0) {
+				logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+				return 0;
+			}
+		}
+
+		/*add element "serial"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "serial");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
-	
+
 		/*add attribute "type"*/
-		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "direct");
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pty");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;
 		}
-		
-		/*add element "source"*/
-		rc = xmlTextWriterStartElement(writer, BAD_CAST "source");
+
+		/*add element "target"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
-	
-		/*add ports*/	
-		/*lsi_example_i*/
-		sprintf(port_name, "%" PRIu64 "_%s_%u", lsiID, nf_name.c_str(), i);
-		
-		/*add attribute "dev"*/
-		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "dev", "%s", port_name);
+
+		/*add attribute "port"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "port", BAD_CAST "0");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;
 		}
-	
-		/*add attribute "mode"*/
-		//XXX I use this mode because all other modes drop the unicast traffic - https://seravo.fi/2012/virtualized-bridged-networking-with-macvtap
-		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "mode", "passthrough");
-		if (rc < 0) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-			return 0;
-		}
-	
-		/*close element "source"*/
+
+		/*close element "target"*/
 		rc = xmlTextWriterEndElement(writer);
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
 		}
-	
+
+		/*close element "serial"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+		/*add element "console"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "console");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
+		/*add attribute "type"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pty");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+		
+		/*add element "target"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+		
+		/*add attribute "type"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "serial");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "port"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "port", BAD_CAST "0");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*close element "target"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+		/*close element "console"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+		/*add element "input"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "input");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
+		/*add attribute "type"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "mouse");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "bus"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "ps2");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*close element "input"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+			/*add element "input"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "input");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
+		/*add attribute "type"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "keyboard");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "bus"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "ps2");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*close element "input"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+		/*add element "graphics"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "graphics");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
+		/*add attribute "type"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "vnc");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "port"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "port", BAD_CAST "-1");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}	
+
+		/*add attribute "autoport"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "autoport", BAD_CAST "yes");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*close element "graphics"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+		/*close element "devices"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+
+		/*add element "sound"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "sound");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
+		/*add attribute "model"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "model", BAD_CAST "ich6");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add element "address"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "address");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
+		/*add attribute "type"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pci");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "domain"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "domain", BAD_CAST "0x0000");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "bus"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "0x00");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "slot"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "slot", BAD_CAST "0x04");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "function"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "function", BAD_CAST "0x0");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*close element "address"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+		
+		/*close element "sound"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+		
+		/*add element "video"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "sound");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
+			return 0;
+		}
+
 		/*add element "model"*/
 		rc = xmlTextWriterStartElement(writer, BAD_CAST "model");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
-	
+
 		/*add attribute "type"*/
-		rc = xmlTextWriterWriteFormatAttribute(writer, BAD_CAST "type", "virtio");
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "cirrus");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;
 		}
-	    	
-	    	/*close element "model"*/
+
+		/*add attribute "vram"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "vram", BAD_CAST "16384");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*add attribute "heads"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "heads", BAD_CAST "1");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+
+		/*close element "model"*/
 		rc = xmlTextWriterEndElement(writer);
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
 		}
-	    	
-	    	/*add element "virtualport"*/
-		rc = xmlTextWriterStartElement(writer, BAD_CAST "virtualport");
+		
+		/*add element "address"*/
+		rc = xmlTextWriterStartElement(writer, BAD_CAST "address");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
 			return 0;
 		}
-	
+		
 		/*add attribute "type"*/
-		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "openvswitch");
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pci");
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
 			return 0;
-		}	
-	
-		/*close element "virtualport"*/
+		}
+		
+		/*add attribute "domain"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "domain", BAD_CAST "0x0000");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+		
+		/*add attribute "bus"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "0x00");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+		
+		/*add attribute "slot"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "slot", BAD_CAST "0x03");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+		
+		/*add attribute "function"*/
+		rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "function", BAD_CAST "0x0");
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
+			return 0;
+		}
+		
+		/*close element "address"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+		
+		/*close element "video"*/
+		rc = xmlTextWriterEndElement(writer);
+		if (rc < 0) {
+			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
+			return 0;
+		}
+		
+		/*close element "domain"*/
 		rc = xmlTextWriterEndElement(writer);
 		if (rc < 0) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
 			return 0;
 		}
 
-		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%u\n", n_ports);
+		xmlFreeTextWriter(writer);
 		
-		/*close element "interface"*/
-		rc = xmlTextWriterEndElement(writer);
-		if (rc < 0) {
-			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-			return 0;
-		}
+		xmlconfig = (const char *)buf->content;
 	}
 	
-	/*add element "serial"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "serial");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pty");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add element "target"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "port"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "port", BAD_CAST "0");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-		
-	/*close element "target"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-		
-	/*close element "serial"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*add element "console"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "console");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pty");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add element "target"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "target");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "serial");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-		
-	/*add attribute "port"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "port", BAD_CAST "0");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}	
-		
-	/*close element "target"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-		
-	/*close element "console"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*add element "input"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "input");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "mouse");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-		
-	/*add attribute "bus"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "ps2");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}	
-		
-	/*close element "input"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-    	
-    	/*add element "input"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "input");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "keyboard");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-		
-	/*add attribute "bus"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "ps2");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}	
-		
-	/*close element "input"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*add element "graphics"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "graphics");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "vnc");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-		
-	/*add attribute "port"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "port", BAD_CAST "-1");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}	
-	
-	/*add attribute "autoport"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "autoport", BAD_CAST "yes");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-		
-	/*close element "graphics"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*close element "devices"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*add element "sound"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "sound");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "model"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "model", BAD_CAST "ich6");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add element "address"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "address");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pci");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "domain"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "domain", BAD_CAST "0x0000");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "bus"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "0x00");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "slot"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "slot", BAD_CAST "0x04");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "function"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "function", BAD_CAST "0x0");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*close element "address"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*close element "sound"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*add element "video"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "sound");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add element "model"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "model");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "cirrus");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "vram"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "vram", BAD_CAST "16384");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "heads"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "heads", BAD_CAST "1");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*close element "model"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*add element "address"*/
-	rc = xmlTextWriterStartElement(writer, BAD_CAST "address");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteElement\n");
-		return 0;
-	}
-	
-	/*add attribute "type"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "type", BAD_CAST "pci");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "domain"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "domain", BAD_CAST "0x0000");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "bus"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "bus", BAD_CAST "0x00");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "slot"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "slot", BAD_CAST "0x03");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*add attribute "function"*/
-	rc = xmlTextWriterWriteAttribute(writer, BAD_CAST "function", BAD_CAST "0x0");
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		return 0;
-	}
-	
-	/*close element "address"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*close element "video"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-	
-	/*close element "domain"*/
-	rc = xmlTextWriterEndElement(writer);
-	if (rc < 0) {
-    	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlwriterMemory: Error at xmlTextWriterEndElement\n");
-		return 0;
-	}
-    	
-	xmlFreeTextWriter(writer);
-	
-	xmlconfig = (const char *)buf->content;
 #if 1  /* Debug */
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Dumping XML to %s\n", domain_name);
 	FILE* fp = fopen(domain_name, "w");
