@@ -74,3 +74,13 @@ supported_matches = [
 	"mpls_tc"
 ]
 
+#XXX: this disctionary must be aligned with that in 
+# [orchestrator]/utils/constants.h
+#XXX: for each key, there must be an handler for that key in actionsParser.py
+supported_actions = {
+	"vlan" : [
+		"push",
+		"pop"
+	]
+}
+

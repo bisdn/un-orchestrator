@@ -6,6 +6,8 @@ from virtualizer3 import *
 #Constants used by the parser
 import constants
 
+from actionsParser import *
+
 import json
 import logging
 import os
@@ -364,7 +366,7 @@ def edit_config(content):
 	
 	vnfsToBeAdded = extractVNFsInstantiated(content)	#VNF deployed/to be deployed on the universal node
 	if error:
-		return False
+		return False	
 	
 	rules = extractRules(content)						#Flowrules installed/to be installed on the universal node
 	if error:
@@ -487,7 +489,7 @@ def extractVNFsInstantiated(content):
 		
 	return nfinstances
 	
-def extractRulesToBeAdded(content):
+def extractRules(content):
 	'''
 	Parses the message and translates the flowrules in the internal JSON representation
 	Returns a json representing the rules in the internal format of the universal node
@@ -503,6 +505,7 @@ def extractRulesToBeAdded(content):
 		print('ParseError: %s' % e.message)
 		error = True
 		return
+	
 			
 	infrastructure = Virtualizer.parse(root=tree.getroot())
 	universal_node = infrastructure.nodes.node[constants.NODE_ID]
@@ -531,7 +534,7 @@ def extractRulesToBeAdded(content):
 				return
 			elif type(flowentry.match.data) is ET.Element:
 				for node in flowentry.match.data:
-					if not 	supportedMatch(node.tag):
+					if not supportedMatch(node.tag):
 						error = True
 						return
 					match[node.tag] = node.text
@@ -560,17 +563,22 @@ def extractRulesToBeAdded(content):
 			LOG.error("Invalid port '%s' defined in a flowentry",port)
 			error = True
 			return
-    		
+				
 		action = {}
-		#The universal node supports only the output actions! But this is 
-		#expressed in the <out> element. Hence, the <action> element must
-		#be empty!!
-		if type(flowentry.action.data) is str or type(flowentry.action.data) is ET.Element:
-			LOG.error("Invalid flowrule with action!",port)
-			error = True
-			return
-			
-		
+		if flowentry.action is not None:
+			if type(flowentry.action.data) is str:
+				#FIXME: I guess this cannot happen! But never say never...
+				#Then I let it here
+				error = True
+				return
+			elif type(flowentry.action.data) is ET.Element:
+				for node in flowentry.action.data:
+					if not supportedAction(node.tag):
+						error = True
+						return
+					#At this point, we have to go more in deep with the analysis					
+					action[node.tag] = handleSpecificAction(node.tag,node)
+							
 		#The content of <out> must be added to the action
 		#XXX: the following code is quite dirty, but it is a consequence of the nffg library
 		portPath = flowentry.out.getTarget().getPath()
@@ -728,6 +736,21 @@ def supportedMatch(tag):
 	else:
 		LOG.error("'%s' is not a supported match!",tag)
 		return False
+	
+def supportedAction(tag):
+	'''
+	Given an element within an action, this function checks whether such an element is supported or node
+	'''
+	
+	if tag in constants.supported_actions:
+		LOG.debug("'%s' is supported!",tag)
+		return True
+	else:
+		LOG.error("'%s' is not a supported match!",tag)
+		return False
+	
+def vlan_action():
+	LOG.debug("!!!!!!!!!!!!!!!!")
 	
 def toBeAddedToFile(flowRules,vnfs,fileName):
 	'''
