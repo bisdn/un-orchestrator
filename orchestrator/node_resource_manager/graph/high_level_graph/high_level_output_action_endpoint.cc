@@ -1,4 +1,4 @@
-#include "high_level_action_endpoint.h"
+#include "high_level_output_action_endpoint.h"
 
 namespace highlevel
 {

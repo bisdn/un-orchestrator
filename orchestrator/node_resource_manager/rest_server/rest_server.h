@@ -43,8 +43,8 @@
 
 #include "../graph_manager/graph_manager.h"
 #include "../../utils/constants.h"
-#include "../graph/high_level_graph/high_level_action_port.h"
-#include "../graph/high_level_graph/high_level_action_endpoint.h"
+#include "../graph/high_level_graph/high_level_output_action_port.h"
+#include "../graph/high_level_graph/high_level_output_action_endpoint.h"
 #include "../graph/vlan_action.h"
 #include "match_parser.h"
 

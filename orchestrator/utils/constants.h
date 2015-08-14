@@ -33,7 +33,7 @@
 
 /*
 *	Costants in the JSON describing the graph
-*	XXX: the list of supported matches MUST be aligned with that
+*	XXX: the list of supported matches and actions MUST be aligned with those
 *	in [orchestrator]/node_resource_manager/virtualizer/constants.py
 */
 
