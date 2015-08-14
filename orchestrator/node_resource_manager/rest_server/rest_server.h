@@ -45,6 +45,7 @@
 #include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_action_port.h"
 #include "../graph/high_level_graph/high_level_action_endpoint.h"
+#include "../graph/vlan_action.h"
 #include "match_parser.h"
 
 #include <json_spirit/json_spirit.h>

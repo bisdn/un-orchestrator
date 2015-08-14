@@ -102,6 +102,11 @@
 			#define	PORT			"port"
 			#define	VNF_ID			"VNF_id"
 			#define ENDPOINT_ID		"endpoint_id"
+			#define VLAN			"vlan"
+				#define VLAN_OP		"operation"
+					#define VLAN_PUSH	"push"
+					#define VLAN_POP	"pop"
+				//#define VLAN_ID	"vlan_id"
 			
 /*
 *	Misc
@@ -116,6 +121,8 @@
 
 /**
 *	@brief: Constants related to the configuration file containing the description of the physical ports
+*
+*	XXX This constants must be updated in case the XML schema is modified
 */
 #define PHY_PORTS_XSD			"config/universal-node-schema.xsd"
 
@@ -135,6 +142,13 @@
 #define VIRTUALIZED_ELEMENT		"virtualized"
 #define AS_ATTRIBUTE			"as"
 #define PORT_TYPE_ATTRIBUTE		"port-type"
+
+#define TYPE_ETHERNET				"ethernet"
+#define TYPE_WIFI				"wifi"
+
+#define SIDE_CORE				"core"
+#define SIDE_EDGE				"edge"
+#define SIDE_NONE				"none"
 
 /*
  * Supported Openflow versions.

@@ -32,6 +32,9 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 		case OFP_12:
 		case OFP_13:
 			message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(0)).set_port_no(port_id);
+			
+			message.set_instructions().set_inst_apply_actions().set_actions().add_action_pop_vlan(rofl::cindex(1));
+			message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(2));
 			break;
 	}
 }

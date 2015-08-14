@@ -4,9 +4,11 @@
 #pragma once
 
 #include "../../../utils/constants.h"
+#include "../generic_action.h"
 
 #include <string>
 #include <iostream>
+#include <list>
 
 #include <json_spirit/json_spirit.h>
 #include <json_spirit/value.h>
@@ -25,6 +27,7 @@ class Action
 
 private:
 	action_t type;
+	list<GenericAction*> genericActions;
 
 public:
 	action_t getType();
@@ -34,6 +37,8 @@ public:
 	virtual Object toJSON() = 0;
 	virtual string toString() = 0;
 
+	void addGenericAction(GenericAction *ga);
+
 	virtual ~Action();
 	
 protected:
@@ -42,4 +47,4 @@ protected:
 
 }
 
-#endif //HIHG_LEVEL_ACTION_H_
+#endif //HIGH_LEVEL_ACTION_H_

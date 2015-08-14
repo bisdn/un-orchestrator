@@ -160,6 +160,10 @@ SET(SOURCES
 	
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
+	node_resource_manager/graph/generic_action.h
+	node_resource_manager/graph/generic_action.cc
+	node_resource_manager/graph/vlan_action.h
+	node_resource_manager/graph/vlan_action.cc
 	
 	node_resource_manager/graph/low_level_graph/action.h
 	node_resource_manager/graph/low_level_graph/action.cc

@@ -154,8 +154,8 @@ set<CheckPhysicalPortsIn> FileParser::parseConfigurationFile(string fileName)
 					string type((const char*)attr_type);
 					string side((const char*)attr_side);
 
-					physicalPortType_t ptype = (type == "ethernet")? ETHERNET_PORT : WIFI_PORT;
-					physicalPortSide_t pside = (side == "core")? CORE : ( (side == "edge")? EDGE : NONE );
+					physicalPortType_t ptype = (type == TYPE_ETHERNET)? ETHERNET_PORT : WIFI_PORT;
+					physicalPortSide_t pside = (side == SIDE_CORE)? CORE : ( (side == SIDE_EDGE)? EDGE : NONE );
 	
 					CheckPhysicalPortsIn cppi(name,ptype,pside);
 					physicalPorts.insert(cppi);

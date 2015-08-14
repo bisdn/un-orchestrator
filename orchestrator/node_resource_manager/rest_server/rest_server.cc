@@ -874,6 +874,7 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 							//This is a rule, with a match, an action, and an ID
 							Object flow_rule = flow_rules_array[fr].getObject();
 							highlevel::Action *action = NULL;
+							list<GenericAction*> genericActions;
 							highlevel::Match match;
 							string ruleID;
 							uint64_t priority = 0;
@@ -995,6 +996,70 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 											action = new highlevel::ActionEndPoint(graph_id, endPoint);
 											graph.addEndPoint(graph_id,action->toString());
 										}
+										else if(a_name == VLAN)
+										{
+											//A vlan push/pop action is required
+											
+											bool foundOperation = false;
+											bool foundVlanID = false;
+											
+											vlan_action_t actionType;
+											unsigned int vlanID = 0;
+																					
+											Object vlanAction = a_value.getObject();
+											for(Object::const_iterator vl = vlanAction.begin(); vl != vlanAction.end(); vl++)
+											{
+												const string& vl_name  = vl->first;
+												const Value&  vl_value = vl->second;
+												
+												if(vl_name == VLAN_OP)
+												{
+													foundOperation = true;
+													string theOperation = vl_value.getString();
+													if(theOperation == VLAN_PUSH)
+														actionType = ACTION_VLAN_PUSH;
+													else if(theOperation == VLAN_POP)
+														actionType = ACTION_VLAN_POP;
+													else
+													{
+														logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid value \"%s\" for key \"%s\"",theOperation.c_str(),VLAN_OP);
+														return false;		
+													}
+												}
+												else if(vl_name == VLAN_ID)
+												{
+													foundVlanID = true;
+													string strVlanID = vl_value.getString();
+													sscanf(strVlanID.c_str(),"%u",&vlanID);													
+												}
+												else
+												{
+													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in \"%s\"",vl_name.c_str(),VLAN);
+													return false;
+												}
+											}
+											
+											if(!foundOperation)
+											{
+												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in \"%s\"",VLAN_OP,VLAN);
+												return false;
+											}
+											if(actionType == ACTION_VLAN_PUSH && !foundVlanID)
+											{
+												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in \"%s\"",VLAN_ID,VLAN);
+												return false;
+											}
+											if(actionType == ACTION_VLAN_POP && foundVlanID)
+											{
+												logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" found in \"%s\", but it is not required for specified \"%s\": \"%s\"",VLAN_ID,VLAN,VLAN_OP,VLAN_POP);
+												return false;
+											}
+											//Finally, we are sure that the command is correct!
+											
+											GenericAction *ga = new VlanAction(actionType,vlanID);
+											genericActions.push_back(ga);
+											
+										}//end if(a_name == VLAN)
 										else
 										{
 											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Invalid key \"%s\" in \"%s\"",a_name.c_str(),ACTION);
@@ -1006,6 +1071,11 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 									{
 										logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Neither Key \"%s\", nor key \"%s\" found in \"%s\"",PORT,VNF_ID,ACTION);
 										return false;
+									}
+									
+									for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+									{
+										action->addGenericAction(*ga);
 									}
 							
 								}//end if(fr_name == ACTION)

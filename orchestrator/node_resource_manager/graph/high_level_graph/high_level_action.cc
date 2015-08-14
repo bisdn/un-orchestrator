@@ -19,5 +19,9 @@ action_t Action::getType()
 	return type;
 }
 
+void Action::addGenericAction(GenericAction *ga)
+{
+	genericActions.push_back(ga);
+}
 
 }
