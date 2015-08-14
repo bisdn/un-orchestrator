@@ -352,15 +352,11 @@ def edit_config(content):
 
 	LOG.debug("Executing the edit-config command")
 
-	#TODO: controllare che i flussi instanziati referinzino funzioni esistenti
-	#Controllare che le porte richieste esistano!
-	
-	print "------------------------------------------"
+	#TODO: check that flows refer to existing (i.e., deployed) network function.
+	#TODO: check that flows refer to existing ports 
 	
 	if not isCorrect(content):
 		return False		
-
-	print "+++++++++++++++++++++++++++++++++++++++++"
 	
 	#
 	#	Extract the needed information from the message received from the network
@@ -370,7 +366,7 @@ def edit_config(content):
 	if error:
 		return False
 	
-	rules = extractRulesToBeAdded(content)				#Flowrules installed/to be installed on the universal node
+	rules = extractRules(content)						#Flowrules installed/to be installed on the universal node
 	if error:
 		return False
 	
@@ -573,6 +569,7 @@ def extractRulesToBeAdded(content):
 			LOG.error("Invalid flowrule with action!",port)
 			error = True
 			return
+			
 		
 		#The content of <out> must be added to the action
 		#XXX: the following code is quite dirty, but it is a consequence of the nffg library
