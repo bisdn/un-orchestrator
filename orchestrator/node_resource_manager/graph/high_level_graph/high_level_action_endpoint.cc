@@ -40,6 +40,8 @@ void ActionEndPoint::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 		cout << "\t\t\tendpoint: " << graphID << ":" << endpoint << endl;
+		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+			(*ga)->print();
 		cout << "\t\t}" << endl;
 	}
 }
@@ -50,6 +52,9 @@ Object ActionEndPoint::toJSON()
 	stringstream ep;
 	ep << graphID << ":" << endpoint;
 	action[ENDPOINT_ID] = ep.str().c_str();
+	
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		(*ga)->toJSON(action);
 	
 	return action;
 }

@@ -6,7 +6,6 @@
 #include <rofl/common/crofbase.h>
 #include <rofl/common/logging.h>
 #include <rofl/common/openflow/openflow_common.h>
-#include <rofl/common/protocols/fvlanframe.h>
 #include <rofl/common/caddress.h>
 
 #include <ostream>
@@ -14,6 +13,8 @@
 #include "../../../utils/logger.h"
 #include "../../../utils/constants.h"
 #include "../../graph_manager/lsi.h"
+
+#include "../generic_action.h"
 
 using namespace rofl;
 using namespace std;
@@ -24,11 +25,16 @@ namespace lowlevel
 class Action
 {
 
-//XXX: only the OUTPUT action is supported
-
 private:
 	openflow::ofp_action_type type;
 	uint32_t port_id;
+	
+	/** 
+	*	The outuput action contains a list of generic actions!
+	*	The code is organized in this way, because the output action is 
+	*	mandatory in each rule.
+	**/
+	list<GenericAction*> genericActions;
 	
 public:
 	Action(uint32_t port_id);
@@ -46,6 +52,8 @@ public:
 	
 	void print();
 	string prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
+	
+	void addGenericAction(GenericAction *ga);
 };
 
 }

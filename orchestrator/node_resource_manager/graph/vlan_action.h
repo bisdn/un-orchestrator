@@ -4,8 +4,10 @@
 #include "generic_action.h"
 
 #include <inttypes.h>
+#include <iostream>
+#include <sstream>
 
-using namespace std;
+#include <rofl/common/protocols/fvlanframe.h>
 
 enum vlan_action_t {ACTION_VLAN_PUSH,ACTION_VLAN_POP};
 
@@ -18,6 +20,11 @@ private:
 public:
 	VlanAction(vlan_action_t type, uint16_t label = 0);
 	~VlanAction();
+	
+	void print();
+	void toJSON(Object &json);
+	
+	void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position);
 };
 
 

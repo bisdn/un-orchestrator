@@ -32,15 +32,12 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 		case OFP_12:
 		case OFP_13:
 			message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(0)).set_port_no(port_id);
-	
-			//The next row adds a vlan pop		
-//			message.set_instructions().set_inst_apply_actions().set_actions().add_action_pop_vlan(rofl::cindex(1));
-			
-			//The next rows add a vlan push
-//			message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(1)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-//			message.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(rofl::cindex(2)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(25 | rofl::openflow::OFPVID_PRESENT));
-			break;
+			break;	
 	}
+	
+	unsigned int position = 1;
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		(*ga)->fillFlowmodMessage(message,&position);
 }
 
 void Action::print()
@@ -49,6 +46,8 @@ void Action::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 		cout << "\t\t\tOUTPUT: " << port_id << endl;
+		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+			(*ga)->print();		
 		cout << "\t\t}" << endl;
 	}
 }
@@ -85,6 +84,11 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 	//The code could be here only when a SIGINT is received and all the graph are going to be removed
 	ss << port_id << " (unknown graph)";
 	return ss.str();
+}
+
+void Action::addGenericAction(GenericAction *ga)
+{
+	genericActions.push_back(ga);
 }
 
 }

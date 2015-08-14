@@ -5,6 +5,7 @@
 
 #include "../../../utils/constants.h"
 #include "../generic_action.h"
+#include "../vlan_action.h"
 
 #include <string>
 #include <iostream>
@@ -27,7 +28,6 @@ class Action
 
 private:
 	action_t type;
-	list<GenericAction*> genericActions;
 
 public:
 	action_t getType();
@@ -38,11 +38,19 @@ public:
 	virtual string toString() = 0;
 
 	void addGenericAction(GenericAction *ga);
+	list<GenericAction*> getGenericActions();
 
 	virtual ~Action();
 	
 protected:
 	Action(action_t type);
+	
+	/** 
+	*	The outuput action contains a list of generic actions!
+	*	The code is organized in this way, because the output action is 
+	*	mandatory in each rule.
+	**/
+	list<GenericAction*> genericActions;
 };
 
 }

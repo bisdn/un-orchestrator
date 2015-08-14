@@ -24,4 +24,9 @@ void Action::addGenericAction(GenericAction *ga)
 	genericActions.push_back(ga);
 }
 
+list<GenericAction*> Action::getGenericActions()
+{
+	return genericActions;
+}
+
 }

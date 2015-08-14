@@ -38,6 +38,8 @@ void ActionPort::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 		cout << "\t\t\tport: " << port << endl;
+		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+			(*ga)->print();
 		cout << "\t\t}" << endl;
 	}
 }
@@ -46,6 +48,9 @@ Object ActionPort::toJSON()
 {
 	Object action;
 	action[PORT] = port.c_str();
+	
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		(*ga)->toJSON(action);
 	
 	return action;
 }

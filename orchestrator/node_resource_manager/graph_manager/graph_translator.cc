@@ -84,6 +84,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				lsi0Match.setInputPort(vlink->getRemoteID());
 
 				//Translate the action
+				//XXX The generic actions will be added to the tenant lsi.
 				unsigned int portForAction = endPointsDefinedInMatches[action->toString()];
 				lowlevel::Action lsi0Action(portForAction);			
 
@@ -129,8 +130,12 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				
 				map<string,unsigned int>::iterator translation = ports_lsi0.find(action_info);
 				unsigned int portForAction = translation->second;
-					
-				lowlevel::Action lsi0Action(portForAction);	
+				
+				lowlevel::Action lsi0Action(portForAction);		
+				//XXX the generic actions must be inserted in this graph.
+				list<GenericAction*> gas = action->getGenericActions();
+				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					lsi0Action.addGenericAction(*ga);
 	
 				//Create the rule and add it to the graph
 				//The rule ID is created as follows  highlevelGraphID_hlrID
@@ -171,6 +176,11 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				}
 				assert(vlink != tenantVirtualLinks.end());
 				lowlevel::Action lsi0Action(vlink->getRemoteID());
+				
+				//XXX the generic actions must be inserted in this graph.
+				list<GenericAction*> gas = action->getGenericActions();
+				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					lsi0Action.addGenericAction(*ga);
 				
 				//Create the rule and add it to the graph
 				//The rule ID is created as follows  highlevelGraphID_hlrID
@@ -240,6 +250,11 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 				assert(vlink != tenantVirtualLinks.end());
 				lowlevel::Action lsi0Action(vlink->getRemoteID());
 				
+				//XXX the generic actions must be inserted in this graph.
+				list<GenericAction*> gas = action->getGenericActions();
+				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					lsi0Action.addGenericAction(*ga);
+				
 				//Create the rule and add it to the graph
 				//The rule ID is created as follows  highlevelGraphID_hlrID
 				stringstream newRuleID;
@@ -290,6 +305,7 @@ lowlevel::Graph GraphTranslator::lowerGraphToLSI0(highlevel::Graph *graph, LSI *
 			unsigned int portForAction = translation->second;
 			
 			lowlevel::Action lsi0Action(portForAction);			
+			//XXX The generic actions will be added to the tenant lsi.
 
 			//Create the rule and add it to the graph
 			//The rule ID is created as follows  highlevelGraphID_hlrID
@@ -392,6 +408,8 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 			//Translate the action
 			map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPorts.find(nf_port.str());
 			lowlevel::Action tenantAction(translation->second);
+			
+			//XXX The generic actions has been added to the lsi-0.
 
 			//Create the rule and add it to the graph
 			lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getFlowID(),priority);
@@ -461,6 +479,11 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				}
 				map<string,unsigned int>::iterator translation = tenantNetworkFunctionsPortsAction.find(nf_port.str());
 				lowlevel::Action tenantAction(translation->second);
+				
+				//XXX the generic actions must be inserted in this graph.
+				list<GenericAction*> gas = action->getGenericActions();
+				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					tenantAction.addGenericAction(*ga);
 	
 				//Create the rule and add it to the graph
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getFlowID(),priority);
@@ -493,6 +516,11 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				}
 				assert(vlink != tenantVirtualLinks.end());
 				lowlevel::Action tenantAction(vlink->getLocalID());
+				
+				//XXX the generic actions must be inserted in this graph.
+				list<GenericAction*> gas = action->getGenericActions();
+				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					tenantAction.addGenericAction(*ga);
 				
 				//Create the rule and add it to the graph
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getFlowID(),priority);
@@ -529,6 +557,11 @@ lowlevel::Graph GraphTranslator::lowerGraphToTenantLSI(highlevel::Graph *graph, 
 				}
 				assert(vlink != tenantVirtualLinks.end());
 				lowlevel::Action tenantAction(vlink->getLocalID());
+				
+				//XXX the generic actions must be inserted in this graph.
+				list<GenericAction*> gas = action->getGenericActions();
+				for(list<GenericAction*>::iterator ga = gas.begin(); ga != gas.end(); ga++)
+					tenantAction.addGenericAction(*ga);
 				
 				//Create the rule and add it to the graph
 				lowlevel::Rule tenantRule(tenantMatch,tenantAction,hlr->getFlowID(),priority);
