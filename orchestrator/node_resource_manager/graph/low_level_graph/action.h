@@ -46,13 +46,15 @@ public:
 	*	@brief: insert the action into a flowmod message
 	*
 	*	@param: message		flowmod message
-	*	@param: of_version	openflow version of the flowmod message
 	*/
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message);
 	
 	void print();
 	string prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
 	
+	/**
+	*	Associate a generic action with this output action
+	*/
 	void addGenericAction(GenericAction *ga);
 };
 

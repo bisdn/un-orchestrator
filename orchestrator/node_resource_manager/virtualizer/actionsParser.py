@@ -5,6 +5,9 @@ __author__ = 'Ivano Cerrato'
 import constants
 
 def handleSpecificAction(action,node):
+	'''
+	Given an action, invokes the proper handler for such an action
+	'''	
 	
 	if action == "vlan":
 		return handleVlanAction(node)
@@ -16,6 +19,10 @@ def handleSpecificAction(action,node):
 	return ""
 	
 def handleVlanAction(node):
+	'''
+	Parses the content of an action and translates it in the internal JSON representation.
+	Such a representation is then returned.
+	'''
 	
 	action = {}
 	
@@ -23,9 +30,6 @@ def handleVlanAction(node):
 		operations = constants.supported_actions["vlan"]
 
 		#TODO: check if operation is defined
-	
-		print operation.tag
-		print operation.text
 		
 		action["operation"] = operation.tag
 		if operation.tag == "push":

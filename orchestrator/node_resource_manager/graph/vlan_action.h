@@ -24,6 +24,12 @@ public:
 	void print();
 	void toJSON(Object &json);
 	
+	/**
+	*	@brief: insert the generic action into a flowmod message
+	*
+	*	@param: message		flowmod message
+	*	@param: position	position, in the flowmod, in which the action must be inserted
+	*/
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position);
 	
 	string prettyPrint();

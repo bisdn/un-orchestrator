@@ -37,7 +37,14 @@ public:
 	virtual Object toJSON() = 0;
 	virtual string toString() = 0;
 
+	/**
+	*	Associate a generic action with this output action
+	*/
 	void addGenericAction(GenericAction *ga);
+	
+	/**
+	*	Return the generic actions associated with this output action
+	*/
 	list<GenericAction*> getGenericActions();
 
 	virtual ~Action();
