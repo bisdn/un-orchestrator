@@ -143,7 +143,7 @@
 #define AS_ATTRIBUTE			"as"
 #define PORT_TYPE_ATTRIBUTE		"port-type"
 
-#define TYPE_ETHERNET				"ethernet"
+#define TYPE_ETHERNET			"ethernet"
 #define TYPE_WIFI				"wifi"
 
 #define SIDE_CORE				"core"

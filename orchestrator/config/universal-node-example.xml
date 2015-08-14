@@ -26,6 +26,12 @@
 		</port>
 		
 		<!-- 
+			Values for "type":
+			* ethernet
+			* wifi
+			
+			Note that not all the vSwitches supports DPDK ports.
+		
 			Values for "side":
 			* edge
 			* core

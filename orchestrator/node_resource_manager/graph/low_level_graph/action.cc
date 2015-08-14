@@ -32,9 +32,13 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 		case OFP_12:
 		case OFP_13:
 			message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(0)).set_port_no(port_id);
+	
+			//The next row adds a vlan pop		
+//			message.set_instructions().set_inst_apply_actions().set_actions().add_action_pop_vlan(rofl::cindex(1));
 			
-			message.set_instructions().set_inst_apply_actions().set_actions().add_action_pop_vlan(rofl::cindex(1));
-			message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(2));
+			//The next rows add a vlan push
+//			message.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(rofl::cindex(1)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+//			message.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(rofl::cindex(2)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(25 | rofl::openflow::OFPVID_PRESENT));
 			break;
 	}
 }
