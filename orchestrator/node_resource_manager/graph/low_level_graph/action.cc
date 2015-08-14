@@ -56,6 +56,8 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 {
 	stringstream ss;
 
+	ss << "output to ";
+
 	map<string,unsigned int> pysicalPorts = lsi0->getPhysicalPorts();
 	for(map<string,unsigned int>::iterator it = pysicalPorts.begin(); it != pysicalPorts.end(); it++)
 	{
@@ -76,13 +78,19 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 			if(vl->getRemoteID() == port_id)
 			{
 				ss << port_id << " (graph: " << it->first << ")";
-				return ss.str();	
+				goto conclude;
 			}
 		}
 	}
 	
 	//The code could be here only when a SIGINT is received and all the graph are going to be removed
 	ss << port_id << " (unknown graph)";
+
+conclude:
+	
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		ss << (*ga)->prettyPrint();
+	
 	return ss.str();
 }
 

@@ -65,5 +65,14 @@ void  VlanAction::fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsign
 			exit(0);
 			break;
 	}
-
 }
+
+string VlanAction::prettyPrint()
+{
+	stringstream ss;
+	ss << " # vlan: " << ((type == ACTION_VLAN_PUSH)? "push " : "pop");
+	if(type == ACTION_VLAN_PUSH)
+		ss << " " << label;
+	return ss.str();
+}
+

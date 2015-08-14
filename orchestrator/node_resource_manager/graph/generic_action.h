@@ -28,6 +28,8 @@ public:
 	
 	//TODO: do this method friend of lowlevel::Action
 	virtual void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position) = 0;
+	//TODO: do this method friend of lowlevel::Action
+	virtual string prettyPrint() = 0;
 	
 protected:
 	GenericAction();

@@ -1136,132 +1136,132 @@ string Match::prettyPrint()
 	*	Ethernet
 	*/	
 	if(eth_src != NULL)
-		ss << " - ethernet src: " << eth_src;
+		ss << " # ethernet src: " << eth_src;
 	if(eth_dst != NULL)
-		ss << " - ethernet dst: " << eth_dst;
+		ss << " # ethernet dst: " << eth_dst;
 	if(eth_src_mask)
-		ss << " - ethernet src mask: " << eth_src_mask;
+		ss << " # ethernet src mask: " << eth_src_mask;
 	if(eth_dst_mask)
-		ss << " - ethernet dst mask: " << eth_dst_mask;
+		ss << " # ethernet dst mask: " << eth_dst_mask;
 	if(isEthType)
-		ss << " - ethertype: " <<  "0x" << hex << ethType;
+		ss << " # ethertype: " <<  "0x" << hex << ethType;
 
 	/*
 	*	VLAN
 	*/
 	if(isVlanID)
-		ss << " - VLAN ID: " << hex << "0x" << vlanID;
+		ss << " # VLAN ID: " << hex << "0x" << vlanID;
 	else if(isAnyVlan)
-		ss << " - VLAN ID: ANY";
+		ss << " # VLAN ID: ANY";
 	else if(isNoVlan)
-		ss << " - NO VLAN";
+		ss << " # NO VLAN";
 		
 	if(isVlanPCP)
-		ss << " - VLAN PCP: " << int(vlanPCP);
+		ss << " # VLAN PCP: " << int(vlanPCP);
 
 	/*
 	*	IPv4
 	*/
 	if(isIpDSCP)
-		ss << " - IPv4 dscp: " << int(ipDSCP); 
+		ss << " # IPv4 dscp: " << int(ipDSCP); 
 	if(isIpECN)
-		ss << " - IPv4 ecn: " << int(ipECN);
+		ss << " # IPv4 ecn: " << int(ipECN);
 	if(isIpProto)
-		ss << " - IPv4 proto: " << (ipProto & 0xF);
+		ss << " # IPv4 proto: " << (ipProto & 0xF);
 	if(ipv4_src)
-		ss << " - IPv4 src: " << ipv4_src;
+		ss << " # IPv4 src: " << ipv4_src;
 	if(ipv4_src_mask)
-		ss << " - IPv4 src mask: " << ipv4_src_mask;
+		ss << " # IPv4 src mask: " << ipv4_src_mask;
 	if(ipv4_dst)
-		ss << " - IPv4 dst: " << ipv4_dst;
+		ss << " # IPv4 dst: " << ipv4_dst;
 	if(ipv4_dst_mask)
-		ss << " - IPv4 dst mask: " << ipv4_dst_mask;
+		ss << " # IPv4 dst mask: " << ipv4_dst_mask;
 
 	/*
 	*	TCP
 	*/
 	if(isTcpSrc)
-		ss << " - TCP src port: " << tcp_src;
+		ss << " # TCP src port: " << tcp_src;
 	if(isTcpDst)
-		ss << " - TCP dst port: " << tcp_dst;
+		ss << " # TCP dst port: " << tcp_dst;
 
 	/*
 	*	UDP
 	*/
 	if(isUdpSrc)
-		ss << " - UDP src port: " << udp_src;
+		ss << " # UDP src port: " << udp_src;
 	if(isUdpDst)
-		ss << " - UDP dst port: " << udp_dst;
+		ss << " # UDP dst port: " << udp_dst;
 
 	/*
 	*	SCTP
 	*/
 	if(isSctpSrc)
-		ss << " - SCTP src port: " << sctp_src;
+		ss << " # SCTP src port: " << sctp_src;
 	if(isSctpDst)
-		ss << " - SCTP dst port: " << sctp_dst;
+		ss << " # SCTP dst port: " << sctp_dst;
 
 	/*
 	*	ICMPv4
 	*/
 	if(isIcmpv4Type)
-		ss << " - ICMPv4 type: " << int(icmpv4Type);
+		ss << " # ICMPv4 type: " << int(icmpv4Type);
 	if(isIcmpv4Code)
-		ss << " - ICMPv4 code: " << int(icmpv4Code);
+		ss << " # ICMPv4 code: " << int(icmpv4Code);
 
 	/*
 	*	ARP
 	*/
 	if(isArpOpcode)
-		ss << " - ARP opcode: " << arpOpcode;
+		ss << " # ARP opcode: " << arpOpcode;
 	if(arp_spa)
-		ss << " - ARP spa: " << arp_spa;
+		ss << " # ARP spa: " << arp_spa;
 	if(arp_spa_mask)
-	 	ss << " - ARP spa mask: " << arp_spa_mask;
+	 	ss << " # ARP spa mask: " << arp_spa_mask;
 	if(arp_tpa)
-		ss << " - ARP tpa: " << arp_tpa;
+		ss << " # ARP tpa: " << arp_tpa;
 	if(arp_tpa_mask)
-		ss << " - ARP tpa mask: " << arp_tpa_mask;
+		ss << " # ARP tpa mask: " << arp_tpa_mask;
 	if(arp_sha)
-		ss << " - ARP sha: " << arp_sha;
+		ss << " # ARP sha: " << arp_sha;
 	if(arp_tha)
-		ss << " - ARP tha: " << arp_tha;
+		ss << " # ARP tha: " << arp_tha;
 
 	/*
 	*	IPv6
 	*/
 	if(ipv6_src)
-		ss << " - IPv6 src: " << ipv6_src;
+		ss << " # IPv6 src: " << ipv6_src;
 	if(ipv6_src_mask)
-		ss << " - IPv6 src mask: " << ipv6_src_mask;
+		ss << " # IPv6 src mask: " << ipv6_src_mask;
 	if(ipv6_dst)
-		ss << " - IPv6 dst: " << ipv6_dst;
+		ss << " # IPv6 dst: " << ipv6_dst;
 	if(ipv6_dst_mask)
-		ss << " - IPv6 dst mask: " << ipv6_dst_mask;
+		ss << " # IPv6 dst mask: " << ipv6_dst_mask;
 	if(isIpv6Flabel)
-		ss << " - IPv6 flabel: " << ipv6_flabel;
+		ss << " # IPv6 flabel: " << ipv6_flabel;
 	if(ipv6_nd_target)
-		 ss << " - IPv6 nd target: " << ipv6_nd_target;
+		 ss << " # IPv6 nd target: " << ipv6_nd_target;
 	if(ipv6_nd_sll)
-		 ss << " - IPv6 nd sll: " << ipv6_nd_sll;
+		 ss << " # IPv6 nd sll: " << ipv6_nd_sll;
 	if(ipv6_nd_tll)
-		ss << " - IPv6 nd tll: " << ipv6_nd_tll;
+		ss << " # IPv6 nd tll: " << ipv6_nd_tll;
 
 	/*
 	*	ICMPv6
 	*/
 	if(isIcmpv6Type)
-		ss << " - ICMPv6 type: "<<  int(icmpv6Type);
+		ss << " # ICMPv6 type: "<<  int(icmpv6Type);
 	if(isIcmpv6Code)
-		ss << " - ICMPv6 code: " << int(icmpv6Code);
+		ss << " # ICMPv6 code: " << int(icmpv6Code);
 
 	/*
 	*	MPLS
 	*/
 	if(isMplsLabel)
-		ss << " - MPLS label: " << mplsLabel;
+		ss << " # MPLS label: " << mplsLabel;
 	if(isMplsTC)
-		ss << " - MPLS tc: " << int(mplsTC);
+		ss << " # MPLS tc: " << int(mplsTC);
 
 	return ss.str();
 }

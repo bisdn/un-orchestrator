@@ -25,6 +25,8 @@ public:
 	void toJSON(Object &json);
 	
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message, unsigned int *position);
+	
+	string prettyPrint();
 };
 
 
