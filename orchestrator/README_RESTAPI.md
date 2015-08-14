@@ -468,12 +468,37 @@ must be spicified as strings):
 
 ===============================================================================
 
-Within the "action" element, the following fields are allowed:
+Within the "action" element, one and only one of the following fields **MUST** 
+be specified:
 
 	"port"         //only if "VNF_id" and "endpoint_id" are not specified
 	"VNF_id"       //only if "port" and "endpoint_id" are not specified
 	"endpoint_id"  //only if "port" and "VNF_id" are not specified
 
+The previous fields specifies an output port through which packets can be sent.	
+Other actions can be specified together with the previous ones:  
+
+* vlan push  
+
+	"action":
+    {    
+        "vlan":
+        {
+            "operation":"push",
+            "vlan_id":"25"
+        }
+    }  
+
+* vlan pop:  
+
+    "action":
+    {    
+        "vlan":
+        {
+            "operation":"pop"
+        }
+    }  	
+	
 ===============================================================================
 
 The same message used to create a new graph can be used to add "parts" (i.e.,
