@@ -6,8 +6,8 @@
 
 s_br=`echo br_$1`
 d_br=`echo br_$2`
-s_port_name=`echo VPort$1_$2`
-d_port_name=`echo VPort$2_$1`
+s_port_name=`echo VLink_$1-to-$2_$5`
+d_port_name=`echo VLink_$2-to-$1_$5`
 s_port_id=$3
 d_port_id=$4
 

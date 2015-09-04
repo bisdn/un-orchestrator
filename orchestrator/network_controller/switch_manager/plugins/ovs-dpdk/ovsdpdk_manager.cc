@@ -96,6 +96,7 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 	}
 
 	// Add Ports for Virtual Links (patch ports)
+	int vlink_n = 0;
 	list<uint64_t> vlinks = cli.getVirtualLinksRemoteLSI();
 	for(list<uint64_t>::iterator vl = vlinks.begin(); vl != vlinks.end(); vl++) {
 
@@ -104,7 +105,7 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Virtual link to LSI %u: %u:%u <-> %u:%u", *vl, dpid, s_port_id, *vl, d_port_id);
 		stringstream cmd_add;
-		cmd_add << CMD_VIRTUAL_LINK << " " << dpid << " " << *vl << " " << s_port_id << " " << d_port_id;
+		cmd_add << CMD_VIRTUAL_LINK << " " << dpid << " " << *vl << " " << s_port_id << " " << d_port_id << " " << vlink_n;
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
 		int retVal = system(cmd_add.str().c_str());
 		retVal = retVal >> 8;
@@ -114,6 +115,8 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 		}
 
 		out_virtual_links.push_back(make_pair(s_port_id, d_port_id));
+
+		vlink_n++;
 	}
 
 	CreateLsiOut *clo = new CreateLsiOut(dpid, out_physical_ports, out_nf_ports, out_virtual_links);
