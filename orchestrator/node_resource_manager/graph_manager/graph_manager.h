@@ -24,6 +24,10 @@
 	#include "../../network_controller/switch_manager/plugins/ovs/ovs_manager.h"
 	#define SWITCH_MANAGER_IMPLEMENTATION OVSManager
 #endif
+#ifdef VSWITCH_IMPLEMENTATION_OVSDPDK
+	#include "../../network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSDPDKManager
+#endif
 //[+] Add here other implementations for the virtual switch
 
 #include <list>

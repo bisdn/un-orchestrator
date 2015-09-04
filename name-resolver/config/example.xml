@@ -26,6 +26,9 @@
 		In case of KVM virtual machine, the file specifies the URI from which the
 		image of the virtual machine can be retrieved. It is a path on the local
 		file system.
+		Alternatively, the URI can point to an XML Libvirt doamin definition which
+		the orchestrator uses as a template in which it adds or updates the
+		network interfaces, etc. 
 	-->
 
 	<network-function name="example">
@@ -34,6 +37,11 @@
 		<implementation type="dpdk" uri="https://nf_repository.com/example" cores="1" location="remote"/>
 		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="local"/>
 		<implementation type="kvm" uri="/home/nf_repository/kvm/example.qcow2"/>
+	</network-function>
+
+	<network-function name="usvhost_example">
+		<!-- Point to a Libvirt XML domain template -->
+		<implementation type="kvm" uri="/home/nf_repository/kvm/kvm_usvhost_vnf.xml"/>
 	</network-function>
 	
 	<network-function name="firewall">

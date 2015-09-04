@@ -58,8 +58,8 @@ ENDIF()
 
 
 # Rather complicated CMake code for selecting the virtual switch implementation
-SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD, OVS")
-SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS") #Add here other implementations
+SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD, OVS, OVS-DPDK")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS" "OVS-DPDK") #Add here other implementations
 SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
 LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
 
@@ -71,6 +71,9 @@ IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0)
 ENDIF()
 IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1)
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVS)
+ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2)
+	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDPDK)
 ENDIF()
 
 # End of the rather complicated CMake code for setting the Openflow version
@@ -227,6 +230,15 @@ IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
 	network_controller/switch_manager/plugins/ovs/ovs_manager.cc
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 2)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.h
+	network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.cc
+	network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_constants.h
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 2)
 
 
 IF(ENABLE_KVM)
