@@ -24,9 +24,13 @@ fi
 
 VSCTL="$OVS_DIR/utilities/ovs-vsctl"
 
-
 echo "[$0] Adding port $port to bridge $bridgeName (type=$port_type id=$port_id)"
+
+if (( "$port_type" == "dpdkvhostuser" ))
+then
+    rm -f "$5/$port"
+fi
+
 $VSCTL --no-wait add-port $bridgeName $port -- set Interface $port type=$port_type ofport_request=$port_id
 
 exit 1
-

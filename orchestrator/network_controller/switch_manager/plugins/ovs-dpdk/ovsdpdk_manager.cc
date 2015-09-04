@@ -1,5 +1,8 @@
 #include "ovsdpdk_manager.h"
 
+/* TODO - These should come from an orchestrator config file (currently, there is only one for the UN ports) */
+static const char* OVS_BASE_SOCK_PATH = "/usr/local/var/run/openvswitch/";
+
 OVSDPDKManager::OVSDPDKManager() : m_NextLsiId(0), m_NextPortId(1) /* 0 is not valid for OVS */
 {
 }
@@ -82,6 +85,7 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " NF port \"%s.%s\" = %d (type=%d)", nf->c_str(), nfp->c_str(), port_id, nf_type);
 			stringstream cmd_add;
 			cmd_add << CMD_ADD_PORT << " " << dpid << " " << dpid << "_" << *nfp << " " << port_type << " " << port_id;
+			cmd_add << " " << OVS_BASE_SOCK_PATH;
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
 			int retVal = system(cmd_add.str().c_str());
 			retVal = retVal >> 8;
