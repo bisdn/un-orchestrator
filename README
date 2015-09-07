@@ -2,18 +2,18 @@
 This repository contains the current implementation of the Universal Node and is divided three sub-portions.
 Please check individual README's in each sub-package.
 
-# Universal Node orchestrator
+## Universal Node orchestrator
 The Universal Node orchestrator (un-orchestrator) is an orchestration module 
 that, given a Network Function - Forwarding Graph (NF-FG), deploys it on
 the current physiucal server. To this purpose, it interacts with a virtual 
 switch in order to configure the paths among the NFs, and with an hypervisor
 in order to properly start the required NFs.
 
-# Name Resolver
+## Name Resolver
 The Name Resolver is a module that returns a set of implementations for a 
 given NF. It is exploited by the un-orchestrator each time that a NF must
 be started in order to translate the 'abstract' name into the proper
 suitable software image.
 
-# NFs
+## NFs
 This folder contains some examples of network functions.
