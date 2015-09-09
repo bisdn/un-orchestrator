@@ -128,7 +128,13 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	    				}
 	    			}
 	    			else if (xmlStrcmp(node->name, (xmlChar*)"interface") == 0) {
-	    				// Currently we just remove any net interface device present in the temple and re-create our own
+	    				// Currently we just remove any net interface device present in the template and re-create our own
+	    				// with the exception of bridged interfaces which are handy for managing the VM.
+	    				xmlChar* type = xmlGetProp(node, (xmlChar*)"type");
+	    				if (xmlStrcmp(type, (xmlChar*)"bridge") == 0) {
+						    xmlFree(type);
+	    					continue;
+	    				}
 	    				xmlUnlinkNode(node);
 	    				xmlFreeNode(node);
 	    			}
