@@ -31,7 +31,7 @@ public:
 	
 	void cmd_close();
 	
-	int cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsigned int n_ports);
+	int cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsigned int n_ports, map<unsigned int,pair<string,string> > ipv4PortsRequirements,map<unsigned int,string> ethPortsRequirements);
 	
 	int cmd_destroy(uint64_t lsiID, string nf_name);
 };
