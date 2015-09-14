@@ -45,7 +45,7 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 		throw OVSDPDKManagerException();
 	}
 
-	// Add ports
+	// Add physical ports
 	list<string> ports = cli.getPhysicalPortsName();
 	typedef map<string,unsigned int> PortsNameIdMap;
 	PortsNameIdMap out_physical_ports;
@@ -81,7 +81,7 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 		PortsNameIdMap nf_ports_ids;
 		for(list<string>::iterator nfp = nf_ports.begin(); nfp != nf_ports.end(); nfp++) {
 			unsigned int port_id = m_NextPortId++;
-			const char* port_type = "dpdkvhostuser";  // TODO - dpdkr, dpdkvhostuser, tap, virtio ...
+			const char* port_type = (nf_type == KVM) ? "dpdkvhostuser" : "veth";  // TODO - dpdkr, dpdkvhostuser, tap, virtio ...
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " NF port \"%s.%s\" = %d (type=%d)", nf->c_str(), nfp->c_str(), port_id, nf_type);
 			stringstream cmd_add;
 			cmd_add << CMD_ADD_PORT << " " << dpid << " " << dpid << "_" << *nfp << " " << port_type << " " << port_id;
