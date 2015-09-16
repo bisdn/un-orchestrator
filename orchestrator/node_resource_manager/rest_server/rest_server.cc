@@ -738,7 +738,7 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 												}
 												if(!foundAddress)
 												{
-													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in an elmenet of \"%s\"",ADDRESS,MASK,ETHERNET);
+													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\" not found in an element of \"%s\"",ADDRESS,MASK,ETHERNET);
 													return false;
 												}
 											}
@@ -784,7 +784,7 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 												}
 												if(!foundAddress || !foundMask)
 												{
-													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or both not found in an elmenet of \"%s\"",ADDRESS,MASK,IP4);
+													logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or both not found in an element of \"%s\"",ADDRESS,MASK,IP4);
 													return false;
 												}
 											}
@@ -796,10 +796,10 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 										}
 										if(!foundName || !(foundIPv4 || foundEthernet))
 										{
-											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or key \"%s\" or all of them not found in an elmenet of \"%s\"",PORT_NAME,ETHERNET,IP4,PORTS_WITH_REQ);
+											logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or key \"%s\" or all of them not found in an element of \"%s\"",PORT_NAME,ETHERNET,IP4,PORTS_WITH_REQ);
 											return false;
 										}
-										logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Port \"%s\" configuration - ipv4: %s - netmask: %s",portName.c_str(), address.c_str(), netmask.c_str());
+										logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Port \"%s\" configuration - ipv4: %s - netmask: %s -mac: %s",portName.c_str(), address.c_str(), netmask.c_str(), mac.c_str());
 										
 										string theName = MatchParser::nfName(portName);
 										unsigned int nf_port = MatchParser::nfPort(portName);
@@ -846,7 +846,7 @@ bool RestServer::parseGraph(Value value, highlevel::Graph &graph, bool newGraph)
 #endif							
 							!foundID)
 							{
-								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or both not found in an elmenet of \"%s\"",_ID,TEMPLATE,VNFS);
+								logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Key \"%s\", or key \"%s\", or both not found in an element of \"%s\"",_ID,TEMPLATE,VNFS);
 								return false;
 							}
 						}					
