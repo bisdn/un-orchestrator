@@ -107,9 +107,15 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 		unsigned int s_port_id = m_NextPortId++;
 		unsigned int d_port_id = m_NextPortId++;
 
+		// In order to avoid creating loops for broadcast messages, flooding can only be enabled on one
+		// of the Virtual Links between two same LSIs.
+		// TODO: We need to track which VLink is doing it so that, when there are updates made to the
+		// graph, we know when the flooding VLink is deleted and we can enable another VLink.
+		bool enable_flooding = (vlink_n == 0);
+
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Virtual link to LSI %u: %u:%u <-> %u:%u", *vl, dpid, s_port_id, *vl, d_port_id);
 		stringstream cmd_add;
-		cmd_add << CMD_VIRTUAL_LINK << " " << dpid << " " << *vl << " " << s_port_id << " " << d_port_id << " " << vlink_n;
+		cmd_add << CMD_VIRTUAL_LINK << " " << dpid << " " << *vl << " " << s_port_id << " " << d_port_id << " " << vlink_n << " " << enable_flooding;
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
 		int retVal = system(cmd_add.str().c_str());
 		retVal = retVal >> 8;
