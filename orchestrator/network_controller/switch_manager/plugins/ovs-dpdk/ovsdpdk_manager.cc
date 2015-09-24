@@ -57,7 +57,9 @@ CreateLsiOut *OVSDPDKManager::createLsi(CreateLsiIn cli)
 		unsigned int port_id = m_NextPortId++;
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " phy port \"%s\" = %d", pit->c_str(), port_id);
 		stringstream cmd_add;
-		cmd_add << CMD_ADD_PORT << " " << dpid << " " << *pit << " " << "dpdk" << " " << port_id;
+
+		const char * port_type = ((*pit).compare(0, 4, "dpdk") == 0) ? "dpdk":"host";
+		cmd_add << CMD_ADD_PORT << " " << dpid << " " << *pit << " " << port_type << " " << port_id;
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"%s\"", cmd_add.str().c_str());
 		int retVal = system(cmd_add.str().c_str());
 		retVal = retVal >> 8;

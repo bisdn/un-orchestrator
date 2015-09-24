@@ -47,6 +47,11 @@ then
     type_cmd=""
 fi
 
+if [[ "$port_type" == "host" ]]
+then
+    type_cmd=""
+fi
+
 echo "type_cmd=$type_cmd"
 
 $VSCTL --no-wait add-port $bridgeName $port -- set Interface $port $type_cmd ofport_request=$port_id
