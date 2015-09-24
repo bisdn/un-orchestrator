@@ -61,6 +61,10 @@ fi
 
 echo -ne "sudo docker run -d -name $1_$2 "   > $tmp_file
 
+skip_lxc_networking=1
+
+if [ $skip_lxc_networking -eq 0 ]
+then
 current=5
 currentIp=`expr $current + $4`
 currentEthernet=`expr $currentIp + $4`
@@ -82,6 +86,7 @@ do
 	currentIp=`expr $currentIp + 1`
 	currentEthernet=`expr $currentEthernet + 1`
 done 
+fi
  
 #echo --networking=\"false\"  --privileged=true  $3 >> $tmp_file
 echo --net=\"none\"  --privileged=true  $3 >> $tmp_file
@@ -108,5 +113,17 @@ echo $ID >> $file
 
 rm $tmp_file
 
-exit 1
+if [ $skip_lxc_networking -eq 1 ]
+then
+	# Insert the veth interfaces into the containers
+	# (normally done with --lxc-conf flags, but some setups it doen't work)  
+	PID=`docker inspect --format '{{ .State.Pid }}' $ID`
+	current=5
+	for (( c=0; c<$4; c++ ))
+	do
+		ip link set ${!current} netns $PID
+		current=`expr $current + 1`
+	done
+fi
 
+exit 1

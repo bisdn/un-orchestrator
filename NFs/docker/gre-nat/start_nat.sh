@@ -1,5 +1,24 @@
 #! /bin/bash
 
+ip link show eth0 > /dev/null
+if [ $? -eq 1 ]
+then
+	# Expected interface does not exist. Means --lxc-conf options didn't work
+	# Our DockerStart script then falls back to just injecting the interface into the NF
+	# But we need to wait a little for it to have the time...
+	sleep 3
+	D=1
+	dev=${D}_gre-nat_1
+	ip link set ${dev} name eth0
+	ip link set eth0 address 9a:f1:fb:dd:40:ef
+	ip link set eth0 up
+
+	dev=${D}_gre-nat_2
+	ip link set ${dev} name eth1
+	ip link set eth1 address 56:57:88:12:85:69
+	ip link set eth1 up
+fi
+
 # Traffic comes in from BNG over GRE tunnel(s) on eth1
 # and goes out, NAT'ed, at eth0
 # eth0 gets its IP automatically assigned and this address is
