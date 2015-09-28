@@ -75,7 +75,28 @@ Let's now launch the DPDK setup script:
 
 ### Install the Open vSwitch (OVS) virtual switch
 
-Compile and install libnetconf as described here:
+The list of OF-CONFIG dependencies:
+
+- compiler (gcc, clang,...) and standard headers
+- pkg-config
+- libpthreads
+- libxml2 (including headers from the devel package)
+- libssh >= 0.6.4 (including headers)
+ - can be skipped if using --disable-ssh
+- pyang >= 1.5.0
+- python 2.6 or higher with the following modules:
+ - os, copy, string, re, argparse, subprocess, inspect, curses, xml, libxml2
+ - only with TLS enabled: M2Crypto
+
+- only with TLS enabled by using the --enable-tls option
+ - OpenSSL (libssl, libcrypto, including headers from the devel package)
+
+- roff2html
+ - optional, used for building HTML version of man pages (make doc)
+- rpmbuild
+ - optional, used for building RPM package (make rpm).
+
+Compile and install libnetconf as described here, including headers from the devel package:
 
 	; Clone the libnetconf repository
 	$ git clone https://code.google.com/p/libnetconf/
@@ -90,7 +111,6 @@ You can now install OpenvSwitch:
 
 Follow the instructions as described in the file INSTALL.md provided
 in the root folder of that repository.
-
 
 ### Virtual Execution Environment for network functions
 
