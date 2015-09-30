@@ -13,13 +13,13 @@ In order to execute the un-orchestrator, we need to setup different components, 
 Several libraries are required to compile the un-orchestrator.
 In the following we list the steps required on an Ubuntu 14.04.
 
-	; Install required libraries:
-  ; - build-essential: it includes GCC, basic libraries, etc
-  ; - cmake: to create cross-platform makefiles
-  ; - cmake-curses-gui: nice 'gui' to edit cmake files
-  ; - libboost-all-dev: nice c++ library with tons of useful functions
+	; Install required libraries
+	; - build-essential: it includes GCC, basic libraries, etc
+	; - cmake: to create cross-platform makefiles
+	; - cmake-curses-gui: nice 'gui' to edit cmake files
+	; - libboost-all-dev: nice c++ library with tons of useful functions
 	;  -libmicrohttpd-dev: embedded micro http server
-  $ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev
+	$ sudo apt-get install build-essential cmake cmake-curses-gui libboost-all-dev libmicrohttpd-dev
 
 	; Install JSON Spirit (nice library to parse JSON files)
 	$ git clone https://github.com/sirikata/json-spirit
