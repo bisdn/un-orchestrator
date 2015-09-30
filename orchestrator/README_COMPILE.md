@@ -81,7 +81,7 @@ The list of OF-CONFIG dependencies:
 - pkg-config
 - libpthreads
 - libxml2 (including headers from the devel package)
-- libssh >= 0.6.4 (including headers)
+- libssh >= 0.6.4 (including headers, remove previous version of libssh with apt-get remove and download and install libssh from the site https://www.libssh.org/)
  - can be skipped if using --disable-ssh
 - pyang >= 1.5.0
 - python 2.6 or higher with the following modules:
