@@ -68,5 +68,10 @@
 		<!-- Only a docker implementation is available for this network function -->
 		<implementation type="docker" uri="simple_bridge"/>
 	</network-function>
+	
+	<network-function name="bridge1">
+		<!-- Only a docker implementation is available for this network function -->
+		<implementation type="kvm" uri="compute_controller/nf_repository/kvm/ovs-ovsdbkvm_usvhost_vnf.xml"/>
+	</network-function>
 
 </network-functions>

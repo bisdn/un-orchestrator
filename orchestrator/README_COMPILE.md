@@ -157,6 +157,7 @@ Follow the instruction provided here:
 To compile and install libvirt, follow the instructions in the
 INSTALL.md file present in the libvirt root folder.
 
+If you run Libvirt for OVS or OVSDB should be use a template presents in a folder "compute_controller/nf_repository/kvm"
 
 ### Compile the un-orchestrator
 
