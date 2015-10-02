@@ -77,12 +77,16 @@ Let's now launch the DPDK setup script:
 
 The list of OF-CONFIG dependencies:
 
+- libnetconf 0.9.x, not higher
+
 - compiler (gcc, clang,...) and standard headers
 - pkg-config
 - libpthreads
 - libxml2 (including headers from the devel package)
-- libssh >= 0.6.4 (including headers, remove previous version of libssh with apt-get remove and download and install libssh from the site https://www.libssh.org/)
+- libssh >= 0.6.4 (including headers)
+	- Download it from https://red.libssh.org/projects/libssh/files and for install it, follow the instructions in the INSTALL file present in a root directory
  - can be skipped if using --disable-ssh
+ 
 - pyang >= 1.5.0
 - python 2.6 or higher with the following modules:
  - os, copy, string, re, argparse, subprocess, inspect, curses, xml, libxml2
@@ -99,7 +103,9 @@ The list of OF-CONFIG dependencies:
 Compile and install libnetconf as described here, including headers from the devel package:
 
 	; Clone the libnetconf repository
-	$ git clone https://code.google.com/p/libnetconf/
+	$ git clone https://github.com/cesnet/libnetconf
+    $ cd libnetconf/
+    $ git checkout -b 0.9.x origin/0.9.x
 
 Install the libnetconf library by following the instructions in the
 INSTALL file contained in the root folder of this library.
