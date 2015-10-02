@@ -61,7 +61,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	sprintf(domain_name, "%" PRIu64 "_%s", lsiID, nf_name.c_str());
 	
 	bool use_template = false;
-	if (/*(strncmp(uri_image.c_str(), ovs.c_str(), ovs.size()))*/ uri_image.compare(0, ovs.size(), ovs.c_str(), ovs.size()) != 0) {
+	if (uri_image.compare(0, ovs.size(), ovs.c_str(), ovs.size()) != 0) {
 		use_template = true;
 	}
 
@@ -235,7 +235,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	    xmlFreeDoc(doc);
 	    xmlCleanupParser();
 	}
-	else {  /* TODO: This provides a largely hard-coded Libvirt domain definition. It can always be done by referring to an XML template. Hence this path could be subsumed in above one */
+	else {
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Using an ovs-ovsdb XML template %s\n", uri_image.c_str());
 		xmlInitParser();
 
