@@ -1,3 +1,8 @@
+#ifdef UNIFY_NFFG
+	#include <Python.h>
+	#include "node_resource_manager/virtualizer/virtualizer.h"
+#endif	
+
 #include "utils/constants.h"
 #include "utils/logger.h"
 #include "node_resource_manager/rest_server/rest_server.h"
@@ -35,6 +40,12 @@ void singint_handler(int sig)
 		//Do nothing, since the program is terminating
 	}
 	
+#ifdef UNIFY_NFFG
+	//Terminate the Python code
+	Virtualizer::terminate();
+	Py_Finalize();
+#endif
+	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Bye :D");
 	exit(EXIT_SUCCESS);
 }
@@ -60,6 +71,19 @@ int main(int argc, char *argv[])
 	sigset_t mask;
 	sigfillset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
+	
+#ifdef UNIFY_NFFG
+	//Initialize the Python code
+	setenv("PYTHONPATH",PYTHON_DIRECTORY ,1);
+	Py_SetProgramName(argv[0]);  /* optional but recommended */
+    Py_Initialize();
+    
+    if(!Virtualizer::init())
+    {
+    	logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Cannot start the virtualizer. The %s cannot be run.",MODULE_NAME);
+		return EXIT_FAILURE;
+	}
+#endif
 
 	if(!RestServer::init(nffg_file_name,core_mask,ports_file_name))
 	{
@@ -196,7 +220,7 @@ bool usage(void)
 	"                                                                                         \n" \
 	"Parameters:                                                                              \n" \
 	"  --f file_name                                                                          \n" \
-	"        Name of the file containing the physical ports to be handled by the node         \n" \
+	"        Name of the file describing the Universal Node in terms of resources and ports   \n" \
 	"        orchestrator                                                                     \n" \
 	"                                                                                         \n" \
 	"Options:                                                                                 \n" \

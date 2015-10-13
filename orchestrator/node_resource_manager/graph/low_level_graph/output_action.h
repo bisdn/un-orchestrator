@@ -14,6 +14,8 @@
 #include "../../../utils/constants.h"
 #include "../../graph_manager/lsi.h"
 
+#include "../generic_action.h"
+
 using namespace rofl;
 using namespace std;
 
@@ -23,11 +25,16 @@ namespace lowlevel
 class Action
 {
 
-//XXX: only the OUTPUT action is supported
-
 private:
 	openflow::ofp_action_type type;
 	uint32_t port_id;
+	
+	/** 
+	*	The outuput action contains a list of generic actions!
+	*	The code is organized in this way, because the output action is 
+	*	mandatory in each rule.
+	**/
+	list<GenericAction*> genericActions;
 	
 public:
 	Action(uint32_t port_id);
@@ -39,12 +46,16 @@ public:
 	*	@brief: insert the action into a flowmod message
 	*
 	*	@param: message		flowmod message
-	*	@param: of_version	openflow version of the flowmod message
 	*/
 	void fillFlowmodMessage(rofl::openflow::cofflowmod &message);
 	
 	void print();
 	string prettyPrint(LSI *lsi0,map<string,LSI *> lsis);
+	
+	/**
+	*	Associate a generic action with this output action
+	*/
+	void addGenericAction(GenericAction *ga);
 };
 
 }

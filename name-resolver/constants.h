@@ -12,6 +12,7 @@
 #define REST_PORT 				2828
 #define BASE_URL 				"nfs"
 #define REST_URL 				"http://localhost"
+#define DIGEST_URL 				"digest"
 
 /*
 *	Rest methods
@@ -35,6 +36,8 @@
 #define NETWORK_FUNCTION_ELEMENT	"network-function"
 #define IMPLEMENTATION_ELEMENT		"implementation"
 #define NAME_ATTRIBUTE				"name"
+#define DESCRIPTION_ATTRIBUTE		"description"
+#define NUM_PORTS_ATTRIBUTE			"num-ports"
 #define TYPE_ATTRIBUTE				"type"
 #define URI_ATTRIBUTE				"uri"
 #define CORES_ATTRIBUTE				"cores"

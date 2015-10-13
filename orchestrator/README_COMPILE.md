@@ -35,7 +35,6 @@ In the following we list the steps required on an Ubuntu 14.04.
 	; Now install the above library according to the description provided
 	; in the cloned folder
 
-
 ### Install the proper virtual switch
 
 The current un-orchestrator supports different types of virtual switches.
@@ -72,20 +71,18 @@ Let's now launch the DPDK setup script:
 	$ cd ../libs/dpdk/tools  
 	$ sudo ./setup.sh  
 
-
 #### Open vSwitch (OVS)
 
 The list of OF-CONFIG dependencies:
 
 - libnetconf 0.9.x, not higher
-
 - compiler (gcc, clang,...) and standard headers
 - pkg-config
 - libpthreads
 - libxml2 (including headers from the devel package)
 - libssh >= 0.6.4 (including headers)
 	- Download it from https://red.libssh.org/projects/libssh/files and for install it, follow the instructions in the INSTALL file present in a root directory
- - can be skipped if using --disable-ssh
+	- can be skipped if using --disable-ssh
  
 - pyang >= 1.5.0
 - python 2.6 or higher with the following modules:
@@ -151,6 +148,8 @@ Follow the instruction provided here:
 
 #### Libvirt (and KVM)
 
+This is needed in order to run network functions in KVM-based virtual machines.
+
 	; Clone the libvirt repository
 	git clone git://libvirt.org/libvirt.git  
 
@@ -158,6 +157,16 @@ To compile and install libvirt, follow the instructions in the
 INSTALL.md file present in the libvirt root folder.
 
 If you run Libvirt for OVS or OVSDB should be use a template presents in a folder "compute_controller/nf_repository/kvm"
+
+### NF-FG library
+
+These steps are mandatory only if you plan to use the Network Functions - 
+Forwarding Graph (NF-FG) defined within the Unify project.
+
+	; Retrieve the NF-FG library.
+	
+	; Copy the library in the un-orchestrator folder
+	$ cp [nffg]/virtualizer3.pyc [un-orchestrator]/orchestrator/node_resource_manager/virtualizer      
 
 ### Compile the un-orchestrator
 
@@ -170,8 +179,8 @@ We are now ready to compile the un-orchestrator.
 
 The previous command allows you to select some configuration parameters for the
 un-orchestrator, such as the virtual switch used, the version of Openflow to
-use, which kind of execution environment you want to enable, etc.
-When you're finished, exit from the 'ccmake' interface by *generating the
+use, which kind of execution environment you want to enable, the NF-FG description,
+etc. When you're finished, exit from the 'ccmake' interface by *generating the
 configuration files* and type the following commands:
 
 	; Create makefile scripts based on the previously selected options

@@ -117,7 +117,22 @@ protected:
 	*			the endpoint" in the tenant LSI.
 	*/
 	static lowlevel::Graph lowerGraphToTenantLSI(highlevel::Graph *graph, LSI *tenantLSI, LSI *lsi0);
-
+	
+	/**
+	*	@Rules used to assign generic actions associated with an high level action to a low level action:
+	*		phyPort -> phyPort:
+	*			The generic actions are inserted in the LSI-0
+	*		phyPort -> NF:
+	*			The generic actions are inserted in the LSI-0
+	*		NF -> NF:
+	*			The generic actions are inserted in the tenant LSI
+	*		NF -> phyPort:
+	*			The generic actions are inserted in the tenant LSI
+	*		NF -> endpoint:
+	*			The generic actions are inserted in the tenant LSI
+	*		endpoint -> NF:
+	*			The generic actions are inserted in the LSI-0
+	*/
 };
 
 #endif //GRAPH_TRANSLATOR_H_

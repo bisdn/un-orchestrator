@@ -23,6 +23,19 @@ public:
 		assert(0);
 		return "";
 	}
+	
+	static unsigned int toID(nf_t type)
+	{
+		if(type == DPDK)
+			return 2;
+		else if(type == DOCKER)
+			return 1;
+		else if(type == KVM)
+			return 0;
+
+		assert(0);
+		return 0;
+	}
 
 	static bool isValid(string type)
 	{

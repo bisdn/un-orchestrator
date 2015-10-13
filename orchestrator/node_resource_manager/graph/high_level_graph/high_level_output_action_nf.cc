@@ -1,4 +1,4 @@
-#include "high_level_action_nf.h"
+#include "high_level_output_action_nf.h"
 
 namespace highlevel
 {
@@ -41,6 +41,8 @@ void ActionNetworkFunction::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 		cout << "\t\t\tNF port: " <<nf << ":" << port << endl;
+		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+			(*ga)->print();		
 		cout << "\t\t}" << endl;
 	}
 }
@@ -52,6 +54,9 @@ Object ActionNetworkFunction::toJSON()
 	network_function << nf << ":" << port;
 	action[VNF_ID] = network_function.str().c_str();
 	
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		(*ga)->toJSON(action);
+
 	return action;
 }
 
