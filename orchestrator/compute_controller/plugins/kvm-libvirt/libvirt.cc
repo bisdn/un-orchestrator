@@ -30,8 +30,6 @@ Libvirt::~Libvirt()
 		disconnect();
 }
 
-//TODO: it would be better to keep the connection among all the objects!
-
 bool Libvirt::isSupported()
 {
 	connect();
@@ -441,7 +439,6 @@ bool Libvirt::startNF(StartNFIn sni)
 }
 
 bool Libvirt::stopNF(StopNFIn sni)
-//int Libvirt::stopNF(uint64_t lsiID, string nf_name)
 {
 	uint64_t lsiID = sni.getLsiID();
 	string nf_name = sni.getNfName();
@@ -463,3 +460,4 @@ bool Libvirt::stopNF(StopNFIn sni)
 	
 	return true;
 }
+
