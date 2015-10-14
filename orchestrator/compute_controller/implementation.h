@@ -7,15 +7,19 @@
 
 #include "../utils/logger.h"
 #include "../utils/constants.h"
+#include "nfs_manager.h"
 
 #include <string>
 #include <assert.h>
 
 using namespace std;
 
+class NFsManager;
 
 class Implementation
 {
+friend NFsManager;
+
 private:
 	nf_t type;
 	string uri;
@@ -27,10 +31,12 @@ public:
 	Implementation(nf_t type, string uri, string cores, string location);
 	Implementation(string type, string uri, string cores, string location);
 	
-	nf_t getType();
 	string getURI();
-	string getCores();
 	string getLocation();
+	nf_t getType();
+	
+protected:
+	string getCores();
 };
 
 #endif //IMPLEMENTATION_H_

@@ -15,6 +15,8 @@
 
 using namespace std;
 
+class Implementation;
+
 class NFsManager
 {
 protected:
@@ -24,6 +26,8 @@ protected:
 	Implementation *implementation;
 
 public:
+
+	virtual ~NFsManager() {}
 
 	/**
 	*	@brief: check wheter the execution environment is supported or not
@@ -49,6 +53,13 @@ public:
 	*	@brief: provide the type of the network function handled by the manager
 	*/
 	nf_t getNFType();
+	
+	/**
+	*	@brief: returns the number of cores to be associated with the network function
+	*			handled by the manager. "0x0" means that no core has to be bound to the
+	*			network function.
+	*/
+	string getCores();
 };
 
 class NFsManagerException: public exception

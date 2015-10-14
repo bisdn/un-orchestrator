@@ -9,3 +9,8 @@ nf_t NFsManager::getNFType()
 {
 	return implementation->getType();
 }
+
+string NFsManager::getCores()
+{
+	return implementation->getCores();
+}

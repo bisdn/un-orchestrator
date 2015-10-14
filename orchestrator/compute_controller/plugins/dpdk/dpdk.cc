@@ -10,6 +10,7 @@ bool Dpdk::startNF(StartNFIn sni)
 	uint64_t lsiID = sni.getLsiID();
 	string nf_name = sni.getNfName();
 	unsigned int n_ports = sni.getNumberOfPorts();
+	uint64_t coreMask = sni.getCoreMask();
 		
 	string uri_image = implementation->getURI();	
 		
@@ -19,8 +20,7 @@ bool Dpdk::startNF(StartNFIn sni)
 	uri << uri_image;
 
 	stringstream command;
-	//TODO: fix the next row
-	command << PULL_AND_RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " /*<< calculateCoreMask(implementation->getCores()) <<  " "*/ << NUM_MEMORY_CHANNELS << " " << n_ports;
+	command << PULL_AND_RUN_DPDK_NF << " " << lsiID << " " << nf_name << " " << uri.str() << " " << coreMask <<  " " << NUM_MEMORY_CHANNELS << " " << n_ports;
 
 	for(unsigned int i = 1; i <= n_ports; i++)
 		command << " " << lsiID << "_" << nf_name << "_" << i;

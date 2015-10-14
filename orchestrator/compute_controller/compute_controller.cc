@@ -364,8 +364,7 @@ bool ComputeController::selectImplementation()
 
 	//[+] Add here other implementations for the execution environment
 
-	//TODO
-//	delete(manager);
+	delete(manager);
 
 	return false;
 }
@@ -486,10 +485,11 @@ bool ComputeController::startNF(string nf_name, unsigned int number_of_ports, ma
 	}
 
 	NF *nf = nfs[nf_name];
-	
-	StartNFIn sni(lsiID, nf_name, number_of_ports, ipv4PortsRequirements, ethPortsRequirements);
-	
 	NFsManager *nfsManager = nf->getSelectedImplementation();
+	
+	StartNFIn sni(lsiID, nf_name, number_of_ports, ipv4PortsRequirements, ethPortsRequirements, calculateCoreMask(nfsManager->getCores()));
+	
+	
 	if(!nfsManager->startNF(sni))
 	{
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "An error occurred while starting the NF \"%s\"",nf_name.c_str());
@@ -540,6 +540,9 @@ uint64_t ComputeController::calculateCoreMask(string coresRequried)
 {
 	int requiredCores;
 	sscanf(coresRequried.c_str(),"%d",&requiredCores);
+
+	if(requiredCores == 0)
+		return 0x0;
 
 	pthread_mutex_lock(&nfs_manager_mutex);
 	uint64_t mask = 0;
