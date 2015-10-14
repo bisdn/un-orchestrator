@@ -98,13 +98,6 @@ private:
 	uint64_t calculateCoreMask(string coresRequired);
 	
 	/**
-	*	@brief: starting from a netmask, returns the /
-	*
-	*	@param:	netmask	Netmask to be converted
-	*/
-	unsigned int convertNetmask(string netmask);
-	
-	/**
 	*	@brief: For all the NF without an alredy selected implementation, select 
 	*	an implementation of the desired type, if at least one implementation
 	*	of such a type is availabled

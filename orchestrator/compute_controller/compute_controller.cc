@@ -320,7 +320,7 @@ bool ComputeController::selectImplementation()
 	//Manage Docker execution environment
 
 	manager = new Docker();
-	if(docker->isSupported())
+	if(manager->isSupported())
 	{
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Select a Docker implementation if exists.");
 		selectImplementation(DOCKER);
@@ -351,7 +351,7 @@ bool ComputeController::selectImplementation()
 	
 	manager = new Libvirt();
 	
-	if(libvirt->isSupported())
+	if(manager->isSupported())
 	{
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Select QEMU/KVM implementation if exists.");
 		selectImplementation(KVM);
@@ -363,6 +363,9 @@ bool ComputeController::selectImplementation()
 #endif
 
 	//[+] Add here other implementations for the execution environment
+
+	//TODO
+//	delete(manager);
 
 	return false;
 }
@@ -550,25 +553,6 @@ uint64_t ComputeController::calculateCoreMask(string coresRequried)
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF requires %d cores. Its core mask is  \"%x\"",requiredCores,mask);
 
 	return mask;
-}
-
-unsigned int ComputeController::convertNetmask(string netmask)
-{
-	unsigned int slash = 0;
-	unsigned int mask;
-	
-	int first, second, third, fourth;
-	sscanf(netmask.c_str(),"%d.%d.%d.%d",&first,&second,&third,&fourth);
-	mask = (first << 24) + (second << 16) + (third << 8) + fourth;
-	
-	for(int i = 0; i < 32; i++)
-	{
-		if((mask & 0x1) == 1)
-			slash++;
-		mask = mask >> 1;
-	}
-	
-	return slash;
 }
 
 void ComputeController::printInfo(int graph_id)
