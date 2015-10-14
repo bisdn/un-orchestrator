@@ -6,6 +6,7 @@ struct nc_session* session = NULL;
 int rnumber = 1;
 uint64_t dnumber = 1;
 int pnumber = 0, nfnumber = 0;
+locale loc;	
 
 /*map use to obtain name of switch from id*/
 map<uint64_t, string> switch_id;
@@ -394,10 +395,23 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli){
 					throw commandsException();
 				}
 
-				strcpy(tmp, (char *)(*nfp).c_str());
+				string str = (*nfp);
+
+				//Create port name to lower case
+				for (string::size_type i=0; i<str.length(); ++i)
+					str[i] = tolower(str[i], loc);
+						
+				//Create the current port name
+				strcpy(tmp, (char *)(str).c_str());
 				sprintf(temp, "%" PRIu64, dnumber);
-				strcat(temp, "_");
-				strcat(temp, tmp);
+				strcat(tmp, "b");
+				strcat(tmp, temp);
+				strcpy(temp, tmp);
+				
+				for(unsigned int j=0;j<strlen(temp);j++){
+					if(temp[j] == '_')
+						temp[j] = 'p';
+				}
 
 				/*add element "name"*/
 				rc = xmlTextWriterWriteElement(writer, BAD_CAST "name",
@@ -610,10 +624,23 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli){
 					throw commandsException();
 				}
 
-				strcpy(tmp, (char *)(*nfp).c_str());
+				string str = (*nfp);
+
+				//Create port name to lower case
+				for (string::size_type i=0; i<str.length(); ++i)
+					str[i] = tolower(str[i], loc);
+						
+				//Create the current port name
+				strcpy(tmp, (char *)(str).c_str());
 				sprintf(temp, "%" PRIu64, dnumber);
-				strcat(temp, "_");
-				strcat(temp, tmp);
+				strcat(tmp, "b");
+				strcat(tmp, temp);
+				strcpy(temp, tmp);
+				
+				for(unsigned int j=0;j<strlen(temp);j++){
+					if(temp[j] == '_')
+						temp[j] = 'p';
+				}
 
 				/*add content "port"*/
 				rc = xmlTextWriterWriteRaw(writer, BAD_CAST temp);
@@ -632,7 +659,7 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli){
 				//vector<string> x = split((*nfp).c_str(), '_');
 
 				/*fill the map ports*/
-				n_ports_1[(*nfp)/*x[0]*/] = rnumber/*i*/;
+				n_ports_1[(*nfp)] = rnumber;
 
 				nf_id[make_pair(dnumber, (*nfp))] = string(temp);
 
@@ -642,7 +669,6 @@ CreateLsiOut* commands::cmd_editconfig_lsi (CreateLsiIn cli){
 
 			/*fill the network_functions_ports*/
 			network_functions_ports[(*nf)] = n_ports_1;
-
 		}
 	}
 
@@ -1363,10 +1389,23 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi){
 		/*for each port in the list of the getNetworkFunctionsPorts*/
 		for(list<string>::iterator p = nfp.begin(); p != nfp.end(); p++){
 
-			strcpy(tmp, (char *)(*p).c_str());
-			sprintf(temp, "%" PRIu64, dnumber);
-			strcat(temp, "_");
-			strcat(temp, tmp);
+			string str = (*p);
+
+			//Create port name to lower case
+			for (string::size_type i=0; i<str.length(); ++i)
+				str[i] = tolower(str[i], loc);
+						
+			//Create the current port name
+			strcpy(tmp, (char *)(str).c_str());
+			sprintf(temp, "%" PRIu64, anpi.getDpid());
+			strcat(tmp, "b");
+			strcat(tmp, temp);
+			strcpy(temp, tmp);
+				
+			for(unsigned int j=0;j<strlen(temp);j++){
+				if(temp[j] == '_')
+					temp[j] = 'p';
+			}
 
 			/*create an element name "port as child of "resources""*/			
 			rc = xmlTextWriterStartElement(writer, BAD_CAST "port");
@@ -1448,7 +1487,7 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi){
 			/*fill map ports to return*/
 			ports[(*p)] = rnumber;
 
-			nf_id[make_pair(dnumber, (*p))] = string(temp);
+			nf_id[make_pair(anpi.getDpid(), (*p))] = string(temp);
 
 			/*increment the value of request-number*/
 			rnumber++;
@@ -1497,10 +1536,23 @@ AddNFportsOut *commands::cmd_editconfig_NFPorts(AddNFportsIn anpi){
 		/*for each port in the list of the ports*/
 		for(list<string>::iterator p = nfp.begin(); p != nfp.end(); p++){
 
-			strcpy(tmp, (char *)(*p).c_str());
-			sprintf(temp, "%" PRIu64, dnumber);
-			strcat(temp, "_");
-			strcat(temp, tmp);
+			string str = (*p);
+
+			//Create port name to lower case
+			for (string::size_type i=0; i<str.length(); ++i)
+				str[i] = tolower(str[i], loc);
+						
+			//Create the current port name
+			strcpy(tmp, (char *)(str).c_str());
+			sprintf(temp, "%" PRIu64, anpi.getDpid());
+			strcat(tmp, "b");
+			strcat(tmp, temp);
+			strcpy(temp, tmp);
+				
+			for(unsigned int j=0;j<strlen(temp);j++){
+				if(temp[j] == '_')
+					temp[j] = 'p';
+			}
 
 			/*add element "port"*/
 			rc = xmlTextWriterStartElement(writer, BAD_CAST "port");
@@ -1895,7 +1947,7 @@ AddVirtualLinkOut *commands::cmd_addVirtualLink(AddVirtualLinkIn avli){
 	sprintf(temp, "%d", pnumber);
 	strcat(trv, temp);
 
-        sprintf(cmdLine, PATH_SCRIPT_VIRTUAL_LINK, bridge_name, peer_name, vrt, trv);
+    sprintf(cmdLine, PATH_SCRIPT_VIRTUAL_LINK, bridge_name, peer_name, vrt, trv);
 
 	/*execute VirtualLink.sh*/
 	system(cmdLine);
@@ -1907,9 +1959,6 @@ AddVirtualLinkOut *commands::cmd_addVirtualLink(AddVirtualLinkIn avli){
 
 	port_id_1 = port_id_1/256;
 
-	/*store the information [port_id, bridge_name]*/
-	virtual_link_id[bridge_name].push_back(port_id_2);
-
 	/*store the information [port_id, port_name]*/
 	port_id[port_id_1] = vrt;
 
@@ -1919,6 +1968,9 @@ AddVirtualLinkOut *commands::cmd_addVirtualLink(AddVirtualLinkIn avli){
 	port_id_2 = system(cmdLine);
 
 	port_id_2 = port_id_2/256;
+	
+	/*store the information [port_id, bridge_name]*/
+	virtual_link_id[bridge_name].push_back(port_id_2);
 
 	/*store the information [port_id, bridge_name]*/
 	virtual_link_id[peer_name].push_back(port_id_1);

@@ -73,7 +73,7 @@ Let's now launch the DPDK setup script:
 	$ sudo ./setup.sh  
 
 
-#### Open vSwitch (OVS)
+#### Open vSwitch (of-config)
 
 The list of OF-CONFIG dependencies:
 
@@ -110,13 +110,51 @@ Compile and install libnetconf as described here, including headers from the dev
 Install the libnetconf library by following the instructions in the
 INSTALL file contained in the root folder of this library.
 
-You can now install OpenvSwitch:
+You can now install of-config:
 
 	; Clone the openvswitch repository
 	$ git clone https://github.com/openvswitch/of-config    
 
 Follow the instructions as described in the file INSTALL.md provided
 in the root folder of that repository.
+
+
+#### Open vSwitch (OVSDB)
+
+Open vSwitch Installation
+=========================
+
+At first, unpack archive with Open vSwitch source codes:
+
+    tar -xf openvswitch-2.3.1.tar.gz
+
+Then configure Open vSwitch using:
+
+    ./configure --prefix=/ --datarootdir=/usr/share --with-linux=/lib/modules/$(uname -r)/build
+
+Note: we discovered bad symbolic link 'build' in /lib/modules/$(uname -r)/ in Scientific Linux 6.6,
+therefore, we temporary fixed it by creating new symbolic link manually. For our case it was:
+
+    ln -s /usr/src/kernels/2.6.32-504.8.1.el6.x86_64/ /lib/modules/2.6.32-504.el6.x86_64/build
+
+After successful configuration of Open vSwitch, run standard commands:
+
+    make && make install
+
+When Open vSwitch is installed, it can be started:
+
+    /usr/local/share/openvswitch/scripts/ovs-ctl start
+
+To start Open vSwitch after boot:
+
+    sed 's,/usr/share/,/usr/local/share/,' rhel/etc_init.d_openvswitch > /etc/init.d/openvswitch
+
+    chkconfig --add openvswitch
+
+    chkconfig openvswitch on
+
+Note: sed(1) is used to rewrite path to Open vSwitch scripts that is statically defined
+in openvswitch script.
 
 
 ### Virtual Execution Environment for network functions

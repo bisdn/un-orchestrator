@@ -81,18 +81,13 @@ void OVSManager::destroyNFPorts(DestroyNFportsIn dnpi){
 }
 
 //implementation of addVirtualLink
-AddVirtualLinkOut *addVirtualLink(AddVirtualLinkIn avli){
+AddVirtualLinkOut *OVSManager::addVirtualLink(AddVirtualLinkIn avli){
 	return c->cmd_addVirtualLink(avli);
 }
 
 //implementation of destroyVirtualLink
 void OVSManager::destroyVirtualLink(DestroyVirtualLinkIn dvli){
 	c->cmd_destroyVirtualLink(dvli);
-}
-
-//implementation of addVirtualLink
-AddVirtualLinkOut *OVSManager::addVirtualLink(AddVirtualLinkIn avli){
-	return c->cmd_addVirtualLink(avli);
 }
 
 //implementation of checkPhysicalInterfaces

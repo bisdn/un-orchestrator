@@ -61,3 +61,14 @@ By default, ofc-server starts in daemon mode. To avoid daemon mode, use the
 For a the full list of the supported parameters, type:
 
     $ ofc-server -h
+    
+
+### How to start OVSDB to work with the un-orchestrator
+    
+Start OVS:
+
+	$ sudo /usr/share/openvswitch/scripts/ovs-ctl start
+
+Start ovsdb-server
+
+	$ sudo ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632

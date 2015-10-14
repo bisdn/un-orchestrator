@@ -11,12 +11,12 @@
 	<!--
 		Specify an ethernet interface
 	-->
-	<port name="eth1" type="ethernet" side="none"/>
+	<port name="eth0" type="ethernet" side="none"/>
 	
 	<!--
 		Specify a wifi interface
 	-->
-	<port name="eth2" type="ethernet" side="none"/>
+	<port name="eth1" type="ethernet" side="none"/>
 
 	<!--
 		Valid values for side are
