@@ -1,7 +1,7 @@
 #include "graph_info.h"
 
 GraphInfo::GraphInfo() :
-	controller(NULL), lsi(NULL), nfsManager(NULL)//, graph(NULL)
+	controller(NULL), lsi(NULL), computeController(NULL)//, graph(NULL)
 {
 
 }
@@ -20,9 +20,9 @@ void GraphInfo::setLSI(LSI *lsi)
 	this->lsi = lsi;
 }
 
-void GraphInfo::setNFsManager(NFsManager *nfsManager)
+void GraphInfo::setComputeController(ComputeController *computeController)
 {
-	this->nfsManager = nfsManager;
+	this->computeController = computeController;
 }
 
 void GraphInfo::setGraph(highlevel::Graph *graph)
@@ -45,8 +45,8 @@ highlevel::Graph *GraphInfo::getGraph()
 	return graph;
 }
 
-NFsManager *GraphInfo::getNFsManager()
+ComputeController *GraphInfo::getComputeController()
 {
-	return nfsManager;
+	return computeController;
 }
 

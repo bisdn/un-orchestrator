@@ -259,9 +259,13 @@ string XDPDManager::prepareCreateLSIrequest(CreateLsiIn cli)
 		assert(nf_type.count(*nf) != 0);
 		nf_t nft = nf_type[*nf];
 
+		//FIXME: it is really bad that a network plugin has knowledge of the compute environment
+
 		//XXX: this is a trick since xDPd does not support kvm ports
+#ifdef ENABLE_KVM
 		if(nft == KVM)
 			nft = DOCKER;
+#endif
 			
 		network_function["type"] = NFType::toString(nft);
 		
@@ -658,11 +662,15 @@ string XDPDManager::prepareCreateNFPortsRequest(AddNFportsIn anpi)
 	Array nfs_array;
 	Object network_function;
 	network_function["name"] = anpi.getNFname();
+
+	//FIXME: it is really bad that a network plugin has knowledge of the compute environment
 	
 	//XXX: this is a trick since xDPd does not support kvm ports
 	nf_t type = anpi.getNFtype();
+#ifdef ENABLE_KVM
 	if(type == KVM)
 		type = DOCKER;
+#endif
 			
 	network_function["type"] = NFType::toString(type);
 		

@@ -6,7 +6,14 @@
 
 using namespace std;
 
-typedef enum{DPDK,DOCKER,KVM}nf_t;
+typedef enum{
+	DPDK,
+	DOCKER,
+#ifdef ENABLE_KVM
+	KVM
+#endif
+	//[+] Add here other implementations for the execution environment
+	}nf_t;
 
 class NFType
 {
@@ -15,10 +22,14 @@ public:
 	{
 		if(type == DPDK)
 			return string("dpdk");
+#ifdef ENABLE_DOCKER
 		else if(type == DOCKER)
 			return string("docker");
+#endif
+#ifdef ENABLE_KVM
 		else if(type == KVM)
 			return string("kvm");
+#endif		
 
 		assert(0);
 		return "";
@@ -28,10 +39,14 @@ public:
 	{
 		if(type == DPDK)
 			return 2;
+#ifdef ENABLE_DOCKER
 		else if(type == DOCKER)
 			return 1;
+#endif
+#ifdef ENABLE_KVM
 		else if(type == KVM)
 			return 0;
+#endif		
 
 		assert(0);
 		return 0;
@@ -39,7 +54,14 @@ public:
 
 	static bool isValid(string type)
 	{
-		if(type == "dpdk" || type == "docker" || type == "kvm")
+		if(type == "dpdk" 
+#ifdef ENABLE_DOCKER		
+		|| type == "docker"
+#endif		
+#ifdef ENABLE_KVM
+		|| type == "kvm"
+#endif				
+		)
 			return true;
 	
 		assert(0);

@@ -21,14 +21,12 @@ list<Implementation*> NF::getAvailableImplementations()
 	return implementations;
 }
 
-void NF::setSelectedImplementation(Implementation *impl)
+void NF::setSelectedImplementation(NFsManager *impl)
 {
 	selectedImplementation = impl;
-	
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Selected a \%s\" implementation for NF \"%s\"", NFType::toString(selectedImplementation->getType()).c_str() ,name.c_str());
 }
 
-Implementation *NF::getSelectedImplementation()
+NFsManager *NF::getSelectedImplementation()
 {
 	return selectedImplementation;
 }

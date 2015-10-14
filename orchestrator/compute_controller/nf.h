@@ -9,6 +9,7 @@
 
 #include "../utils/constants.h"
 #include "implementation.h"
+#include "nfs_manager.h"
 
 using namespace std;
 
@@ -36,8 +37,11 @@ private:
 	*	@brief: available implementations of the NF
 	*/
 	list<Implementation*> implementations;
-		
-	Implementation *selectedImplementation;	
+	
+	/**
+	*	@brief: selected implementation for the NF
+	*/
+	NFsManager *selectedImplementation;	
 		
 	/**
 	*	@brief: true if the network function is running, false otherwise
@@ -54,8 +58,8 @@ public:
 	void addImplementation(Implementation *implementation);
 	list<Implementation*> getAvailableImplementations();
 	
-	void setSelectedImplementation(Implementation *impl);
-	Implementation *getSelectedImplementation();
+	void setSelectedImplementation(NFsManager *impl);
+	NFsManager *getSelectedImplementation();
 	
 	void setRunning(bool val);
 	bool getRunning();

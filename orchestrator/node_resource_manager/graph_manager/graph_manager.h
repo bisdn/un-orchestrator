@@ -46,7 +46,7 @@ typedef struct
 		unsigned int number_of_ports;
 		map<unsigned int,pair<string,string> > ipv4PortsRequirements;
 		map<unsigned int,string> ethPortsRequirements;
-		NFsManager *nfsManager;
+		ComputeController *computeController;
 	}to_thread_t;
 
 class GraphManager
@@ -151,10 +151,10 @@ private:
 	*	@brief: given a graph description, check if the ports and the NFs required by the
 	*		graph exist
 	*
-	*	@param: graph		Graph description to be validated
-	*	@param: nfsManager	NF manager used to validate the graph
+	*	@param: graph				Graph description to be validated
+	*	@param: computeController	Compute controller used to validate the graph
 	*/
-	bool checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsManager);
+	bool checkGraphValidity(highlevel::Graph *graph, ComputeController *computeController);
 	
 	/**
 	*	@brief: check if
@@ -167,7 +167,7 @@ private:
 	*		- endpoints are no longer used
 	*	and then remove the useles things from the LSI
 	*/
-	void removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo tbr, NFsManager *nfsManager,highlevel::Graph *graph, LSI * lsi);
+	void removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo tbr, ComputeController *computeController,highlevel::Graph *graph, LSI * lsi);
 	
 	/**
 	*	@brief: given a NF of the graph (in the form NF_port), return the endpoint expressed in the match of a rule

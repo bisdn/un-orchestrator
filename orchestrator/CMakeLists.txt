@@ -208,11 +208,19 @@ SET(SOURCES
 	
 	compute_controller/nfs_manager.h
 	compute_controller/nfs_manager.cc
+	compute_controller/compute_controller.h
+	compute_controller/compute_controller.cc
 	compute_controller/nf.h
 	compute_controller/nf.cc
 	compute_controller/nf_type.h
 	compute_controller/implementation.h
 	compute_controller/implementation.cc
+	compute_controller/startNF_in.h
+	compute_controller/stopNF_in.h
+	
+	compute_controller/plugins/dpdk/dpdk.h
+	compute_controller/plugins/dpdk/dpdk.cc
+	compute_controller/plugins/dpdk/dpdk_constants.h
 	
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
@@ -258,8 +266,9 @@ ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 2)
 IF(ENABLE_KVM)
     SET(SOURCES3
     ${SOURCES2}
-	compute_controller/libvirt/libvirt.cc
-	compute_controller/libvirt/libvirt.h
+	compute_controller/plugins/kvm-libvirt/libvirt.cc
+	compute_controller/plugins/kvm-libvirt/libvirt.h
+	compute_controller/plugins/kvm-libvirt/libvirt_constants.h
 	)
 ELSE()
      SET(SOURCES3
@@ -267,16 +276,29 @@ ELSE()
     	)
 ENDIF(ENABLE_KVM)
 
+IF(ENABLE_DOCKER)
+    SET(SOURCES4
+    ${SOURCES3}
+	compute_controller/plugins/docker/docker.cc
+	compute_controller/plugins/docker/docker.h
+	compute_controller/plugins/docker/docker_constants.h
+	)
+ELSE()
+     SET(SOURCES4
+         ${SOURCES3}
+    	)
+ENDIF(ENABLE_DOCKER)
+
 
 IF(UNIFY_NFFG)
-	SET(SOURCES4
-    ${SOURCES3}
+	SET(SOURCES5
+    ${SOURCES4}
     node_resource_manager/virtualizer/virtualizer.cc
     node_resource_manager/virtualizer/virtualizer.h
 	)
 ELSE()
-	SET(SOURCES4
-    	${SOURCES3}
+	SET(SOURCES5
+    	${SOURCES4}
 	)
 ENDIF(UNIFY_NFFG)
 
@@ -298,7 +320,7 @@ ENDIF(UNIFY_NFFG)
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES4}
+	${SOURCES5}
 )
 
 LINK_DIRECTORIES(

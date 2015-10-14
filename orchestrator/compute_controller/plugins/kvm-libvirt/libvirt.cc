@@ -1,16 +1,8 @@
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-#include <libxml/xpath.h>
-#include <libxml/xpathInternals.h>
-
 #include "libvirt.h"
 
-/* TODO - These should come from an orchestrator config file (curently, there is only one for the UN ports) */
-static const char* QEMU_BIN_PATH = NULL; /* Can point to qemu bin or a wrapper script that tweaks the command line. If NULL, Libvirt default or path found in XML is used */
-static const char* OVS_BASE_SOCK_PATH = "/usr/local/var/run/openvswitch/";
+virConnectPtr Libvirt::conn = NULL;
 
-/*error handler libvirt*/
-static void customErrorFunc(void *userdata, virErrorPtr err)
+void Libvirt::customErrorFunc(void *userdata, virErrorPtr err)
 {
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Failure of libvirt library call:\n");
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " Code: %d\n", err->code);
@@ -24,32 +16,54 @@ static void customErrorFunc(void *userdata, virErrorPtr err)
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, " int2: %d\n", err->int2);
 }
 
-/*connect to qemu with root privileges*/
-int Libvirt::cmd_connect(){
-
+Libvirt::Libvirt()
+{
 	virSetErrorFunc(NULL, customErrorFunc);
+}
+
+Libvirt::~Libvirt()
+{
+}
+
+//TODO: it would be better to keep the connection among all the objects!
+
+bool Libvirt::isSupported()
+{
+	connect();
+	
+	if(connection == NULL)
+		return false;
+	return true;
+}
+
+void Libvirt::connect()
+{
+	if(connection != NULL)
+		//The connection is already open
+		return;
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Connecting to Libvirt ...\n");
-	conn = virConnectOpen("qemu:///system");
-	if (conn == NULL) {
+	virConnectPtr connection = virConnectOpen("qemu:///system");
+	if (connection == NULL) 
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Failed to open connection to qemu:///system\n");
-		return 0;
-	}
-	
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Open connection to qemu:///system successfull\n");
-	
-	return 1;
+	else
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Open connection to qemu:///system successfull\n");
 }
 
-/*close connection*/
-void Libvirt::cmd_close(){
-	virConnectClose(conn);
-	conn = NULL;
-}
-
-/*retrieve and start NF*/
-int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsigned int n_ports)
+void Libvirt::cmd_close()
 {
+	virConnectClose(connection);
+	connection = NULL;
+}
+
+bool Libvirt::startNF(StartNFIn sni)
+{
+	uint64_t lsiID = sni.getLsiID();
+	string nf_name = sni.getNfName();
+	unsigned int n_ports = sni.getNumberOfPorts();
+	
+	string uri_image = implementation->getURI();
+
 	virDomainPtr dom = NULL;
 	char domain_name[64], port_name[64];
 	const char *xmlconfig = NULL;
@@ -65,9 +79,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		use_template = true;
 	}
 
-	/* Connect to qemu with root privileges*/
-	if(!cmd_connect())
-		return 0;
+	assert(connection != NULL);
 	
 	/* Create XML for VM */
 	if (use_template) {
@@ -82,7 +94,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		doc = xmlParseFile(uri_image.c_str());
 		if (doc == NULL) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to parse file \"%s\"\n", uri_image.c_str());
-			return 0;
+			return false;
 		}
 
 		/* xpath evaluation for Libvirt various elements we may want to update */
@@ -90,7 +102,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		if(xpathCtx == NULL) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to create new XPath context\n");
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 		const xmlChar* xpathExpr = BAD_CAST "/domain/devices/interface|/domain/name|/domain/devices/emulator";
 		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
@@ -98,7 +110,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
 			xmlXPathFreeContext(xpathCtx);
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 
 		enum E_updates {
@@ -180,14 +192,14 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
 			xmlXPathFreeContext(xpathCtx);
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 		nodes = xpathObj->nodesetval;
 		if (!nodes || (nodes->nodeNr != 1)) {
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "xpath(devices) failed accessing <devices> node\n");
 			xmlXPathFreeContext(xpathCtx);
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 
     	xmlNodePtr devices = nodes->nodeTab[0];
@@ -247,7 +259,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		doc = xmlParseFile(uri_image.c_str());
 		if (doc == NULL) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to parse file \"%s\"\n", uri_image.c_str());
-			return 0;
+			return false;
 		}
 		
 		/* xpath evaluation for Libvirt various elements we may want to update */
@@ -255,7 +267,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		if(xpathCtx == NULL) {
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Unable to create new XPath context\n");
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 		const xmlChar* xpathExpr = BAD_CAST "/domain/devices/interface|/domain/name";
 		xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
@@ -263,7 +275,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
 			xmlXPathFreeContext(xpathCtx);
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 		
 		enum E_updates {
@@ -341,14 +353,14 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Error: unable to evaluate xpath expression \"%s\"\n", xpathExpr);
 			xmlXPathFreeContext(xpathCtx);
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 		nodes = xpathObj->nodesetval;
 		if (!nodes || (nodes->nodeNr != 1)) {
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "xpath(devices) failed accessing <devices> node\n");
 			xmlXPathFreeContext(xpathCtx);
 			xmlFreeDoc(doc);
-			return 0;
+			return false;
 		}
 
     	xmlNodePtr devices = nodes->nodeTab[0];
@@ -387,7 +399,7 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 		buf = xmlBufferCreate();
 		if(buf == NULL){
 			logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "testXmlWriterMemory: Error creating the xml buffer\n.");
-			return 0;
+			return false;
 		}
 
 		/* Get resulting document */
@@ -409,36 +421,40 @@ int Libvirt::cmd_startNF(uint64_t lsiID, string nf_name, string uri_image, unsig
 	}
 #endif
 
-	dom = virDomainCreateXML(conn, xmlconfig, 0);
+	dom = virDomainCreateXML(connection, xmlconfig, 0);
 	if (!dom) {
 		virDomainFree(dom);
     		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Domain definition failed");
-    		return 0;
+    		return false;
 	}
 	
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Boot guest");
 	
 	virDomainFree(dom);
 	
-	return 1;
+	return true;
 }
 
-/*stop NF*/
-int Libvirt::cmd_destroy(uint64_t lsiID, string nf_name){
-	char *tmmp_file = new char[64];
+bool Libvirt::stopNFstopNF(StopNFIn sni)
+//int Libvirt::stopNF(uint64_t lsiID, string nf_name)
+{
+	uint64_t lsiID = sni.getLsiID();
+	string nf_name = sni.getNfName();
+
+	char *tmp_file = new char[64];
 	
 	/*image_name*/
-	sprintf(tmmp_file, "%" PRIu64, lsiID);
-	strcat(tmmp_file, "_");
-	strcat(tmmp_file, (char *)nf_name.c_str());
+	sprintf(tmp_file, "%" PRIu64, lsiID);
+	strcat(tmp_file, "_");
+	strcat(tmp_file, (char *)nf_name.c_str());
+	
+	assert(connection != NULL);
 
 	/*destroy the VM*/
-	if(virDomainDestroy(virDomainLookupByName(conn, tmmp_file)) != 0){
+	if(virDomainDestroy(virDomainLookupByName(connection, tmp_file)) != 0){
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "failed to stop (destroy) VM.\n");
-		return 0;
+		return false;
 	}
 	
-	cmd_close();
-	
-	return 1;
+	return true;
 }
