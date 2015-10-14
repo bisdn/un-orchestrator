@@ -47,7 +47,6 @@ string Implementation::getURI()
 
 string Implementation::getCores()
 {
-	assert(type == DPDK);
 	return cores;
 }
 

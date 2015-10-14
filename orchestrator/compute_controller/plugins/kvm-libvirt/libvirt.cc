@@ -46,7 +46,7 @@ void Libvirt::connect()
 		return;
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Connecting to Libvirt ...\n");
-	virConnectPtr connection = virConnectOpen("qemu:///system");
+	connection = virConnectOpen("qemu:///system");
 	if (connection == NULL) 
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "Failed to open connection to qemu:///system\n");
 	else
