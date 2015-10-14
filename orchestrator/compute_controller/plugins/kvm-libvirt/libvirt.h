@@ -13,8 +13,8 @@
 #include <string.h>
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
-#include "../../../../utils/logger.h"
-#include "../../../../utils/constants.h"
+#include "../../../utils/logger.h"
+#include "../../../utils/constants.h"
 
 #include "../../nfs_manager.h"
 #include "../../startNF_in.h"

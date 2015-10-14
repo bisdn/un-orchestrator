@@ -1,6 +1,9 @@
 #include "libvirt.h"
 
-virConnectPtr Libvirt::conn = NULL;
+static const char* QEMU_BIN_PATH = NULL; /* Can point to qemu bin or a wrapper script that tweaks the command line. If NULL, Libvirt default or path found in XML is used */
+static const char* OVS_BASE_SOCK_PATH = "/usr/local/var/run/openvswitch/";
+
+virConnectPtr Libvirt::connection = NULL;
 
 void Libvirt::customErrorFunc(void *userdata, virErrorPtr err)
 {
@@ -23,6 +26,8 @@ Libvirt::Libvirt()
 
 Libvirt::~Libvirt()
 {
+	if(connection != NULL)
+		disconnect();
 }
 
 //TODO: it would be better to keep the connection among all the objects!
@@ -50,7 +55,7 @@ void Libvirt::connect()
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Open connection to qemu:///system successfull\n");
 }
 
-void Libvirt::cmd_close()
+void Libvirt::disconnect()
 {
 	virConnectClose(connection);
 	connection = NULL;
@@ -435,7 +440,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	return true;
 }
 
-bool Libvirt::stopNFstopNF(StopNFIn sni)
+bool Libvirt::stopNF(StopNFIn sni)
 //int Libvirt::stopNF(uint64_t lsiID, string nf_name)
 {
 	uint64_t lsiID = sni.getLsiID();
