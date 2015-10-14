@@ -16,9 +16,21 @@ class NF
 {
 private:
 	/**
-	*	@brief: name of the NF
+	*	@brief: name of the NF. This should be unique
 	*/
 	string name;
+	
+#ifdef UNIFY_NFFG
+	/**
+	*	@brief: number of ports of a NF
+	*/
+	unsigned int numPorts;
+	
+	/**
+	*	@brief: text describing the NF
+	*/
+	string description;
+#endif
 	
 	/**
 	*	@brief: available implementations of the NF
@@ -33,7 +45,11 @@ private:
 	bool isRunning;
 	
 public:
+#ifdef UNIFY_NFFG
+	NF(string name, unsigned int numPorts, string description);
+#else
 	NF(string name);
+#endif
 	
 	void addImplementation(Implementation *implementation);
 	list<Implementation*> getAvailableImplementations();
@@ -43,6 +59,13 @@ public:
 	
 	void setRunning(bool val);
 	bool getRunning();
+	
+	string getName();
+	
+#ifdef UNIFY_NFFG
+	unsigned int getNumPorts();
+	string getDescription();
+#endif	
 };
 
 #endif //NF_H_ 1

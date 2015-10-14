@@ -1,4 +1,4 @@
-#include "action.h"
+#include "output_action.h"
 
 namespace lowlevel
 {
@@ -32,8 +32,12 @@ void Action::fillFlowmodMessage(rofl::openflow::cofflowmod &message)
 		case OFP_12:
 		case OFP_13:
 			message.set_instructions().set_inst_apply_actions().set_actions().add_action_output(cindex(0)).set_port_no(port_id);
-			break;
+			break;	
 	}
+	
+	unsigned int position = 1;
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		(*ga)->fillFlowmodMessage(message,&position);
 }
 
 void Action::print()
@@ -42,6 +46,8 @@ void Action::print()
 	{
 		cout << "\t\tAction:" << endl << "\t\t{" << endl;
 		cout << "\t\t\tOUTPUT: " << port_id << endl;
+		for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+			(*ga)->print();		
 		cout << "\t\t}" << endl;
 	}
 }
@@ -49,6 +55,8 @@ void Action::print()
 string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 {
 	stringstream ss;
+
+	ss << "output to ";
 
 	map<string,unsigned int> pysicalPorts = lsi0->getPhysicalPorts();
 	for(map<string,unsigned int>::iterator it = pysicalPorts.begin(); it != pysicalPorts.end(); it++)
@@ -70,14 +78,25 @@ string Action::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 			if(vl->getRemoteID() == port_id)
 			{
 				ss << port_id << " (graph: " << it->first << ")";
-				return ss.str();	
+				goto conclude;
 			}
 		}
 	}
 	
 	//The code could be here only when a SIGINT is received and all the graph are going to be removed
 	ss << port_id << " (unknown graph)";
+
+conclude:
+	
+	for(list<GenericAction*>::iterator ga = genericActions.begin(); ga != genericActions.end(); ga++)
+		ss << (*ga)->prettyPrint();
+	
 	return ss.str();
+}
+
+void Action::addGenericAction(GenericAction *ga)
+{
+	genericActions.push_back(ga);
 }
 
 }

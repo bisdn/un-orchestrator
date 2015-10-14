@@ -50,6 +50,9 @@
 						</xsd:element>	
 					</xsd:sequence>
 					<xsd:attribute ref="name" use="required"/>
+					<!-- TODO: put num-ports mandatory! -->
+					<xsd:attribute name="num-ports" type="xsd:integer"/>
+					<xsd:attribute name="description" type="xsd:string" use="required"/>
 				</xsd:complexType>
 			</xsd:element> 
 		</xsd:sequence>

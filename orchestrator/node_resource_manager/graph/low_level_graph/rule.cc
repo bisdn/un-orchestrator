@@ -97,7 +97,7 @@ void Rule::prettyPrint(LSI *lsi0,map<string,LSI *> lsis)
 	else if(id == 3)
 		coloredLogger(ANSI_COLOR_RED ,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tPriority-> %"PRIu64" -\t Match-> %s - \t Action-> output to '%s'",priority,match.prettyPrint(lsi0,lsis).c_str(),action.prettyPrint(lsi0,lsis).c_str());
 	else
-		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tPriority-> %"PRIu64" -\t Match-> %s - \t Action-> output to '%s'",priority,match.prettyPrint(lsi0,lsis).c_str(),action.prettyPrint(lsi0,lsis).c_str());
+		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tPriority-> %"PRIu64" -\t Match-> %s - \t Action-> %s",priority,match.prettyPrint(lsi0,lsis).c_str(),action.prettyPrint(lsi0,lsis).c_str());
 }
 
 }

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "low_level_match.h"
-#include "action.h"
+#include "output_action.h"
 #include "../../../utils/logger.h"
 #include "../../graph_manager/lsi.h"
 

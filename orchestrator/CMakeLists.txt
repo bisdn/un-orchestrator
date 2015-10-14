@@ -37,7 +37,7 @@ ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
 # Rather complicated CMake code for selecting the Openflow version
-SET(OFP_VERSION "OFP_10" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
+SET(OFP_VERSION "OFP_12" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
 SET(OFP_VERSION_VALUES "OFP_10" "OFP_12" "OFP_13")
 SET_PROPERTY(CACHE OFP_VERSION PROPERTY STRINGS ${OFP_VERSION_VALUES})
 LIST(FIND OFP_VERSION_VALUES ${OFP_VERSION} OFP_VERSION_INDEX)
@@ -102,7 +102,7 @@ ENDIF(ENABLE_DOCKER)
 OPTION(
 	ENABLE_KVM
 	"Turn on the support of NFs implemented in KVM virtual machines"
-	ON
+	OFF
 )
 IF(ENABLE_KVM)
 	ADD_DEFINITIONS(-DENABLE_KVM)
@@ -136,6 +136,16 @@ IF(DEBUG_OPENFLOW)
 ENDIF(DEBUG_OPENFLOW)
 
 
+OPTION(
+	UNIFY_NFFG
+	"Turn on to support the NF-FG defined in the Unify project"
+	OFF
+)
+IF(UNIFY_NFFG)
+	ADD_DEFINITIONS(-DUNIFY_NFFG)
+ENDIF(UNIFY_NFFG)
+
+
 # Set source files
 SET(SOURCES
 	node_orchestrator.cc
@@ -156,9 +166,13 @@ SET(SOURCES
 	
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
+	node_resource_manager/graph/generic_action.h
+	node_resource_manager/graph/generic_action.cc
+	node_resource_manager/graph/vlan_action.h
+	node_resource_manager/graph/vlan_action.cc
 	
-	node_resource_manager/graph/low_level_graph/action.h
-	node_resource_manager/graph/low_level_graph/action.cc
+	node_resource_manager/graph/low_level_graph/output_action.h
+	node_resource_manager/graph/low_level_graph/output_action.cc
 	node_resource_manager/graph/low_level_graph/graph.h
 	node_resource_manager/graph/low_level_graph/graph.cc
 	node_resource_manager/graph/low_level_graph/low_level_match.h
@@ -166,14 +180,14 @@ SET(SOURCES
 	node_resource_manager/graph/low_level_graph/rule.h
 	node_resource_manager/graph/low_level_graph/rule.cc
 	
-	node_resource_manager/graph/high_level_graph/high_level_action.h
-	node_resource_manager/graph/high_level_graph/high_level_action.cc
-	node_resource_manager/graph/high_level_graph/high_level_action_nf.h
-	node_resource_manager/graph/high_level_graph/high_level_action_nf.cc
-	node_resource_manager/graph/high_level_graph/high_level_action_port.h
-	node_resource_manager/graph/high_level_graph/high_level_action_port.cc
-	node_resource_manager/graph/high_level_graph/high_level_action_endpoint.h
-	node_resource_manager/graph/high_level_graph/high_level_action_endpoint.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_port.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_port.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph.h
@@ -268,16 +282,38 @@ ELSE()
     	)
 ENDIF(ENABLE_KVM)
 
+
+IF(UNIFY_NFFG)
+	SET(SOURCES4
+    ${SOURCES3}
+    node_resource_manager/virtualizer/virtualizer.cc
+    node_resource_manager/virtualizer/virtualizer.h
+	)
+ELSE()
+	SET(SOURCES4
+    	${SOURCES3}
+	)
+ENDIF(UNIFY_NFFG)
+
+
+
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
 	/usr/include/libxml2
 )
 
+#Include specific for the NF-FG library defined in the Unify project
+IF(UNIFY_NFFG)
+	find_package(PythonLibs REQUIRED)
+	INCLUDE_DIRECTORIES (
+		${PYTHON_INCLUDE_DIRS}
+	)
+ENDIF(UNIFY_NFFG)
 
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES3}
+	${SOURCES4}
 )
 
 LINK_DIRECTORIES(
@@ -285,12 +321,13 @@ LINK_DIRECTORIES(
 	/usr/local/lib/
 	/usr/x86_64-linux-gnu/
 	/usr/lib/x86_64-linux-gnu/
+	/usr/lib/python2.7/config-x86_64-linux-gnu/
 )
 
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
-	librofl_common.so
+	/usr/local/lib/librofl_common.so
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so
@@ -311,4 +348,12 @@ IF(ENABLE_KVM)
 		libvirt.so
 	)
 ENDIF(ENABLE_KVM)
+
+#Links specific for the NF-FG library defined in the Unify project
+IF(UNIFY_NFFG)
+    TARGET_LINK_LIBRARIES( node-orchestrator
+		libpython2.7.so
+		${PYTHON_LIBRARIES}
+	)
+ENDIF(UNIFY_NFFG)
 

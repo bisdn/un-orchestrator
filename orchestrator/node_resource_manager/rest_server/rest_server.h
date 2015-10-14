@@ -43,8 +43,9 @@
 
 #include "../graph_manager/graph_manager.h"
 #include "../../utils/constants.h"
-#include "../graph/high_level_graph/high_level_action_port.h"
-#include "../graph/high_level_graph/high_level_action_endpoint.h"
+#include "../graph/high_level_graph/high_level_output_action_port.h"
+#include "../graph/high_level_graph/high_level_output_action_endpoint.h"
+#include "../graph/vlan_action.h"
 #include "match_parser.h"
 
 #include <json_spirit/json_spirit.h>
@@ -61,6 +62,11 @@ class RestServer
 private:
 
 	static GraphManager *gm;
+
+#ifdef UNIFY_NFFG
+	static bool firstTime;
+#endif
+	
 
 	struct connection_info_struct
 	{
@@ -83,6 +89,11 @@ private:
 	static bool parseGraphFromFile(string toBeCreated,highlevel::Graph &graph, bool newGraph);
 	
 	static bool parseGraph(Value value, highlevel::Graph &graph, bool newGraph);
+	
+	static bool readGraphFromFile(char *nffg_filename);
+#ifdef UNIFY_NFFG
+	static bool toBeRemovedFromFile(char *filename);
+#endif
 	
 public:
 	static bool init(char *nffg_filename,int core_mask, char *ports_file_name);
