@@ -56,7 +56,7 @@ public:
 	
 	/**
 	*	@brief: returns the number of cores to be associated with the network function
-	*			handled by the manager. "0x0" means that no core has to be bound to the
+	*			handled by the manager. "" means that no core has to be bound to the
 	*			network function.
 	*/
 	string getCores();
