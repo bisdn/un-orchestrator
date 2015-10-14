@@ -59,7 +59,7 @@ fi
 #
 #	lxc.network.ipv6	#set the IPv6 address to an interface
 
-echo -ne "sudo docker run -d -name $1_$2 "   > $tmp_file
+echo -ne "sudo docker run -d --name $1_$2 "   > $tmp_file
 
 skip_lxc_networking=1
 
