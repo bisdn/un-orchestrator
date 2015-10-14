@@ -39,7 +39,7 @@
 		<implementation type="kvm" uri="/home/nf_repository/kvm/example.qcow2"/>
 	</network-function>
 
-	<network-function name="usvhost_example">
+	<network-function name="usvhost_example"  description="Network function based on user space vhost">
 		<!-- Point to a Libvirt XML domain template -->
 		<implementation type="kvm" uri="/home/nf_repository/kvm/kvm_usvhost_vnf.xml"/>
 	</network-function>
@@ -63,15 +63,5 @@
 		<!-- Only a VNF implementation is available for this network function -->
 		<implementation type="dpdk" uri="/home/nf_repository/dpdk/example" cores="1" location="local"/>
 	</network-function>
-
-	<network-function name="bridge">
-		<!-- Only a docker implementation is available for this network function -->
-		<implementation type="docker" uri="simple_bridge"/>
-	</network-function>
 	
-	<network-function name="bridge1">
-		<!-- Only a docker implementation is available for this network function -->
-		<implementation type="kvm" uri="compute_controller/nf_repository/kvm/ovs-ovsdbkvm_usvhost_vnf.xml"/>
-	</network-function>
-
 </network-functions>
