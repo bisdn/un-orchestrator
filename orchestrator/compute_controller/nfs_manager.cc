@@ -548,7 +548,7 @@ bool NFsManager::startNF(string nf_name, unsigned int number_of_ports, map<unsig
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing startNF!");
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Executing command \"cmd_startNF\"");
 
-		retVal = libvirt->cmd_startNF(lsiID, nf_name, impl->getURI(), number_of_ports);
+		retVal = libvirt->cmd_startNF(lsiID, nf_name, impl->getURI(), number_of_ports, ipv4PortsRequirements, ethPortsRequirements);
 	}
 #endif
 

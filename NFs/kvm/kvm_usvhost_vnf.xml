@@ -33,6 +33,9 @@
 			<driver name="qemu" type="raw"/>
 			<target dev="hdc" bus="ide"/>
 		</disk>
+		<interface type='bridge'>
+			<source bridge='br-mgt'/>
+		</interface>
 		<interface type="vhostuser">
 			<source type="unix" path="/usr/local/var/run/openvswitch/example_1" mode="client"/>
 			<model type="virtio"/>
