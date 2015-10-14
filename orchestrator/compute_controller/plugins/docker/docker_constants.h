@@ -6,6 +6,6 @@
 */
 #define CHECK_DOCKER			"./compute_controller/plugins/docker/scripts/checkDockerRun.sh"
 #define PULL_AND_RUN_DOCKER_NF	"./compute_controller/plugins/docker/scripts/pullAndRunNF.sh"
-#define STOP_DOCKER_NF			"../compute_controller/plugins/docker/scripts/stopNF.sh"
+#define STOP_DOCKER_NF			"./compute_controller/plugins/docker/scripts/stopNF.sh"
 
 #endif //DOCKER_CONSTANTS_H_

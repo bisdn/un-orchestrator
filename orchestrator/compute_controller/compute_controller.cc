@@ -475,7 +475,7 @@ void ComputeController::setLsiID(uint64_t lsiID)
 //the number of ports.. But xDPd could give different names to the ports!
 bool ComputeController::startNF(string nf_name, unsigned int number_of_ports, map<unsigned int,pair<string,string> > ipv4PortsRequirements,map<unsigned int,string> ethPortsRequirements)
 {
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "!!!!Starting the NF \"%s\"",nf_name.c_str());
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Starting the NF \"%s\"",nf_name.c_str());
 
 	if(nfs.count(nf_name) == 0)
 	{
