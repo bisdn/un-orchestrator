@@ -64,6 +64,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	uint64_t lsiID = sni.getLsiID();
 	string nf_name = sni.getNfName();
 	unsigned int n_ports = sni.getNumberOfPorts();
+	map<unsigned int,string> ethPortsRequirements = sni.getEthPortsRequirements();
 	
 	string uri_image = implementation->getURI();
 
@@ -143,7 +144,13 @@ bool Libvirt::startNF(StartNFIn sni)
 	    				}
 	    			}
 	    			else if (xmlStrcmp(node->name, (xmlChar*)"interface") == 0) {
-	    				// Currently we just remove any net interface device present in the temple and re-create our own
+	    				// Currently we just remove any net interface device present in the template and re-create our own
+	    				// with the exception of bridged interfaces which are handy for managing the VM.
+	    				xmlChar* type = xmlGetProp(node, (xmlChar*)"type");
+	    				if (xmlStrcmp(type, (xmlChar*)"bridge") == 0) {
+						    xmlFree(type);
+	    					continue;
+	    				}
 	    				xmlUnlinkNode(node);
 	    				xmlFreeNode(node);
 	    			}
@@ -214,7 +221,7 @@ bool Libvirt::startNF(StartNFIn sni)
 
 		/* Create NICs */
 		for(unsigned int i=1;i<=n_ports;i++) {
-			// TODO: This is OVS vhostuser specific - Should be extracted to network plugin part...
+			// TODO: This is OVS vhostuser specific - Should be coordinated with network plugin part...
 			char sock_path[255];
 			sprintf(sock_path, "%s/%s_%u", OVS_BASE_SOCK_PATH, domain_name, i);
 			xmlNodePtr ifn = xmlNewChild(devices, NULL, BAD_CAST "interface", NULL);
@@ -227,6 +234,11 @@ bool Libvirt::startNF(StartNFIn sni)
 
     	    xmlNodePtr modeln = xmlNewChild(ifn, NULL, BAD_CAST "model", NULL);
     	    xmlNewProp(modeln, BAD_CAST "type", BAD_CAST "virtio");
+
+			if(ethPortsRequirements.count(i) > 0) {
+	    	    xmlNodePtr macn = xmlNewChild(ifn, NULL, BAD_CAST "mac", NULL);
+	    	    xmlNewProp(macn, BAD_CAST "address", BAD_CAST (ethPortsRequirements.find(i)->second.c_str()));
+			}
 
     	    xmlNodePtr drvn = xmlNewChild(ifn, NULL, BAD_CAST "driver", NULL);
     	    xmlNodePtr drv_hostn = xmlNewChild(drvn, NULL, BAD_CAST "host", NULL);

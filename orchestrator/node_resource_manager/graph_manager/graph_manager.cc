@@ -707,7 +707,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		
 		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
 
-		CreateLsiOut *clo = switchManager.createLsi(cli);
+		clo = switchManager.createLsi(cli);
 
 		lsi->setDpid(clo->getDpid());
 		map<string,unsigned int> physicalPorts = clo->getPhysicalPorts();
