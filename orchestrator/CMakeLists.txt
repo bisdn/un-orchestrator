@@ -200,7 +200,6 @@ SET(SOURCES
 	network_controller/switch_manager/addNFports_out.h
 	network_controller/switch_manager/addVirtualLink_in.h
 	network_controller/switch_manager/addVirtualLink_out.h
-	network_controller/switch_manager/createLSIin.h
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
 	network_controller/switch_manager/destroyVirtualLink_in.h 
@@ -283,7 +282,6 @@ IF(ENABLE_KVM)
     ${SOURCES2}
 	compute_controller/plugins/kvm-libvirt/libvirt.cc
 	compute_controller/plugins/kvm-libvirt/libvirt.h
-	compute_controller/plugins/kvm-libvirt/libvirt_constants.h
 	)
 ELSE()
      SET(SOURCES3

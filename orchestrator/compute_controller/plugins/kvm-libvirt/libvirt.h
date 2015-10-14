@@ -19,8 +19,6 @@
 #include "../../nfs_manager.h"
 #include "../../startNF_in.h"
 
-#include "libvirt_constants.h"
-
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
 #include <libxml/xmlreader.h>
