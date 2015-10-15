@@ -11,9 +11,9 @@
 #include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
-#include "../graph/high_level_graph/high_level_output_action_nf.h"
-#include "../graph/high_level_graph/high_level_output_action_port.h"
-#include "../graph/high_level_graph/high_level_output_action_endpoint.h"
+#include "../graph/high_level_graph/high_level_action_nf.h"
+#include "../graph/high_level_graph/high_level_action_port.h"
+#include "../graph/high_level_graph/high_level_action_endpoint.h"
 #include "../rest_server/match_parser.h"
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
@@ -27,6 +27,10 @@
 #ifdef VSWITCH_IMPLEMENTATION_OVSDPDK
 	#include "../../network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.h"
 	#define SWITCH_MANAGER_IMPLEMENTATION OVSDPDKManager
+#endif
+#ifdef VSWITCH_IMPLEMENTATION_OVSDB
+	#include "../../network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSDBManager
 #endif
 //[+] Add here other implementations for the virtual switch
 
@@ -178,7 +182,6 @@ private:
 	*/
 	string findEndPointTowardsNF(highlevel::Graph *graph, string nf);
 	
-#ifndef UNIFY_NFFG
 	/**
 	*	@brief: check if a specific flow can be removed from a graph. The flow cannot be removed if it defines
 	*		an endpoint currently used by other graphs.
@@ -190,7 +193,6 @@ private:
 	*	be removed if it is not used in actions of other graphs. 
 	*/
 	bool canDeleteFlow(highlevel::Graph *graph, string flowID);
-#endif
 	
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
@@ -260,16 +262,6 @@ public:
 	*	TODO: describe what happens in case of endpoint
 	*/
 	bool deleteFlow(string graphID, string flowID);
-	
-#ifdef UNIFY_NFFG
-	/**
-	*	@brief: deletes a NF from the graph
-	*
-	*	@param: graphID	Identifier of the graph to which the NF belongs to
-	*	@param: nf_name	Name of the NF to be removed from the graph
-	*/
-	bool stopNetworkFunction(string graphID, string nf_name);
-#endif	
 	
 	/**
 	*	@brief: checks if a specific NF is part of a specific graph
