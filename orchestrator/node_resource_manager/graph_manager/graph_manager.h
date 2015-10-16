@@ -28,6 +28,10 @@
 	#include "../../network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.h"
 	#define SWITCH_MANAGER_IMPLEMENTATION OVSDPDKManager
 #endif
+#ifdef VSWITCH_IMPLEMENTATION_OVSDB
+	#include "../../network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSDBManager
+#endif
 //[+] Add here other implementations for the virtual switch
 
 #include <list>
@@ -177,8 +181,8 @@ private:
 	*	@param: nf		Involved NF
 	*/
 	string findEndPointTowardsNF(highlevel::Graph *graph, string nf);
-	
-#ifndef UNIFY_NFFG
+
+#ifndef UNIFY_NFFG	
 	/**
 	*	@brief: check if a specific flow can be removed from a graph. The flow cannot be removed if it defines
 	*		an endpoint currently used by other graphs.
@@ -269,7 +273,7 @@ public:
 	*	@param: nf_name	Name of the NF to be removed from the graph
 	*/
 	bool stopNetworkFunction(string graphID, string nf_name);
-#endif	
+#endif		
 	
 	/**
 	*	@brief: checks if a specific NF is part of a specific graph
