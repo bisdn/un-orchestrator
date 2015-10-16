@@ -426,7 +426,7 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 	bool definedHere = false;
 	if(endpointInvolved != "")
 		definedHere = graph->isDefinedHere(endpointInvolved);
-	
+		
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Removing the flow from the LSI-0 graph");
 	Controller *lsi0Controller = graphInfoLSI0.getController();
 	stringstream lsi0FlowID;
