@@ -98,12 +98,10 @@ bool Graph::removeRuleFromID(string ID)
 				}
 			}
 			rules.erase(it);			
-			goto ok;
+			break;
 		}
 	}
-	assert(0);
-
-ok:
+	
 	return retVal;
 }
 
