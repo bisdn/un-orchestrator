@@ -1,11 +1,11 @@
-#include "implementation.h"
+#include "description.h"
 
-Implementation::Implementation(nf_t type, string uri, string cores, string location) :
+Description::Description(nf_t type, string uri, string cores, string location) :
 	type(type), uri(uri), cores(cores), location(location)
 {
 }
 
-Implementation::Implementation(string type, string uri, string cores, string location) :
+Description::Description(string type, string uri, string cores, string location) :
 	 uri(uri), cores(cores), location(location)
 {
 
@@ -35,22 +35,22 @@ Implementation::Implementation(string type, string uri, string cores, string loc
 	return;
 }
 
-nf_t Implementation::getType()
+nf_t Description::getType()
 {
 	return type;
 }
 
-string Implementation::getURI()
+string Description::getURI()
 {
 	return uri;
 }
 
-string Implementation::getCores()
+string Description::getCores()
 {
 	return cores;
 }
 
-string Implementation::getLocation()
+string Description::getLocation()
 {
 	assert(type == DPDK 
 #ifdef ENABLE_KVM

@@ -109,11 +109,8 @@ private:
 	/**
 	*	@brief: Check if an implementation for all the NFs has been selected. In this
 	*	case the return value is true, otherwise it is false
-	*
-	*	@param: lastCall	This parameter indicates if this function will be called 
-	*	again. If it is false, the function behaves slightly different
 	*/
-	bool allSelected(bool lastCall);
+	bool allSelected();
 
 public:
 	ComputeController();

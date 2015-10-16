@@ -1,16 +1,16 @@
 #include "nfs_manager.h"
 
-void NFsManager::setImplementation(Implementation *implementation)
+void NFsManager::setDescription(Description *description)
 {
-	this->implementation = implementation;
+	this->description = description;
 }
 
 nf_t NFsManager::getNFType()
 {
-	return implementation->getType();
+	return description->getType();
 }
 
 string NFsManager::getCores()
 {
-	return implementation->getCores();
+	return description->getCores();
 }

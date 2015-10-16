@@ -12,10 +12,10 @@ bool Dpdk::startNF(StartNFIn sni)
 	unsigned int n_ports = sni.getNumberOfPorts();
 	uint64_t coreMask = sni.getCoreMask();
 		
-	string uri_image = implementation->getURI();	
+	string uri_image = description->getURI();	
 		
 	stringstream uri;
-	if(implementation->getLocation() == "local")
+	if(description->getLocation() == "local")
 		uri << "file://";
 	uri << uri_image;
 

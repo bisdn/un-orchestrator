@@ -66,7 +66,7 @@ bool Libvirt::startNF(StartNFIn sni)
 	unsigned int n_ports = sni.getNumberOfPorts();
 	map<unsigned int,string> ethPortsRequirements = sni.getEthPortsRequirements();
 	
-	string uri_image = implementation->getURI();
+	string uri_image = description->getURI();
 
 	virDomainPtr dom = NULL;
 	char domain_name[64], port_name[64];

@@ -5,7 +5,7 @@
 
 #include "startNF_in.h"
 #include "stopNF_in.h"
-#include "implementation.h"
+#include "description.h"
 
 /**
 * @file nfs_manager.h
@@ -15,15 +15,15 @@
 
 using namespace std;
 
-class Implementation;
+class Description;
 
 class NFsManager
 {
 protected:
 	/**
-	*	@brief: Description of the implementation of the network function
+	*	@brief: Description of the network function associated with this manager
 	*/
-	Implementation *implementation;
+	Description *description;
 
 public:
 
@@ -47,7 +47,7 @@ public:
 	/**
 	*	@brief: set the description of the network function to be handled by the manager
 	*/
-	void setImplementation(Implementation *implementation);
+	void setDescription(Description *description);
 	
 	/**
 	*	@brief: provide the type of the network function handled by the manager
