@@ -150,13 +150,13 @@ bool ComputeController::parseAnswer(string answer, string nf)
 		bool foundName = false;
 		bool foundImplementations = false;
 
-		list<Implementation*> possibleImplementations;
+		list<Description*> possibleDescriptions;
 		string nf_name;
 #ifdef UNIFY_NFFG
 		unsigned int numports = 0;
-		string description;
+		string text_description;
 		
-		bool foundNports = false, foundDescription = false;
+		bool foundNports = false, foundTextDescription = false;
 #endif
 
 		for( Object::const_iterator i = obj.begin(); i != obj.end(); ++i )
@@ -184,8 +184,8 @@ bool ComputeController::parseAnswer(string answer, string nf)
 		    else if(name == "description")
 		    {
 #ifdef UNIFY_NFFG
-				foundDescription = true;
-		    	description = value.getString();
+				foundTextDescription = true;
+		    	text_description = value.getString();
 #endif
 		    }
 		    else if(name == "implementations")
@@ -268,7 +268,7 @@ bool ComputeController::parseAnswer(string answer, string nf)
 						return false;
 					}
 
-					possibleImplementations.push_back(new Implementation(type,uri,cores,location));
+					possibleDescriptions.push_back(new Description(type,uri,cores,location));
 				}
 		    } //end if(name == "implementations")
 		    else
@@ -280,7 +280,7 @@ bool ComputeController::parseAnswer(string answer, string nf)
 
 		if(!foundName || !foundImplementations
 #ifdef UNIFY_NFFG
-			|| !foundNports || !foundDescription
+			|| !foundNports || !foundTextDescription
 #endif		
 		)
 		{
@@ -294,12 +294,12 @@ bool ComputeController::parseAnswer(string answer, string nf)
 
 		NF *new_nf = new NF(nf_name
 #ifdef UNIFY_NFFG		
-			,numports, description
+			,numports, text_description
 #endif	
 		);
-		assert(possibleImplementations.size() != 0);
-		for(list<Implementation*>::iterator impl = possibleImplementations.begin(); impl != possibleImplementations.end(); impl++)
-			new_nf->addImplementation(*impl);
+		assert(possibleDescriptions.size() != 0);
+		for(list<Description*>::iterator impl = possibleDescriptions.begin(); impl != possibleDescriptions.end(); impl++)
+			new_nf->addDescription(*impl);
 
 		nfs[nf_name] = new_nf;
 
@@ -325,7 +325,7 @@ bool ComputeController::selectImplementation()
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Select a Docker implementation if exists.");
 		selectImplementation(DOCKER);
 		
-		if(allSelected(false))
+		if(allSelected())
 			return true;
 	}
 	else
@@ -340,7 +340,7 @@ bool ComputeController::selectImplementation()
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Select DPDK implementation if exists.");
 	
 		selectImplementation(DPDK);
-		if(allSelected(false))
+		if(allSelected())
 			return true;
 	}
 	else
@@ -355,7 +355,9 @@ bool ComputeController::selectImplementation()
 	{
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Select QEMU/KVM implementation if exists.");
 		selectImplementation(KVM);
-		return allSelected(true);
+		
+		if(allSelected())
+			return true;
 	}
 	else
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "QEMU/KVM is not supported.");
@@ -376,13 +378,13 @@ void ComputeController::selectImplementation(nf_t desiredType)
 	{
 		NF *current = nf->second;
 		
-		//An implementation is selected only for those functions that do not have an implementation yet
-		if(current->getSelectedImplementation() == NULL)
+		//An descritpion is selected only for those functions that do not have a description yet
+		if(current->getSelectedDescription() == NULL)
 		{
-			list<Implementation*> implementations = current->getAvailableImplementations();
+			list<Description*> descriptions = current->getAvailableDescriptions();
 
-			list<Implementation*>::iterator impl;
-			for(impl = implementations.begin(); impl != implementations.end(); impl++)
+			list<Description*>::iterator impl;
+			for(impl = descriptions.begin(); impl != descriptions.end(); impl++)
 			{
 				if((*impl)->getType() == desiredType)
 				{
@@ -409,10 +411,10 @@ void ComputeController::selectImplementation(nf_t desiredType)
 							assert(0);
 					}
 					
-					manager->setImplementation(*impl);					
-					current->setSelectedImplementation(manager);
+					manager->setDescription(*impl);					
+					current->setSelectedDescription(manager);
 										
-					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%s implementation has been selected for NF \"%s\".",NFType::toString(desiredType).c_str(),nf->first.c_str());
+					logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "%s description has been selected for NF \"%s\".",NFType::toString(desiredType).c_str(),nf->first.c_str());
 					break;
 				}
 			}
@@ -420,17 +422,16 @@ void ComputeController::selectImplementation(nf_t desiredType)
 	}
 }
 
-bool ComputeController::allSelected(bool lastCall)
+bool ComputeController::allSelected()
 {
 	bool retVal = true;
 
 	for(map<string, NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
 	{
 		NF *current = nf->second;
-		if(current->getSelectedImplementation() == NULL)
+		if(current->getSelectedDescription() == NULL)
 		{
-			if(lastCall)
-				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The NF \"%s\" cannot be run.",nf->first.c_str());
+			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "The NF \"%s\" has not been selected yet.",nf->first.c_str());
 			retVal = false;
 		}
 	}
@@ -456,7 +457,7 @@ nf_t ComputeController::getNFType(string name)
 	assert(nfs.count(name) != 0);
 
 	NF *nf = nfs[name];
-	NFsManager *impl = nf->getSelectedImplementation();
+	NFsManager *impl = nf->getSelectedDescription();
 
 	assert(impl != NULL);
 
@@ -485,7 +486,7 @@ bool ComputeController::startNF(string nf_name, unsigned int number_of_ports, ma
 	}
 
 	NF *nf = nfs[nf_name];
-	NFsManager *nfsManager = nf->getSelectedImplementation();
+	NFsManager *nfsManager = nf->getSelectedDescription();
 	
 	StartNFIn sni(lsiID, nf_name, number_of_ports, ipv4PortsRequirements, ethPortsRequirements, calculateCoreMask(nfsManager->getCores()));
 
@@ -509,7 +510,7 @@ void ComputeController::stopAll()
 bool ComputeController::stopNF(string nf_name)
 {
 	//FIXME: remove the NF from the map?
-	//FIXME: if not, remove at least the selected implementation?
+	//FIXME: if not, remove at least the selected description?
 
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Stopping the NF \"%s\"",nf_name.c_str());
 
@@ -520,7 +521,7 @@ bool ComputeController::stopNF(string nf_name)
 	}
 
 	NF *nf = nfs[nf_name];
-	NFsManager *nfsManager = nf->getSelectedImplementation();
+	NFsManager *nfsManager = nf->getSelectedDescription();
 	
 	StopNFIn sni(lsiID,nf_name);
 	
@@ -561,7 +562,7 @@ void ComputeController::printInfo(int graph_id)
 {
 	for(map<string, NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
 	{
-		nf_t type = nf->second->getSelectedImplementation()->getNFType();
+		nf_t type = nf->second->getSelectedDescription()->getNFType();
 		string str = NFType::toString(type);
 		if(graph_id == 2)
 			coloredLogger(ANSI_COLOR_BLUE,ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\t\tName: '%s'%s\t-\tType: %s\t-\tStatus: %s",nf->first.c_str(),(nf->first.length()<=7)? "\t" : "", str.c_str(),(nf->second->getRunning())?"running":"stopped");

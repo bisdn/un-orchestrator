@@ -7,7 +7,7 @@
 #include "../../utils/constants.h"
 #include "../../utils/logger.h"
 #include "../../compute_controller/nf.h"
-#include "../../compute_controller/implementation.h"
+#include "../../compute_controller/description.h"
 
 #include <string>
 #include <map>

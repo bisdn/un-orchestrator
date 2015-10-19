@@ -295,7 +295,7 @@ bool Virtualizer::addSupportedVNFs(set<NF*> nfs)
 				PyTuple_SetItem(pythonArgs, 0, pythonValue);
 				
 				//XXX: I use the network function description as name of the VNF
-				pythonValue = PyString_FromString((nf->getDescription()).c_str());
+				pythonValue = PyString_FromString((nf->getTextDescription()).c_str());
 				PyTuple_SetItem(pythonArgs, 1, pythonValue);
 				
 				//XXX: I use the network function name as type of the VNF

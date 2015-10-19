@@ -215,8 +215,8 @@ SET(SOURCES
 	compute_controller/nf.h
 	compute_controller/nf.cc
 	compute_controller/nf_type.h
-	compute_controller/implementation.h
-	compute_controller/implementation.cc
+	compute_controller/description.h
+	compute_controller/description.cc
 	compute_controller/startNF_in.h
 	compute_controller/stopNF_in.h
 	

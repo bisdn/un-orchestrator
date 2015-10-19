@@ -8,7 +8,7 @@
 #include <list>
 
 #include "../utils/constants.h"
-#include "implementation.h"
+#include "description.h"
 #include "nfs_manager.h"
 
 using namespace std;
@@ -30,18 +30,18 @@ private:
 	/**
 	*	@brief: text describing the NF
 	*/
-	string description;
+	string text_description;
 #endif
 	
 	/**
-	*	@brief: available implementations of the NF
+	*	@brief: available descriptions of the NF
 	*/
-	list<Implementation*> implementations;
+	list<Description*> descriptions;
 	
 	/**
-	*	@brief: selected implementation for the NF
+	*	@brief: manager associated with the selected description for this NF
 	*/
-	NFsManager *selectedImplementation;	
+	NFsManager *selectedDescription;	
 		
 	/**
 	*	@brief: true if the network function is running, false otherwise
@@ -50,16 +50,16 @@ private:
 	
 public:
 #ifdef UNIFY_NFFG
-	NF(string name, unsigned int numPorts, string description);
+	NF(string name, unsigned int numPorts, string text_description);
 #else
 	NF(string name);
 #endif
 	
-	void addImplementation(Implementation *implementation);
-	list<Implementation*> getAvailableImplementations();
+	void addDescription(Description *description);
+	list<Description*> getAvailableDescriptions();
 	
-	void setSelectedImplementation(NFsManager *impl);
-	NFsManager *getSelectedImplementation();
+	void setSelectedDescription(NFsManager *impl);
+	NFsManager *getSelectedDescription();
 	
 	void setRunning(bool val);
 	bool getRunning();
@@ -68,7 +68,7 @@ public:
 	
 #ifdef UNIFY_NFFG
 	unsigned int getNumPorts();
-	string getDescription();
+	string getTextDescription();
 #endif	
 };
 

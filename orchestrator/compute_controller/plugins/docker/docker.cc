@@ -27,7 +27,7 @@ bool Docker::startNF(StartNFIn sni)
 	map<unsigned int,pair<string,string> > ipv4PortsRequirements = sni.getIpv4PortsRequirements();
 	map<unsigned int,string> ethPortsRequirements = sni.getEthPortsRequirements();
 	
-	string uri_image = implementation->getURI();
+	string uri_image = description->getURI();
 	
 	stringstream command;
 	command << PULL_AND_RUN_DOCKER_NF << " " << lsiID << " " << nf_name << " " << uri_image << " " << n_ports;
