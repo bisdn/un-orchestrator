@@ -192,7 +192,7 @@ This is needed in order to run network functions in KVM-based virtual machines.
 
 To compile and install libvirt, execute the command shown above.
 
-If you run Libvirt for OVS or OVSDB should be put your template in a folder "compute_controller/nf_repository/kvm".
+If you run Libvirt for OVS or OVSDB should be put your template in a folder "compute_controller/plugins/kvm-libvirt/nf_repository".
 
 ### NF-FG library
 
