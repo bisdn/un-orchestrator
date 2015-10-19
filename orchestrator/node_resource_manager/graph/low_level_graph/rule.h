@@ -4,16 +4,15 @@
 #pragma once
 
 #include "low_level_match.h"
-#include "action.h"
+#include "output_action.h"
 #include "../../../utils/logger.h"
 #include "../../graph_manager/lsi.h"
 
 #include <ostream>
 
-
 //XXX: the following two constants are not exported by rofl common. Hence they are redefined in this file.
 #define OF1X_GROUP_ANY	0xffffffff
-#define OF1X_PORT_ANY	0xffffffff	
+#define OF1X_PORT_ANY	0xffffffff
 
 using namespace std;
 

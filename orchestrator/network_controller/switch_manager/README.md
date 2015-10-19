@@ -1,4 +1,4 @@
-The switch manager alloesy the un-orchestrator to interact with the virtual 
+The switch manager allows the un-orchestrator to interact with the virtual 
 switch (vSwitch)for management purposes, such as the creation of a new LSI, the
 creation of new virtual ports, and so on.
 

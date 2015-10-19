@@ -76,13 +76,22 @@ bool RestServer::init(string fileName)
 		if ((cur_root_child->type == XML_ELEMENT_NODE)&&(!xmlStrcmp(cur_root_child->name, (const xmlChar*)NETWORK_FUNCTION_ELEMENT)))
 		{
 			xmlChar* attr_name = xmlGetProp(cur_root_child, (const xmlChar*)NAME_ATTRIBUTE);
+			xmlChar* attr_nports = xmlGetProp(cur_root_child, (const xmlChar*)NUM_PORTS_ATTRIBUTE);
+			xmlChar* attr_description = xmlGetProp(cur_root_child, (const xmlChar*)DESCRIPTION_ATTRIBUTE);
+		
+			int nports = 0;
 
 			assert(attr_name != NULL);
+			if(attr_nports != NULL)
+				sscanf((const char*)attr_nports,"%d",&nports);
 
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Network function: %s",attr_name);
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Number of ports: %d",nports);
+			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "Description: %s",attr_description);
 
 			string name((const char*)attr_name);
-			NF *nf = new NF(name);
+			string description((const char*)attr_description);
+			NF *nf = new NF(name,nports,description);
 	
 			xmlNodePtr nf_elem = cur_root_child;
 			for(xmlNodePtr cur_impl = nf_elem->xmlChildrenNode; cur_impl != NULL; cur_impl = cur_impl->next)
@@ -204,6 +213,7 @@ int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 {
 	struct MHD_Response *response;
 	int ret;
+	bool digest = false;
 	
 	//Check the URL
 	char delimiter[] = "/";
@@ -229,7 +239,10 @@ int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 				}
 				break;
 			case 1:
-				strcpy(nf_name,pnt);
+				if(strcmp(pnt,DIGEST_URL) == 0)
+					digest = true;
+				else
+					strcpy(nf_name,pnt);
 		}
 		
 		pnt = strtok( NULL, delimiter );
@@ -269,21 +282,36 @@ int RestServer::doGet(struct MHD_Connection *connection, const char *url)
 		}
 		else
 		{
-			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s",nf_name);
-			for(set<NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
+			if(digest)
 			{
-				if((*nf)->getName() == nf_name)
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Required a summary of the resources");
+				
+				Array networkFunctions;
+				for(set<NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
 				{
-					json = (*nf)->toJSON();
-					goto ok;
+					Object name;
+					name["name"] = (*nf)->getName();
+					networkFunctions.push_back(name);
 				}
+				json["network-functions"] = networkFunctions;
 			}
-			
-			logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for resource '%s'",nf_name);
-			response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
-			ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
-			MHD_destroy_response (response);
-			return ret;	
+			else
+			{
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Required resource: %s",nf_name);
+				for(set<NF*>::iterator nf = nfs.begin(); nf != nfs.end(); nf++)
+				{
+					if((*nf)->getName() == nf_name)
+					{
+						json = (*nf)->toJSON();
+						goto ok;
+					}
+				}
+				logger(ORCH_WARNING, MODULE_NAME, __FILE__, __LINE__, "Method GET is not supported for resource '%s'",nf_name);
+				response = MHD_create_response_from_buffer (0,(void*) "", MHD_RESPMEM_PERSISTENT);
+				ret = MHD_queue_response (connection, MHD_HTTP_METHOD_NOT_ALLOWED, response);
+				MHD_destroy_response (response);
+				return ret;	
+			}
 		}
 		
 ok:		

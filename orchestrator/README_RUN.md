@@ -1,67 +1,74 @@
-Command lines parameters for the un-orchestrator can be retrieved thorugh the
-command:  
-  sudo ./node-orchestrator --h
+# How to run the un-orchestrator
 
-The output will change according to the fact that you compiled the un-orchestrator
-with the flag READ_JSON_FROM_FILE enabled or not.
-
-===============================================================================
-
-READ_JSON_FROM_FILE *disabled* (default configuration)
-
-Usage: 
-  sudo ./name-orchestrator --f file_name
-                                                                                         
-Parameters:  
-  --f file_name  
-        Name of the file containing the physical ports to be handled by the node         
-        orchestrator                                                                     
-                                                                                         
-Options:  
-  --p tcp_port  
-        TCP port used by the REST server to receive commands (default is 8080)           
-  --c core_mask  
-        Mask that specifies which cores must be used for DPDK network functions. These   
-        cores will be allocated to the DPDK network functions in a round robin fashion   
-        (default is 0x2)                                                                 
-  --h  
-        Print this help.                                                                 
-                                                                                         
-Example:  
-  sudo ./node-orchestrator --f config/example.xml
+The full list of command line parameters for the un-orchestrator can be
+retrieved by the following command:
   
-===============================================================================
+    $ sudo ./node-orchestrator --h
 
-READ_JSON_FROM_FILE *enabled*
+Please refer to the help provided by the node-orchestrator itself in order to
+understand how to use the different options.
 
-Usage:  
-  sudo ./name-orchestrator --p file_name --f file_name  
-                                                                                         
-Parameters:  
-  --p file_name  
-        Name of the file containing the physical ports to be handled by the node         
-        orchestrator                                                                     
-  --f file_name  
-        Name of the file describing the NF-FG to be deployed on the node                 
-                                                                                         
-Options:  
-  --c core_mask  
-        Mask that specifies which cores must be used for DPDK network functions. These   
-        cores will be allocated to the DPDK network functions in a round robin fashion   
-        (default is 0x2)                                                                 
-  --h  
-        Print this help.                                                                 
-                                                                                         
-Example:  
-  sudo ./node-orchestrator --p example/config.xml --f example.json
+The un-orchestrator requires a virtual switch up and running in the server,
+which is completely independent from this software.
+
+Therefore you need to start your preferred softswitch first, before running
+the un-orchestrator. Proper instructions for xDPd and OpenvSwich are provided
+below.
+
+
+### Configuration file examples
+
+Folder 'config' contains some configuration file examples that can be used 
+to configure/test the un-orchestrator.
+
+  * config/physical\_ports-example.xml: configuration file describing
+    the physical ports to be handeld by the un-orchestrator.
+  * config/simple\_passthrough\_nffg.json: simple graph that implements
+    a simple passthrough function, i.e., traffic is received from a first
+    physical port and sent out from a second physical port, after having
+    been handled to the vswitch.
+
+
+### How to start xDPd to work with the un-orchestrator
+
+Start xDPd:
+
+	$ cd [xdpd]/build/src/xdpd
+	$ sudo ./xdpd
     
-===============================================================================
+xDPd comes with a command line tool called xcli, that can be used to check 
+the  flows installed in the lsis, which are the lsis deployed, see statistics 
+on flows matched, and so on. The xcli can be run by just typing:
 
-Please check config/example.xml to understand the configuration file descrfibing
-the physical ports to be handeld by the  un-orchestrator.
+	$ xcli
 
-===============================================================================
 
-Please check README_COMMANDS to know the commands to be used to interact with
-the un-orchestrator.
+### How to start OpenvSwitch to work with the un-orchestrator
 
+Start OVS:
+
+	$ sudo /usr/share/openvswitch/scripts/ovs-ctl start
+
+In addition, you have to start the OF-CONFIG server, which represents the
+daemon the implements the protocol used to configure the switch.
+
+OF-CONFIG server can be started by
+
+	$ sudo ofc-server
+
+By default, ofc-server starts in daemon mode. To avoid daemon mode, use the
+'-f' parameter.
+For a the full list of the supported parameters, type:
+
+    $ ofc-server -h
+    
+
+### How to start OVSDB to work with the un-orchestrator
+    
+Start OVS:
+
+	$ sudo /usr/share/openvswitch/scripts/ovs-ctl start
+
+Start ovsdb-server
+
+	$ sudo ovs-appctl -t ovsdb-server ovsdb-server/add-remote ptcp:6632

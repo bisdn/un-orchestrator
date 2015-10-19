@@ -1,32 +1,34 @@
 #include "nf.h"
 
-
+#ifdef UNIFY_NFFG
+NF::NF(string name, unsigned int numPorts, string text_description) :
+	name(name), numPorts(numPorts), text_description(text_description), selectedDescription(NULL), isRunning(false)
+#else
 NF::NF(string name) :
-	name(name), selectedImplementation(NULL), isRunning(false)
+	name(name), selectedDescription(NULL), isRunning(false)
+#endif
 {
 
 }
 
-void NF::addImplementation(Implementation *implementation)
+void NF::addDescription(Description *description)
 {
-	implementations.push_back(implementation);
+	descriptions.push_back(description);
 }
 
-list<Implementation*> NF::getAvailableImplementations()
+list<Description*> NF::getAvailableDescriptions()
 {
-	return implementations;
+	return descriptions;
 }
 
-void NF::setSelectedImplementation(Implementation *impl)
+void NF::setSelectedDescription(NFsManager *impl)
 {
-	selectedImplementation = impl;
-	
-	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Selected a \%s\" implementation for NF \"%s\"", NFType::toString(selectedImplementation->getType()).c_str() ,name.c_str());
+	selectedDescription = impl;
 }
 
-Implementation *NF::getSelectedImplementation()
+NFsManager *NF::getSelectedDescription()
 {
-	return selectedImplementation;
+	return selectedDescription;
 }
 
 bool NF::getRunning()
@@ -38,3 +40,21 @@ void NF::setRunning(bool val)
 {
 	isRunning = val;
 }
+
+string NF::getName()
+{
+	return name;
+}
+
+#ifdef UNIFY_NFFG
+	unsigned int NF::getNumPorts()
+	{
+		return numPorts;
+	}
+	
+	string NF::getTextDescription()
+	{
+		return text_description;
+	}
+#endif	
+

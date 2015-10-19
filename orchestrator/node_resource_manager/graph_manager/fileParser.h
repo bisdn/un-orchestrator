@@ -1,7 +1,11 @@
 #ifndef FileParser_H_
-#define LSI_H_ 1
+#define FileParser_ 1
 
 #pragma once
+
+#ifdef UNIFY_NFFG
+	#include "../virtualizer/virtualizer.h"
+#endif	
 
 #include "../../network_controller/switch_manager/checkPhysicalPorts_in.h"
 #include "../../utils/constants.h"
@@ -23,9 +27,11 @@ private:
 public:
 
 	/**
-	*	@brief: parse the file describing the ports to be connected to the node
+	*	@brief: parse the configuration file of the Universal Node, and retrieves information
+	*		related to the physical ports to be connected to the node itself
 	*/
-	static set<CheckPhysicalPortsIn> parsePortsFile(string fileName);
+	static set<CheckPhysicalPortsIn> parseConfigurationFile(string fileName);
+	
 };
 
 class FileParserException: public exception

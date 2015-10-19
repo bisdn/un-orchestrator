@@ -1,0 +1,29 @@
+{  
+   "flow-graph":{  
+      "VNFs":[  
+         {  
+            "id":"usvhost_example"
+         }
+      ],
+      "flow-rules":[  
+         {  
+            "id":"00000001",
+            "match":{  
+              "port":"dpdk2"
+            },
+            "action":{  
+               "VNF_id":"usvhost_example:1"
+            }
+         },
+         {  
+            "id":"00000002",
+            "match":{  
+               "VNF_id":"usvhost_example:2"
+            },
+            "action":{  
+              "port":"dpdk0"
+            }
+         }
+      ]
+   }
+}

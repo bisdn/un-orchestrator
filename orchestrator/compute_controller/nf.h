@@ -8,7 +8,8 @@
 #include <list>
 
 #include "../utils/constants.h"
-#include "implementation.h"
+#include "description.h"
+#include "nfs_manager.h"
 
 using namespace std;
 
@@ -16,16 +17,31 @@ class NF
 {
 private:
 	/**
-	*	@brief: name of the NF
+	*	@brief: name of the NF. This should be unique
 	*/
 	string name;
 	
+#ifdef UNIFY_NFFG
 	/**
-	*	@brief: available implementations of the NF
+	*	@brief: number of ports of a NF
 	*/
-	list<Implementation*> implementations;
-		
-	Implementation *selectedImplementation;	
+	unsigned int numPorts;
+	
+	/**
+	*	@brief: text describing the NF
+	*/
+	string text_description;
+#endif
+	
+	/**
+	*	@brief: available descriptions of the NF
+	*/
+	list<Description*> descriptions;
+	
+	/**
+	*	@brief: manager associated with the selected description for this NF
+	*/
+	NFsManager *selectedDescription;	
 		
 	/**
 	*	@brief: true if the network function is running, false otherwise
@@ -33,16 +49,27 @@ private:
 	bool isRunning;
 	
 public:
+#ifdef UNIFY_NFFG
+	NF(string name, unsigned int numPorts, string text_description);
+#else
 	NF(string name);
+#endif
 	
-	void addImplementation(Implementation *implementation);
-	list<Implementation*> getAvailableImplementations();
+	void addDescription(Description *description);
+	list<Description*> getAvailableDescriptions();
 	
-	void setSelectedImplementation(Implementation *impl);
-	Implementation *getSelectedImplementation();
+	void setSelectedDescription(NFsManager *impl);
+	NFsManager *getSelectedDescription();
 	
 	void setRunning(bool val);
 	bool getRunning();
+	
+	string getName();
+	
+#ifdef UNIFY_NFFG
+	unsigned int getNumPorts();
+	string getTextDescription();
+#endif	
 };
 
 #endif //NF_H_ 1

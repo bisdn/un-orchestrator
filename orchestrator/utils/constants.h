@@ -21,6 +21,9 @@
 #define PUT						"PUT"
 #define GET						"GET"
 #define DELETE					"DELETE"
+#ifdef UNIFY_NFFG
+	#define POST				"POST"
+#endif
 
 /*
 *	HTTP headers
@@ -30,6 +33,8 @@
 
 /*
 *	Costants in the JSON describing the graph
+*	XXX: the list of supported matches and actions MUST be aligned with those
+*	in [orchestrator]/node_resource_manager/virtualizer/constants.py
 */
 
 #define FLOW_GRAPH		"flow-graph"
@@ -97,6 +102,11 @@
 			#define	PORT			"port"
 			#define	VNF_ID			"VNF_id"
 			#define ENDPOINT_ID		"endpoint_id"
+			#define VLAN			"vlan"
+				#define VLAN_OP		"operation"
+					#define VLAN_PUSH	"push"
+					#define VLAN_POP	"pop"
+				//#define VLAN_ID	"vlan_id"
 			
 /*
 *	Misc
@@ -111,13 +121,34 @@
 
 /**
 *	@brief: Constants related to the configuration file containing the description of the physical ports
+*
+*	XXX This constants must be updated in case the XML schema is modified
 */
-#define PHY_PORTS_XSD				"config/physical-ports.xsd"
+#define PHY_PORTS_XSD			"config/universal-node-schema.xsd"
 
-#define PORT_ELEMENT				"port"
-#define NAME_ATTRIBUTE				"name"
-#define TYPE_ATTRIBUTE				"type"
-#define SIDE_ATTRIBUTE				"side"
+#define RESOURCES_ELEMENT		"resources"
+#define CPU_ELEMENT				"cpu"
+#define MEMORY_ELEMENT			"memory"
+#define STORAGE_ELEMENT			"storage"
+#define AMOUNT_ATTRIBUTE		"amount"
+#define UNIT_ATTRIBUTE			"unit"
+
+#define PORTS_ELEMENT			"ports"
+#define PORT_ELEMENT			"port"
+#define NAME_ATTRIBUTE			"name"
+#define TYPE_ATTRIBUTE			"type"
+#define SIDE_ATTRIBUTE			"side"
+
+#define VIRTUALIZED_ELEMENT		"virtualized"
+#define AS_ATTRIBUTE			"as"
+#define PORT_TYPE_ATTRIBUTE		"port-type"
+
+#define TYPE_ETHERNET			"ethernet"
+#define TYPE_WIFI				"wifi"
+
+#define SIDE_CORE				"core"
+#define SIDE_EDGE				"edge"
+#define SIDE_NONE				"none"
 
 /*
  * Supported Openflow versions.
@@ -128,5 +159,45 @@ enum
 	OFP_12,
 	OFP_13
 };
+
+/*
+ * Constants used by Libvirt
+ */
+ #define MEMORY_SIZE 				"4194304"
+ #define NUMBER_OF_CORES			 "4"
+
+/*
+ *	Misc
+ */
+ #define GRAPH_ID					"NF-FG"
+
+/*
+ * Constant required with the Unify NF-FG library is used
+ */
+#ifdef UNIFY_NFFG
+	#define PYTHON_DIRECTORY    "node_resource_manager/virtualizer"
+	#define PYTHON_MAIN_FILE    "virtualizer"
+
+	/*
+	* Python functionas
+	*/
+	#define PYTHON_INIT					"init"
+	#define PYTHON_TERMINATE			"terminate"
+	#define PYTHON_ADDRESOURCES			"addResources"
+	#define PYTHON_ADDNODEPORT			"addNodePort"
+	#define PYTHON_EDIT_PORT_ID			"editPortID"
+	#define PYTHON_ADD_SUPPORTED_VNFs	"addSupportedVNFs"
+	#define PYTHON_HANDLE_REQ			"handle_request"
+	
+	/*
+	* File containing the NF-FG to be implemented
+	*/
+	#define NEW_GRAPH_FILE				"./node_resource_manager/virtualizer/.new_graph.json"
+	
+	/*
+	* File containing the rules to be removed from the graph
+	*/
+	#define REMOVE_GRAPH_FILE			"./node_resource_manager/virtualizer/.remove_graph.json"
+#endif	
 
 #endif //CONSTANTS_H_

@@ -11,16 +11,28 @@
 #include "../../utils/constants.h"
 #include "../graph/high_level_graph/high_level_graph.h"
 #include "../graph/low_level_graph/graph.h"
-#include "../graph/high_level_graph/high_level_action_nf.h"
-#include "../graph/high_level_graph/high_level_action_port.h"
-#include "../graph/high_level_graph/high_level_action_endpoint.h"
+#include "../graph/high_level_graph/high_level_output_action_nf.h"
+#include "../graph/high_level_graph/high_level_output_action_port.h"
+#include "../graph/high_level_graph/high_level_output_action_endpoint.h"
 #include "../rest_server/match_parser.h"
 
 #ifdef VSWITCH_IMPLEMENTATION_XDPD
 	#include "../../network_controller/switch_manager/plugins/xdpd/xdpd_manager.h"
-
-//[+] Add here other implementations for the virtual switch
+	#define SWITCH_MANAGER_IMPLEMENTATION XDPDManager
 #endif
+#ifdef VSWITCH_IMPLEMENTATION_OVS
+	#include "../../network_controller/switch_manager/plugins/ovs/ovs_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSManager
+#endif
+#ifdef VSWITCH_IMPLEMENTATION_OVSDPDK
+	#include "../../network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSDPDKManager
+#endif
+#ifdef VSWITCH_IMPLEMENTATION_OVSDB
+	#include "../../network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.h"
+	#define SWITCH_MANAGER_IMPLEMENTATION OVSDBManager
+#endif
+//[+] Add here other implementations for the virtual switch
 
 #include <list>
 #include <vector>
@@ -38,7 +50,7 @@ typedef struct
 		unsigned int number_of_ports;
 		map<unsigned int,pair<string,string> > ipv4PortsRequirements;
 		map<unsigned int,string> ethPortsRequirements;
-		NFsManager *nfsManager;
+		ComputeController *computeController;
 	}to_thread_t;
 
 class GraphManager
@@ -106,11 +118,7 @@ private:
 	/**
 	*	The module that interacts with the virtual switch
 	*/
-#ifdef VSWITCH_IMPLEMENTATION_XDPD
-	XDPDManager switchManager;
-	
-	//[+] Add here other implementations for the virtual switch
-#endif
+	SWITCH_MANAGER_IMPLEMENTATION switchManager;
 	
 	/**
 	*	@brief: identify the virtual links required to implement the graph: each action
@@ -147,10 +155,10 @@ private:
 	*	@brief: given a graph description, check if the ports and the NFs required by the
 	*		graph exist
 	*
-	*	@param: graph		Graph description to be validated
-	*	@param: nfsManager	NF manager used to validate the graph
+	*	@param: graph				Graph description to be validated
+	*	@param: computeController	Compute controller used to validate the graph
 	*/
-	bool checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsManager);
+	bool checkGraphValidity(highlevel::Graph *graph, ComputeController *computeController);
 	
 	/**
 	*	@brief: check if
@@ -163,7 +171,7 @@ private:
 	*		- endpoints are no longer used
 	*	and then remove the useles things from the LSI
 	*/
-	void removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo tbr, NFsManager *nfsManager,highlevel::Graph *graph, LSI * lsi);
+	void removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo tbr, ComputeController *computeController,highlevel::Graph *graph, LSI * lsi);
 	
 	/**
 	*	@brief: given a NF of the graph (in the form NF_port), return the endpoint expressed in the match of a rule
@@ -173,7 +181,8 @@ private:
 	*	@param: nf		Involved NF
 	*/
 	string findEndPointTowardsNF(highlevel::Graph *graph, string nf);
-	
+
+#ifndef UNIFY_NFFG	
 	/**
 	*	@brief: check if a specific flow can be removed from a graph. The flow cannot be removed if it defines
 	*		an endpoint currently used by other graphs.
@@ -185,6 +194,7 @@ private:
 	*	be removed if it is not used in actions of other graphs. 
 	*/
 	bool canDeleteFlow(highlevel::Graph *graph, string flowID);
+#endif
 	
 public:
 	//XXX: Currently I only support rules with a match expressed on a port or on a NF
@@ -254,6 +264,16 @@ public:
 	*	TODO: describe what happens in case of endpoint
 	*/
 	bool deleteFlow(string graphID, string flowID);
+	
+#ifdef UNIFY_NFFG
+	/**
+	*	@brief: deletes a NF from the graph
+	*
+	*	@param: graphID	Identifier of the graph to which the NF belongs to
+	*	@param: nf_name	Name of the NF to be removed from the graph
+	*/
+	bool stopNetworkFunction(string graphID, string nf_name);
+#endif		
 	
 	/**
 	*	@brief: checks if a specific NF is part of a specific graph

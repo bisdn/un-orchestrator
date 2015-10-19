@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<physical-ports xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                 xsi:noNamespaceSchemaLocation="physical_ports-schema.xsd">
+    <!--
+    	This file specifies the physical interfaces to be associated to the universal node; in particular
+    	these interfaces will be controlled by the virtual switch, and then may no longer accessible by the
+    	operating system.
+    -->                 
+
+	<!--
+		Specify an ethernet interface
+	-->
+	<port name="eth0" type="ethernet" side="none"/>
+	
+	<!--
+		Specify a wifi interface
+	-->
+	<port name="eth1" type="ethernet" side="none"/>
+
+	<!--
+		Valid values for side are
+		*	core
+		*	edge
+		*	none: use this value if you are not interested on the side of the port
+	-->
+
+</physical-ports>

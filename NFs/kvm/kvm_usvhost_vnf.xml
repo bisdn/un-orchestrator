@@ -1,0 +1,57 @@
+<domain type="kvm" xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+	<name>example</name>
+	<memory>4194304</memory>
+	<vcpu placement="static">4</vcpu>
+	<cpu mode='host-passthrough'>
+		<topology sockets='1' cores='4' threads='1'/>
+		<numa>
+			<cell id='0' cpus='0-3' memory='4194304' memAccess='shared'/> 
+		</numa>
+	</cpu>
+	<os>
+		<type arch="x86_64" machine="pc-i440fx-2.2">hvm</type>
+		<boot dev="hd"/>
+	</os>
+	<features>
+		<acpi/><apic/>
+		<pae/>
+	</features>
+	<memoryBacking>    <!-- TODO? Have this inserted automatically by orchestrator? -->
+		<hugepages>
+			<page size="1" unit="G" nodeset="0"/>
+		</hugepages>
+	</memoryBacking>
+
+	<devices>
+		<!-- emulator>/home/dverbeir/qemu/qemu_git/x86_64-softmmu/qemu-system-x86_64</emulator -->
+		<disk type="file" device="disk">
+			<source file="/home/nf_repository/kvm/usvhost_vnf.raw"/>
+			<driver name="qemu" type="raw"/>
+			<target dev="vda" bus="virtio"/>
+		</disk>
+		<disk type="block" device="cdrom">
+			<driver name="qemu" type="raw"/>
+			<target dev="hdc" bus="ide"/>
+		</disk>
+		<interface type='bridge'>
+			<source bridge='br-mgt'/>
+		</interface>
+		<interface type="vhostuser">
+			<source type="unix" path="/usr/local/var/run/openvswitch/example_1" mode="client"/>
+			<model type="virtio"/>
+		</interface>
+		<interface type="vhostuser">
+			<source type="unix" path="/usr/local/var/run/openvswitch/example_2" mode="client"/>
+			<model type="virtio"/>
+		</interface>
+		<serial type="pty">
+			<target port="0"/>
+		</serial>
+		<console type="pty">
+			<target type="serial" port="0"/>
+		</console>
+		<input type="mouse" bus="ps2"/>
+		<input type="keyboard" bus="ps2"/>
+		<graphics type="vnc" port="-1" autoport="yes" listen="0.0.0.0"/>
+	</devices>
+</domain>

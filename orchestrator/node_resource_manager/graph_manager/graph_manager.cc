@@ -15,7 +15,7 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 	set<CheckPhysicalPortsIn> phyPortsRequired;
 	try
 	{
-		phyPortsRequired = FileParser::parsePortsFile(portsFileName);
+		phyPortsRequired = FileParser::parseConfigurationFile(portsFileName);
 	}
 	catch(...)
 	{
@@ -54,7 +54,6 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Creating the LSI-0...");
 
-
 	//The three following strunctures are empty. No NF and no virtual link is attached.	
 	map<string, list<unsigned int> > dummy_network_functions;
 	vector<VLink> dummy_virtual_links;
@@ -68,7 +67,7 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 		
 		map<string,list<string> > netFunctionsPortsName;		
 		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(),lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
-		
+
 		CreateLsiOut *clo = switchManager.createLsi(cli);
 		
 		lsi->setDpid(clo->getDpid());
@@ -82,6 +81,10 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 				delete(clo);
 				throw GraphManagerException();
 			}
+#ifdef UNIFY_NFFG
+			if(!Virtualizer::EditPortID(it->first,it->second))
+				throw GraphManagerException();
+#endif
 		}
 		
 		map<string,map<string, unsigned int> > nfsports = clo->getNetworkFunctionsPorts();
@@ -146,7 +149,12 @@ GraphManager::GraphManager(int core_mask,string portsFileName) :
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "LSI-0 and its controller are created");
 
-	NFsManager::setCoreMask(core_mask);
+	ComputeController::setCoreMask(core_mask);
+
+#ifdef UNIFY_NFFG	
+	if(ComputeController::retrieveAllAvailableNFs() != NFManager_OK)
+		throw GraphManagerException();	
+#endif
 }
 
 GraphManager::~GraphManager()
@@ -320,10 +328,10 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 	/**
 	*		2) stop the NFs
 	*/
-	NFsManager *nfsManager = (tenantLSIs.find(graphID))->second.getNFsManager();
+	ComputeController *computeController = (tenantLSIs.find(graphID))->second.getComputeController();
 #ifdef RUN_NFS
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "2) Stop the NFs");
-	nfsManager->stopAll();
+	computeController->stopAll();
 #else
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "2) Flag RUN_NFS disabled. No NF to be stopped");
 #endif
@@ -376,11 +384,11 @@ bool GraphManager::deleteGraph(string graphID, bool shutdown)
 
 	delete(highLevelGraph);
 	delete(tenantLSI);
-	delete(nfsManager);
+	delete(computeController);
 
 	highLevelGraph = NULL;
 	tenantLSI = NULL;
-	nfsManager = NULL;
+	computeController = NULL;
 	
 	logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "Tenant LSI (ID: %s) and its controller have been destroyed!",graphID.c_str());
 	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
@@ -407,6 +415,7 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 		return false;
 	}
 
+#ifndef UNIFY_NFFG
 	//if the graph has only this flow, remove the entre graph
 	if(graph->getNumberOfRules() == 1)
 	{
@@ -414,18 +423,17 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 		return deleteGraph(graphID);
 	}
 	
-	//Unfortunately this is not the only flow of the graph
-	
 	/**
 	*	The flow can be removed only if does not define an endpoint used by some other graph
 	*/
 	if(!canDeleteFlow(graph,flowID))
-		return false;
-		
+		return false;	
+				
 	string endpointInvolved = graph->getEndpointInvolved(flowID);
 	bool definedHere = false;
 	if(endpointInvolved != "")
 		definedHere = graph->isDefinedHere(endpointInvolved);
+#endif	
 	
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Removing the flow from the LSI-0 graph");
 	Controller *lsi0Controller = graphInfoLSI0.getController();
@@ -441,11 +449,12 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Removing the flow from the high level graph");
 	RuleRemovedInfo rri = graph->removeRuleFromID(flowID);
 	
-	NFsManager *nfs_manager = graphInfo.getNFsManager();
+	ComputeController *nfs_manager = graphInfo.getComputeController();
 	LSI *lsi = graphInfo.getLSI();
 	
 	removeUselessPorts_NFs_Endpoints_VirtualLinks(rri,nfs_manager,graph,lsi);
-	
+
+#ifndef UNIFY_NFFG	
 	if(endpointInvolved != "")
 	{
 		if(definedHere)
@@ -462,13 +471,14 @@ bool GraphManager::deleteFlow(string graphID, string flowID)
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "endpoint \"%s\" still used %d times",endpointInvolved.c_str(), availableEndPoints[endpointInvolved]);
 		}
 	}
+#endif
 	
 	printInfo(graphLSI0lowLevel,graphInfoLSI0.getLSI());
 	
 	return true;
 }
 
-bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsManager)
+bool GraphManager::checkGraphValidity(highlevel::Graph *graph, ComputeController *computeController)
 {
 	set<string> phyPorts = graph->getPorts();
 	set<string> endPoints = graph->getEndPoints();
@@ -530,7 +540,7 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsMa
 	list<string> requiredNFs;
 	for(map<string,list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
-		nf_manager_ret_t retVal = nfsManager->retrieveDescription(nf->first);
+		nf_manager_ret_t retVal = computeController->retrieveDescription(nf->first);
 	
 		if(retVal == NFManager_NO_NF)
 		{
@@ -541,6 +551,14 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsMa
 		{
 			throw GraphManagerException();
 		}
+#ifdef UNIFY_NFFG
+		unsigned int numPorts =  computeController->getNumPorts(nf->first);
+		
+		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The NF '%s' has %d ports",nf->first.c_str(),numPorts);
+		
+		for(unsigned int p = 1; p <= numPorts; p++)
+			graph->updateNetworkFunction(nf->first,p);
+#endif
 	}
 
 	return true;
@@ -549,9 +567,9 @@ bool GraphManager::checkGraphValidity(highlevel::Graph *graph, NFsManager *nfsMa
 void *startNF(void *arguments)
 {
     to_thread_t *args = (to_thread_t *)arguments;
-    assert(args->nfsManager != NULL);
+    assert(args->computeController != NULL);
     
-    if(!args->nfsManager->startNF(args->nf_name, args->number_of_ports, args->ipv4PortsRequirements, args->ethPortsRequirements))
+    if(!args->computeController->startNF(args->nf_name, args->number_of_ports, args->ipv4PortsRequirements, args->ethPortsRequirements))
     	return (void*) 0;
     else
     	return (void*) 1;
@@ -580,13 +598,13 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*/
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "0) Check the validity of the graph");
 	
-	NFsManager *nfsManager = new NFsManager();
+	ComputeController *computeController = new ComputeController();
 	
-	if(!checkGraphValidity(graph,nfsManager))
+	if(!checkGraphValidity(graph,computeController))
 	{
 		//This is an error in the request
-		delete(nfsManager);
-		nfsManager = NULL;
+		delete(computeController);
+		computeController = NULL;
 		return false;
 	}
 
@@ -628,12 +646,12 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	*	2) Select an implementation for each network function of the graph
 	*/
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "2) Select an implementation for each NF of the graph");	
-	if(!nfsManager->selectImplementation())
+	if(!computeController->selectImplementation())
 	{
 		//This is an internal error
-		delete(nfsManager);
+		delete(computeController);
 		delete(controller);
-		nfsManager = NULL;
+		computeController = NULL;
 		controller = NULL;
 		throw GraphManagerException();
 	}	
@@ -672,7 +690,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	
 	map<string,nf_t>  nf_types;
 	for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
-		nf_types[nf->first] = nfsManager->getNFType(nf->first);
+		nf_types[nf->first] = computeController->getNFType(nf->first);
 	
 	//Prepare the structure representing the new tenant-LSI
 	LSI *lsi = new LSI(string(OF_CONTROLLER_ADDRESS), strControllerPort.str(), dummyPhyPorts, network_functions,virtual_links,nf_types);
@@ -688,8 +706,8 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		}
 		
 		CreateLsiIn cli(string(OF_CONTROLLER_ADDRESS),strControllerPort.str(), lsi->getPhysicalPortsName(),nf_types,netFunctionsPortsName,lsi->getVirtualLinksRemoteLSI());
-		
-		CreateLsiOut *clo = switchManager.createLsi(cli);
+
+		clo = switchManager.createLsi(cli);
 
 		lsi->setDpid(clo->getDpid());
 		map<string,unsigned int> physicalPorts = clo->getPhysicalPorts();
@@ -730,11 +748,11 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 			delete(clo);
 		delete(graph);
 		delete(lsi);
-		delete(nfsManager);
+		delete(computeController);
 		delete(controller);
 		graph = NULL;
 		lsi = NULL;
-		nfsManager = NULL;
+		computeController = NULL;
 		controller = NULL;
 		throw GraphManagerException();
 	}
@@ -837,7 +855,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 #ifdef RUN_NFS
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "4) start the network functions");
 	
-	nfsManager->setLsiID(dpid);
+	computeController->setLsiID(dpid);
 		
 	pthread_t some_thread[network_functions.size()];
 	to_thread_t thr[network_functions.size()];
@@ -849,7 +867,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 		thr[i].number_of_ports = nf->second.size();
 		thr[i].ipv4PortsRequirements = graph->getNetworkFunctionIPv4PortsRequirements(nf->first);
 		thr[i].ethPortsRequirements = graph->getNetworkFunctionEthernetPortsRequirements(nf->first);
-		thr[i].nfsManager = nfsManager;
+		thr[i].computeController = computeController;
 		
 		if (pthread_create(&some_thread[i], NULL, &startNF, (void *)&thr[i]) != 0)
 		{
@@ -874,18 +892,18 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	if(!ok)
 	{
 		for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
-			nfsManager->stopNF(nf->first);
+			computeController->stopNF(nf->first);
 
 		switchManager.destroyLsi(lsi->getDpid());
 	
 		delete(graph);
 		delete(lsi);
-		delete(nfsManager);
+		delete(computeController);
 		delete(controller);
 		
 		graph = NULL;;
 		lsi = NULL;
-		nfsManager = NULL;
+		computeController = NULL;
 		controller = NULL;
 		
 		throw GraphManagerException();
@@ -917,7 +935,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 
 		GraphInfo graphInfoTenantLSI;
 		graphInfoTenantLSI.setGraph(graph);
-		graphInfoTenantLSI.setNFsManager(nfsManager);
+		graphInfoTenantLSI.setComputeController(computeController);
 		graphInfoTenantLSI.setLSI(lsi);
 		graphInfoTenantLSI.setController(controller);
 
@@ -936,7 +954,7 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	{
 #ifdef RUN_NFS
 		for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
-			nfsManager->stopNF(nf->first);
+			computeController->stopNF(nf->first);
 #endif
 	
 		switchManager.destroyLsi(lsi->getDpid());
@@ -946,12 +964,12 @@ bool GraphManager::newGraph(highlevel::Graph *graph)
 	
 		delete(graph);
 		delete(lsi);
-		delete(nfsManager);
+		delete(computeController);
 		delete(controller);
 
 		graph = NULL;
 		lsi = NULL;
-		nfsManager = NULL;
+		computeController = NULL;
 		controller = NULL;
 
 		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
@@ -972,7 +990,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	assert(tenantLSIs.count(graphID) != 0);
 
 	GraphInfo graphInfo = (tenantLSIs.find(graphID))->second;
-	NFsManager *nfsManager = graphInfo.getNFsManager();
+	ComputeController *computeController = graphInfo.getComputeController();
 	highlevel::Graph *graph = graphInfo.getGraph();
 	LSI *lsi = graphInfo.getLSI();
 	Controller *tenantController = graphInfo.getController();
@@ -1007,10 +1025,15 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		{
 			//The NF is not part of the graph
 			tmp->addNetworkFunction(it->first);
+#ifndef UNIFY_NFFG
+			//XXX The number of ports of a VNF does not depend on the flows described in the NFFG
 			list<unsigned int> ports = it->second;
 			for(list<unsigned int>::iterator p = ports.begin(); p != ports.end(); p++)
 				tmp->updateNetworkFunction(it->first,*p);
+#endif
 		}
+#ifndef UNIFY_NFFG
+		//XXX The number of ports of a VNF does not depend on the flows described in the NFFG
 		else
 		{
 			//The NF is already part of the graph, but the update
@@ -1032,6 +1055,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 				}
 			}
 		}
+#endif
 	}
 	
 	//Retrieve the ports already existing in the graph
@@ -1068,7 +1092,7 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 
 	//tmp contains only the new NFs, the new ports and the new endpoints that are not already into the graph
 
-	if(!checkGraphValidity(tmp,nfsManager))
+	if(!checkGraphValidity(tmp,computeController))
 	{
 		//This is an error in the request
 		delete(tmp);
@@ -1099,11 +1123,13 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	for(map<string, list<unsigned int> >::iterator nf = networkFunctions.begin(); nf != networkFunctions.end(); nf++)
 	{
 		graph->addNetworkFunction(nf->first);
+#ifndef UNIFY_NFFG
 		list<unsigned int> nfPorts = nf->second;
 		for(list<unsigned int>::iterator p = nfPorts.begin(); p != nfPorts.end(); p++)
 		{
 			graph->updateNetworkFunction(nf->first,*p);
 		}
+#endif
 	}
 	set<string> nep = tmp->getEndPoints();
 	for(set<string>::iterator ep = nep.begin(); ep != nep.end(); ep++)
@@ -1120,11 +1146,11 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 	*	2) Select an implementation for the new NFs
 	*/
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "2) Select an implementation for the new NFs");	
-	if(!nfsManager->selectImplementation())
+	if(!computeController->selectImplementation())
 	{
 		//This is an internal error
-		delete(nfsManager);
-		nfsManager = NULL;
+		delete(computeController);
+		computeController = NULL;
 		throw GraphManagerException();
 	}
 	
@@ -1272,8 +1298,8 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 		AddNFportsOut *anpo = NULL;
 		try
 		{
-			lsi->addNF(nf->first,nf->second,nfsManager->getNFType(nf->first));
-			AddNFportsIn anpi(dpid,nf->first,nfsManager->getNFType(nf->first),lsi->getNetworkFunctionsPortNames(nf->first));
+			lsi->addNF(nf->first,nf->second,computeController->getNFType(nf->first));
+			AddNFportsIn anpi(dpid,nf->first,computeController->getNFType(nf->first),lsi->getNetworkFunctionsPortNames(nf->first));
 			
 			anpo = switchManager.addNFPorts(anpi);
 			
@@ -1304,11 +1330,11 @@ bool GraphManager::updateGraph(string graphID, highlevel::Graph *newPiece)
 #ifdef RUN_NFS
 	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "4) start the new NFs");
 	
-	nfsManager->setLsiID(dpid);
+	computeController->setLsiID(dpid);
 	
 	for(map<string, list<unsigned int> >::iterator nf = network_functions.begin(); nf != network_functions.end(); nf++)
 	{
-		if(!nfsManager->startNF(nf->first, nf->second.size(),newPiece->getNetworkFunctionIPv4PortsRequirements(nf->first),newPiece->getNetworkFunctionEthernetPortsRequirements(nf->first)))
+		if(!computeController->startNF(nf->first, nf->second.size(),newPiece->getNetworkFunctionIPv4PortsRequirements(nf->first),newPiece->getNetworkFunctionEthernetPortsRequirements(nf->first)))
 		{
 			//TODO: no idea on what I have to do at this point
 			assert(0);
@@ -1526,7 +1552,7 @@ vector<set<string> > GraphManager::identifyVirtualLinksRequired(highlevel::Graph
 	return retval;
 }
 
-void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo rri, NFsManager *nfsManager,highlevel::Graph *graph, LSI * lsi)
+void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo rri, ComputeController *computeController,highlevel::Graph *graph, LSI * lsi)
 {
 	/*
 	*	Check if ports, NFs, end point and virtual links used by the rule removed are still useful.
@@ -1536,7 +1562,9 @@ void GraphManager::removeUselessPorts_NFs_Endpoints_VirtualLinks(RuleRemovedInfo
 
 	map<string, uint64_t> nfs_vlinks = lsi->getNFsVlinks();
 	map<string, uint64_t> ports_vlinks = lsi->getPortsVlinks();
+#ifndef UNIFY_NFFG
 	map<string, uint64_t> endpoints_vlinks = lsi->getEndPointsVlinks();
+#endif
 	
 	list<highlevel::Rule> rules = graph->getRules();
 	
@@ -1670,6 +1698,7 @@ next:
 	
 next2:
 
+#ifndef UNIFY_NFFG
 	if(rri.isEndpoint)
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Check if the vlink associated with the endpoint '%s' must be removed (if this vlink exists)",rri.endpoint.c_str());
 	
@@ -1718,7 +1747,9 @@ next2:
 			}
 		}
 	}
+#endif
 
+#ifndef UNIFY_NFFG
 	//Remove NFs, if they no longer appear in the graph
 	for(list<string>::iterator nf = rri.nfs.begin(); nf != rri.nfs.end(); nf++)
 	{
@@ -1728,7 +1759,7 @@ next2:
 
 			//Stop the NF	
 #ifdef RUN_NFS
-			nfsManager->stopNF(*nf);
+			computeController->stopNF(*nf);
 #else
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Flag RUN_NFS disabled. No NF to be stopped");
 #endif
@@ -1747,6 +1778,7 @@ next2:
 			}
 		}
 	}
+#endif
 	
 	//Remove physical ports, if they no longer appear in the graph
 	for(list<string>::iterator p = rri.ports.begin(); p != rri.ports.end(); p++)
@@ -1754,11 +1786,52 @@ next2:
 		if(!graph->stillExistPort(*p))
 			logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The port '%s' is no longer part of the graph",(*p).c_str());
 	}
-	
+
+#ifndef UNIFY_NFFG
 	//Remove the endpoint, if it no longer appear in the graph
 	if((rri.endpoint != "") && (!graph->stillExistEndpoint(rri.endpoint)))
 		logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "The endpoint '%s' is no longer part of the graph",rri.endpoint.c_str());	
+#endif
 }
+
+#ifdef UNIFY_NFFG
+bool GraphManager::stopNetworkFunction(string graphID, string nf_name)
+{
+	//TODO: the NF must not have flows associated!!
+
+	GraphInfo graphInfo = (tenantLSIs.find(graphID))->second;
+	highlevel::Graph *graph = graphInfo.getGraph();
+	ComputeController *computeController = graphInfo.getComputeController();
+	LSI *lsi = graphInfo.getLSI();
+	
+	if(graph->stillExistNF(nf_name))
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "The graph still contains flows associated with the NF: \"%s\"",nf_name.c_str());
+		return false;
+	}
+
+#ifdef RUN_NFS
+	computeController->stopNF(nf_name);
+#else
+	logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Flag RUN_NFS disabled. No NF to be stopped");
+#endif
+	try
+	{
+		list<string> tmpListPorts = lsi->getNetworkFunctionsPortNames(nf_name);
+		set<string> portsToBeRemoved(tmpListPorts.begin(),tmpListPorts.end());
+		
+		DestroyNFportsIn dnpi(lsi->getDpid(),nf_name,portsToBeRemoved);
+		switchManager.destroyNFPorts(dnpi);
+		lsi->removeNF(nf_name);
+	} catch (SwitchManagerException e)
+	{
+		logger(ORCH_ERROR, MODULE_NAME, __FILE__, __LINE__, "%s",e.what());
+		return false;
+	}
+	
+	return true;
+}
+#endif
 
 string GraphManager::findEndPointTowardsNF(highlevel::Graph *graph, string nf)
 {
@@ -1787,6 +1860,7 @@ string GraphManager::findEndPointTowardsNF(highlevel::Graph *graph, string nf)
 	return ""; //just for the compiler
 }
 
+#ifndef UNIFY_NFFG
 bool GraphManager::canDeleteFlow(highlevel::Graph *graph, string flowID)
 {
 	highlevel::Rule r = graph->getRuleFromID(flowID);
@@ -1821,6 +1895,7 @@ bool GraphManager::canDeleteFlow(highlevel::Graph *graph, string flowID)
 	
 	return true;
 }
+#endif
 
 void GraphManager::printInfo(lowlevel::Graph graphLSI0, LSI *lsi0)
 {
@@ -1874,8 +1949,8 @@ void GraphManager::printInfo(bool completed)
 			logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "\tVNF installed:");
 		}
 			
-		NFsManager *nfsManager = it->second.getNFsManager();
-		nfsManager->printInfo(id);
+		ComputeController *computeController = it->second.getComputeController();
+		computeController->printInfo(id);
 		logger(ORCH_INFO, MODULE_NAME, __FILE__, __LINE__, "");
 	}
 	

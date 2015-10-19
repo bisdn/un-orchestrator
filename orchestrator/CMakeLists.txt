@@ -37,7 +37,7 @@ ENDIF()
 # End of the rather complicated CMake code for setting the logging level
 
 # Rather complicated CMake code for selecting the Openflow version
-SET(OFP_VERSION "OFP_10" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
+SET(OFP_VERSION "OFP_12" CACHE STRING "Openflow version: OFP_10, OFP_12, OFP_13")
 SET(OFP_VERSION_VALUES "OFP_10" "OFP_12" "OFP_13")
 SET_PROPERTY(CACHE OFP_VERSION PROPERTY STRINGS ${OFP_VERSION_VALUES})
 LIST(FIND OFP_VERSION_VALUES ${OFP_VERSION} OFP_VERSION_INDEX)
@@ -58,8 +58,8 @@ ENDIF()
 
 
 # Rather complicated CMake code for selecting the virtual switch implementation
-SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD")
-SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD") #Add here other implementations
+SET(VSWITCH_IMPLEMENTATION "XDPD" CACHE STRING "vSwitch implementation: XDPD, OVS, OVS-DPDK, OVS-OVSDB")
+SET(VSWITCH_IMPLEMENTATION_VALUES "XDPD" "OVS" "OVS-DPDK" "OVS-OVSDB") #Add here other implementations
 SET_PROPERTY(CACHE VSWITCH_IMPLEMENTATION PROPERTY STRINGS ${VSWITCH_IMPLEMENTATION_VALUES})
 LIST(FIND VSWITCH_IMPLEMENTATION_VALUES ${VSWITCH_IMPLEMENTATION} VSWITCH_IMPLEMENTATION_INDEX)
 
@@ -69,6 +69,16 @@ ENDIF()
 IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 0)
 	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_XDPD)
 ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 1)
+	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVS)
+ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 2)
+	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDPDK)
+ENDIF()
+IF(${VSWITCH_IMPLEMENTATION_INDEX} EQUAL 3)
+	ADD_DEFINITIONS(-DVSWITCH_IMPLEMENTATION_OVSDB)
+ENDIF()
+
 # End of the rather complicated CMake code for setting the Openflow version
 
 OPTION(
@@ -79,16 +89,6 @@ OPTION(
 IF(RUN_NFS)
 	ADD_DEFINITIONS(-DRUN_NFS)
 ENDIF(RUN_NFS)
-
-OPTION(
-	READ_JSON_FROM_FILE
-	"Turn on to read the json describing a graph from file. In this case the REST server does not start."
-	OFF
-)
-IF(READ_JSON_FROM_FILE)
-	ADD_DEFINITIONS(-DREAD_JSON_FROM_FILE)
-ENDIF(READ_JSON_FROM_FILE)
-
 
 OPTION(
 	ENABLE_DOCKER
@@ -102,7 +102,7 @@ ENDIF(ENABLE_DOCKER)
 OPTION(
 	ENABLE_KVM
 	"Turn on the support of NFs implemented in KVM virtual machines"
-	ON
+	OFF
 )
 IF(ENABLE_KVM)
 	ADD_DEFINITIONS(-DENABLE_KVM)
@@ -136,6 +136,16 @@ IF(DEBUG_OPENFLOW)
 ENDIF(DEBUG_OPENFLOW)
 
 
+OPTION(
+	UNIFY_NFFG
+	"Turn on to support the NF-FG defined in the Unify project"
+	OFF
+)
+IF(UNIFY_NFFG)
+	ADD_DEFINITIONS(-DUNIFY_NFFG)
+ENDIF(UNIFY_NFFG)
+
+
 # Set source files
 SET(SOURCES
 	node_orchestrator.cc
@@ -156,9 +166,13 @@ SET(SOURCES
 	
 	node_resource_manager/graph/match.h
 	node_resource_manager/graph/match.cc
+	node_resource_manager/graph/generic_action.h
+	node_resource_manager/graph/generic_action.cc
+	node_resource_manager/graph/vlan_action.h
+	node_resource_manager/graph/vlan_action.cc
 	
-	node_resource_manager/graph/low_level_graph/action.h
-	node_resource_manager/graph/low_level_graph/action.cc
+	node_resource_manager/graph/low_level_graph/output_action.h
+	node_resource_manager/graph/low_level_graph/output_action.cc
 	node_resource_manager/graph/low_level_graph/graph.h
 	node_resource_manager/graph/low_level_graph/graph.cc
 	node_resource_manager/graph/low_level_graph/low_level_match.h
@@ -166,14 +180,14 @@ SET(SOURCES
 	node_resource_manager/graph/low_level_graph/rule.h
 	node_resource_manager/graph/low_level_graph/rule.cc
 	
-	node_resource_manager/graph/high_level_graph/high_level_action.h
-	node_resource_manager/graph/high_level_graph/high_level_action.cc
-	node_resource_manager/graph/high_level_graph/high_level_action_nf.h
-	node_resource_manager/graph/high_level_graph/high_level_action_nf.cc
-	node_resource_manager/graph/high_level_graph/high_level_action_port.h
-	node_resource_manager/graph/high_level_graph/high_level_action_port.cc
-	node_resource_manager/graph/high_level_graph/high_level_action_endpoint.h
-	node_resource_manager/graph/high_level_graph/high_level_action_endpoint.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_nf.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_port.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_port.cc
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.h
+	node_resource_manager/graph/high_level_graph/high_level_output_action_endpoint.cc
 	node_resource_manager/graph/high_level_graph/high_level_rule.h
 	node_resource_manager/graph/high_level_graph/high_level_rule.cc
 	node_resource_manager/graph/high_level_graph/high_level_graph.h
@@ -186,7 +200,6 @@ SET(SOURCES
 	network_controller/switch_manager/addNFports_out.h
 	network_controller/switch_manager/addVirtualLink_in.h
 	network_controller/switch_manager/addVirtualLink_out.h
-	network_controller/switch_manager/createLSIin.h
 	network_controller/switch_manager/createLSIout.h
 	network_controller/switch_manager/destroyNFports_in.h
 	network_controller/switch_manager/destroyVirtualLink_in.h 
@@ -197,11 +210,19 @@ SET(SOURCES
 	
 	compute_controller/nfs_manager.h
 	compute_controller/nfs_manager.cc
+	compute_controller/compute_controller.h
+	compute_controller/compute_controller.cc
 	compute_controller/nf.h
 	compute_controller/nf.cc
 	compute_controller/nf_type.h
-	compute_controller/implementation.h
-	compute_controller/implementation.cc
+	compute_controller/description.h
+	compute_controller/description.cc
+	compute_controller/startNF_in.h
+	compute_controller/stopNF_in.h
+	
+	compute_controller/plugins/dpdk/dpdk.h
+	compute_controller/plugins/dpdk/dpdk.cc
+	compute_controller/plugins/dpdk/dpdk_constants.h
 	
 	node_resource_manager/rest_server/rest_server.h
 	node_resource_manager/rest_server/rest_server.cc
@@ -218,41 +239,141 @@ SET(SOURCES
 IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
     SET(SOURCES2
     ${SOURCES}
-    network_controller/switch_manager/plugins/xdpd/xdpd_manager.h
+	network_controller/switch_manager/plugins/xdpd/xdpd_manager.h
 	network_controller/switch_manager/plugins/xdpd/xdpd_manager.cc
 	network_controller/switch_manager/plugins/xdpd/xdpd_constants.h
     )
 ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 0)
+
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/ovs/commands.h
+	network_controller/switch_manager/plugins/ovs/commands.cc
+	network_controller/switch_manager/plugins/ovs/ovs_manager.h
+	network_controller/switch_manager/plugins/ovs/ovs_manager.cc
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 2)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.h
+	network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_manager.cc
+	network_controller/switch_manager/plugins/ovs-dpdk/ovsdpdk_constants.h
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 2)
+
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
+    SET(SOURCES2
+    ${SOURCES}
+	network_controller/switch_manager/plugins/ovs-ovsdb/commands.h
+	network_controller/switch_manager/plugins/ovs-ovsdb/commands.cc
+	network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.h
+    network_controller/switch_manager/plugins/ovs-ovsdb/ovsdb_manager.cc
+    network_controller/switch_manager/plugins/ovs-ovsdb/Jzon.h
+    network_controller/switch_manager/plugins/ovs-ovsdb/Jzon.cpp
+    )
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 3)
+
+
+IF(ENABLE_KVM)
+    SET(SOURCES3
+    ${SOURCES2}
+	compute_controller/plugins/kvm-libvirt/libvirt.cc
+	compute_controller/plugins/kvm-libvirt/libvirt.h
+	)
+ELSE()
+     SET(SOURCES3
+         ${SOURCES2}
+    	)
+ENDIF(ENABLE_KVM)
+
+IF(ENABLE_DOCKER)
+    SET(SOURCES4
+    ${SOURCES3}
+	compute_controller/plugins/docker/docker.cc
+	compute_controller/plugins/docker/docker.h
+	compute_controller/plugins/docker/docker_constants.h
+	)
+ELSE()
+     SET(SOURCES4
+         ${SOURCES3}
+    	)
+ENDIF(ENABLE_DOCKER)
+
+
+IF(UNIFY_NFFG)
+	SET(SOURCES5
+    ${SOURCES4}
+    node_resource_manager/virtualizer/virtualizer.cc
+    node_resource_manager/virtualizer/virtualizer.h
+	)
+ELSE()
+	SET(SOURCES5
+    	${SOURCES4}
+	)
+ENDIF(UNIFY_NFFG)
+
+
 
 INCLUDE_DIRECTORIES (
 	/usr/include/boost
 	/usr/include/libxml2
 )
 
+#Include specific for the NF-FG library defined in the Unify project
+IF(UNIFY_NFFG)
+	find_package(PythonLibs REQUIRED)
+	INCLUDE_DIRECTORIES (
+		${PYTHON_INCLUDE_DIRS}
+	)
+ENDIF(UNIFY_NFFG)
 
 # Create the executable
 ADD_EXECUTABLE(
 	node-orchestrator
-	${SOURCES2}
+	${SOURCES5}
 )
-
-
 
 LINK_DIRECTORIES(
 	/usr/lib/
 	/usr/local/lib/
 	/usr/x86_64-linux-gnu/
 	/usr/lib/x86_64-linux-gnu/
+	/usr/lib/python2.7/config-x86_64-linux-gnu/
 )
 
 
 TARGET_LINK_LIBRARIES( node-orchestrator
 	libpthread.so
-	librofl_common.so
+	/usr/local/lib/librofl_common.so
 	libjson_spirit.so
 	libmicrohttpd.so
 	libboost_system.so
 	libxml2.so
 	-lrt
 )
+
+#Links specific for ovs
+IF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+	TARGET_LINK_LIBRARIES( node-orchestrator
+		libnetconf.so
+	)
+ENDIF(VSWITCH_IMPLEMENTATION_INDEX EQUAL 1)
+
+#Links specific for libvirt (KVM)
+IF(ENABLE_KVM)
+	TARGET_LINK_LIBRARIES( node-orchestrator
+		libvirt.so
+	)
+ENDIF(ENABLE_KVM)
+
+#Links specific for the NF-FG library defined in the Unify project
+IF(UNIFY_NFFG)
+    TARGET_LINK_LIBRARIES( node-orchestrator
+		libpython2.7.so
+		${PYTHON_LIBRARIES}
+	)
+ENDIF(UNIFY_NFFG)
 

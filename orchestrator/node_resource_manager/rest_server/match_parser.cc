@@ -141,9 +141,27 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, map<string,
 			}
 		
 			foundOne = true;
-			match.setInputPort(value.getString());
+#ifdef UNIFY_NFFG
+			//In this case, the virtualized port name must be translated into the real one.
+			try
+			{
+				string realName = Virtualizer::getRealName(value.getString());
 			
-			graph.addPort(value.getString());
+#else
+			string realName = value.getString();
+#endif			
+			
+			match.setInputPort(realName);
+			graph.addPort(realName);
+			
+#ifdef UNIFY_NFFG
+			}catch(exception e)
+			{
+				logger(ORCH_DEBUG_INFO, MODULE_NAME, __FILE__, __LINE__, "Error while translating the virtualized port '%s': %s",value.getString().c_str(),e.what());
+				return false;
+			}
+#endif			
+			
 		}
 		else if(name == VNF_ID)
 		{
@@ -170,7 +188,6 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, map<string,
 			ports.insert(port);
 			nfs[nf_name] = ports;
 		}
-#ifndef READ_JSON_FROM_FILE
 		else if(name == ENDPOINT_ID)
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ENDPOINT_ID,value.getString().c_str());
@@ -195,7 +212,6 @@ bool MatchParser::parseMatch(Object object, highlevel::Match &match, map<string,
 			ss << match.getGraphID() << ":" << match.getEndPoint();
 			definedInCurrentGraph = graph.addEndPoint(graph_id,ss.str());
 		}
-#endif
 		else if(name == ETH_SRC)
 		{
 			logger(ORCH_DEBUG, MODULE_NAME, __FILE__, __LINE__, "\"%s\"->\"%s\": \"%s\"",MATCH,ETH_SRC,value.getString().c_str());
