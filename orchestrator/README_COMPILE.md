@@ -188,13 +188,11 @@ Follow the instruction provided here:
 
 This is needed in order to run network functions in KVM-based virtual machines.
 
-	; Clone the libvirt repository
-	git clone git://libvirt.org/libvirt.git  
+	$ sudo apt-get install libvirt-dev qemu-kvm libvirt-bin bridge-utils  
 
-To compile and install libvirt, follow the instructions in the
-INSTALL.md file present in the libvirt root folder.
+To compile and install libvirt, execute the command shown above.
 
-If you run Libvirt for OVS or OVSDB should be use a template presents in a folder "compute_controller/nf_repository/kvm"
+If you run Libvirt for OVS or OVSDB should be put your template in a folder "compute_controller/nf_repository/kvm".
 
 ### NF-FG library
 
