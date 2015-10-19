@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <string.h>
+#include <locale>
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
 #include "../../../utils/logger.h"
